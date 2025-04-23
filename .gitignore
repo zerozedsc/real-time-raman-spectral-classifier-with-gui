@@ -176,3 +176,4 @@ cython_debug/
 #misc folder
 Tamura/
 thesis/
+test_rawdata/
