@@ -41,14 +41,10 @@ The main objective of this research is to build a modular and CPU-optimised soft
 - PyQt5 / matplotlib / numpy / scipy
 
 ### Example (command line inference):
-```bash
-python src/infer.py --model models/hirsch.pt --input data/sample.csv
-```
+
 
 ### Example (GUI mode):
-```bash
-python gui/main.py
-```
+
 
 ---
 
