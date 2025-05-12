@@ -1,0 +1,27 @@
+dataset- prostate cancer raman spectrum
+
+RF:
+{'benign': {'benign': 40, 'cancer': 59}, 'cancer': {'benign': 9, 'cancer': 263}}
+('              precision    recall  f1-score   support\n'
+ '\n'
+ '      benign       0.82      0.40      0.54        99\n'
+ '      cancer       0.82      0.97      0.89       272\n'
+ '\n'
+ '    accuracy                           0.82       371\n'
+ '   macro avg       0.82      0.69      0.71       371\n'
+ 'weighted avg       0.82      0.82      0.79       371\n')
+CV Accuracy: 0.827 ± 0.030
+
+SVC:
+{ 'benign': {'benign': 67, 'cancer': 32},
+  'cancer': {'benign': 24, 'cancer': 248}}
+('              precision    recall  f1-score   support\n'
+ '\n'
+ '      benign       0.74      0.68      0.71        99\n'
+ '      cancer       0.89      0.91      0.90       272\n'
+ '\n'
+ '    accuracy                           0.85       371\n'
+ '   macro avg       0.81      0.79      0.80       371\n'
+ 'weighted avg       0.85      0.85      0.85       371\n')
+CV Accuracy: 0.835 ± 0.037
+

@@ -177,3 +177,5 @@ cython_debug/
 Tamura/
 thesis/
 test_rawdata/
+kenkyu_venv/
+.conda/
