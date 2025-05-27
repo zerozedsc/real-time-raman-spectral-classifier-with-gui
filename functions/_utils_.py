@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import ramanspy as rp
 import torch
+import pickle
+import traceback
 
 from IPython.display import clear_output
 
@@ -12,7 +14,7 @@ from functions.data_loader import RamanDataLoader
 from functions.noise_func import RamanNoiseProcessor
 from functions.pipeline import RamanPipeline, SNV
 from functions.visualization import RamanVisualizer
-from functions.ML import RamanML, ONNXModel
+from functions.ML import RamanML, MLModel
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device

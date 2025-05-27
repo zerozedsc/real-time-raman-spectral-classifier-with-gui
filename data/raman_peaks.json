@@ -1,0 +1,1914 @@
+{
+    "130": {
+        "assignment": "C-C skeletal stretching",
+        "reference_number": 77
+    },
+    "300": {
+        "assignment": "CH2 deformation",
+        "reference_number": 23
+    },
+    "350": {
+        "assignment": "Amide III-Due to C-N stretching and N-H bending",
+        "reference_number": 72
+    },
+    "375": {
+        "assignment": "Several bands of moderate intensity, belonging to anide III and other groups",
+        "reference_number": 41
+    },
+    "400": {
+        "assignment": "CH bending",
+        "reference_number": 85
+    },
+    "415": {
+        "assignment": "Phosphatidylinositol",
+        "reference_number": 42
+    },
+    "418": {
+        "assignment": "Cholesterol",
+        "reference_number": 42
+    },
+    "428": {
+        "assignment": "Symmetric stretching vibration of n2 PO4 32",
+        "reference_number": 31
+    },
+    "429": {
+        "assignment": "Cholesterol, cholesterol ester",
+        "reference_number": 42
+    },
+    "445": {
+        "assignment": "N-C-S stretch",
+        "reference_number": 61
+    },
+    "477": {
+        "assignment": "Polysaccharides, amylose",
+        "reference_number": 39
+    },
+    "481": {
+        "assignment": "DNA",
+        "reference_number": 65
+    },
+    "490": {
+        "assignment": "Glycogen",
+        "reference_number": 24
+    },
+    "509": {
+        "assignment": "S-S disulﬁde stretching band of collagen",
+        "reference_number": 31
+    },
+    "519": {
+        "assignment": "Phosphatidylinositol",
+        "reference_number": 41
+    },
+    "524": {
+        "assignment": "S-S disulﬁde stretching in proteins",
+        "reference_number": 42
+    },
+    "538": {
+        "assignment": "Cholesterol ester",
+        "reference_number": 42
+    },
+    "540": {
+        "assignment": "Glucose-saccharide band",
+        "reference_number": 42
+    },
+    "548": {
+        "assignment": "Cholesterol",
+        "reference_number": 42
+    },
+    "550": {
+        "assignment": "OH stretching",
+        "reference_number": 36
+    },
+    "573": {
+        "assignment": "Tryptophan/cytosine, guanine",
+        "reference_number": 23
+    },
+    "575": {
+        "assignment": "Amide II",
+        "reference_number": 3
+    },
+    "576": {
+        "assignment": "Phosphatidylinositol",
+        "reference_number": 42
+    },
+    "589": {
+        "assignment": "Symmetric stretching vibration of n4 PO4 32",
+        "reference_number": 31
+    },
+    "596": {
+        "assignment": "Phosphatidylinositol",
+        "reference_number": 42
+    },
+    "600": {
+        "assignment": "COO2",
+        "reference_number": 6
+    },
+    "607": {
+        "assignment": "Glycerol",
+        "reference_number": 42
+    },
+    "608": {
+        "assignment": "Cholesterol",
+        "reference_number": 42
+    },
+    "614": {
+        "assignment": "Cholesterol ester",
+        "reference_number": 42
+    },
+    "618": {
+        "assignment": "C-C twisting",
+        "reference_number": 72
+    },
+    "620": {
+        "assignment": "C-C twist aromatic ring",
+        "reference_number": 66
+    },
+    "621": {
+        "assignment": "C-C twisting mode of phenylalanine",
+        "reference_number": 42
+    },
+    "640": {
+        "assignment": "C-S stretching & C-C twisting of proteins- tyrosine",
+        "reference_number": 72
+    },
+    "643": {
+        "assignment": "C-C twisting mode of tyrosine",
+        "reference_number": 73
+    },
+    "646": {
+        "assignment": "C-C twisting mode of tyrosine",
+        "reference_number": 31
+    },
+    "662": {
+        "assignment": "C-S stretching mode of cystine",
+        "reference_number": 72
+    },
+    "669": {
+        "assignment": "n7",
+        "reference_number": 56
+    },
+    "678": {
+        "assignment": "Ring breathing modes in the DNA bases",
+        "reference_number": 72
+    },
+    "680": {
+        "assignment": "Amide carbonyl group vibrations and aromatic hydrogens",
+        "reference_number": 84
+    },
+    "702": {
+        "assignment": "Cholesterol, cholesterol ester",
+        "reference_number": 42
+    },
+    "718": {
+        "assignment": "C-N",
+        "reference_number": 24
+    },
+    "719": {
+        "assignment": "Symmetric stretch vibration of choline group Nþ",
+        "reference_number": 42
+    },
+    "720": {
+        "assignment": "DNA",
+        "reference_number": 65
+    },
+    "722": {
+        "assignment": "DNA",
+        "reference_number": 65
+    },
+    "725": {
+        "assignment": "A",
+        "reference_number": 72
+    },
+    "726": {
+        "assignment": "C-S",
+        "reference_number": 23
+    },
+    "729": {
+        "assignment": "A",
+        "reference_number": 73
+    },
+    "733": {
+        "assignment": "Phosphatidylserine",
+        "reference_number": 42
+    },
+    "735": {
+        "assignment": "C-S stretch",
+        "reference_number": 61
+    },
+    "746": {
+        "assignment": "T",
+        "reference_number": 72
+    },
+    "748": {
+        "assignment": "DNA",
+        "reference_number": 65
+    },
+    "749": {
+        "assignment": "Symmetric breathing of tryptophan (protein assignment) (17, 24, 31) (continued)...",
+        "reference_number": 71
+    },
+    "750": {
+        "assignment": "In-plane double end vibrations of bases; the spectra in this region are very sen...",
+        "reference_number": 3
+    },
+    "752": {
+        "assignment": ", which corresponds to the porphyrin breathing mode",
+        "reference_number": 56
+    },
+    "755": {
+        "assignment": "Symmetric breathing of tryptophan",
+        "reference_number": 23
+    },
+    "759": {
+        "assignment": "Tryptophan",
+        "reference_number": 23
+    },
+    "760": {
+        "assignment": "Tryptophan, d",
+        "reference_number": 39
+    },
+    "766": {
+        "assignment": "Pyrimidine ring breathing mode",
+        "reference_number": 61
+    },
+    "776": {
+        "assignment": "Phosphatidylinositol",
+        "reference_number": 42
+    },
+    "780": {
+        "assignment": "Uracil based ring breathing mode",
+        "reference_number": 61
+    },
+    "781": {
+        "assignment": "Cytosine/uracil ring breathing",
+        "reference_number": 73
+    },
+    "785": {
+        "assignment": "U, T, C",
+        "reference_number": 72
+    },
+    "786": {
+        "assignment": "DNA: O-P-O, cytosine, uracil, thymine",
+        "reference_number": 23
+    },
+    "787": {
+        "assignment": "Can be taken as a measure for the relative quantity of nucleic acids present",
+        "reference_number": 59
+    },
+    "788": {
+        "assignment": "C05-O-P-O-C03 phosphodiester bands in DNA",
+        "reference_number": 73
+    },
+    "800": {
+        "assignment": "Amide I band of proteins-Due to C55O stretching",
+        "reference_number": 3
+    },
+    "802": {
+        "assignment": "Uracil-based ring breathing mode",
+        "reference_number": 61
+    },
+    "810": {
+        "assignment": "Phosphodiester",
+        "reference_number": 62
+    },
+    "811": {
+        "assignment": "O-P-O stretching RNA",
+        "reference_number": 73
+    },
+    "812": {
+        "assignment": "Phosphodiester",
+        "reference_number": 62
+    },
+    "813": {
+        "assignment": "C-C stretching",
+        "reference_number": 74
+    },
+    "815": {
+        "assignment": "Proline, hydroxyproline, tyrosine, n2 PO2 2 stretch of nucleic acids",
+        "reference_number": 31
+    },
+    "817": {
+        "assignment": "C-C stretching",
+        "reference_number": 74
+    },
+    "820": {
+        "assignment": "Protein band",
+        "reference_number": 22
+    },
+    "822": {
+        "assignment": "Phosphodiester",
+        "reference_number": 62
+    },
+    "823": {
+        "assignment": "Out-of-plane ring breathing, tyrosine",
+        "reference_number": 17
+    },
+    "826": {
+        "assignment": "O-P-O stretch DNA",
+        "reference_number": 23
+    },
+    "827": {
+        "assignment": "Proline, hydroxyproline, tyrosine, n2 PO2 2 stretch of nucleic acids",
+        "reference_number": 31
+    },
+    "828": {
+        "assignment": "Out-of-plane ring breathing, tyrosine/O-P-O stretch DNA",
+        "reference_number": 62
+    },
+    "830": {
+        "assignment": "Tyrosine",
+        "reference_number": 39
+    },
+    "831": {
+        "assignment": "Asymmetric O-P-O stretching, tyrosine",
+        "reference_number": 72
+    },
+    "838": {
+        "assignment": "Deformative vibrations od amine groups",
+        "reference_number": 59
+    },
+    "840": {
+        "assignment": "a-Anomers",
+        "reference_number": 42
+    },
+    "842": {
+        "assignment": "Glucose",
+        "reference_number": 23
+    },
+    "847": {
+        "assignment": "Monosaccharides",
+        "reference_number": 39
+    },
+    "850": {
+        "assignment": "Most probably due to single bond stretching vibrations for the amino acids and v...",
+        "reference_number": 34
+    },
+    "852": {
+        "assignment": "Proline, hydroxyproline, tyrosine",
+        "reference_number": 31
+    },
+    "853": {
+        "assignment": "Ring breathing mode of tyrosine & C-C stretch of proline ring",
+        "reference_number": 65
+    },
+    "854": {
+        "assignment": "",
+        "reference_number": 39
+    },
+    "855": {
+        "assignment": "Proline, tyrosine",
+        "reference_number": 17
+    },
+    "856": {
+        "assignment": "Amino acid side chain vibrations of proline & hydroxyproline, as well as a",
+        "reference_number": 31
+    },
+    "859": {
+        "assignment": "Tyrosine, collagen",
+        "reference_number": 23
+    },
+    "860": {
+        "assignment": "Phosphate group",
+        "reference_number": 42
+    },
+    "867": {
+        "assignment": "Ribose vibration, one of the distinct RNA modes",
+        "reference_number": 72
+    },
+    "868": {
+        "assignment": "C-C stretching, hypro",
+        "reference_number": 74
+    },
+    "869": {
+        "assignment": "Proline",
+        "reference_number": 23
+    },
+    "870": {
+        "assignment": "Most probably due to single bond stretching vibrations for the amino acids proli...",
+        "reference_number": 34
+    },
+    "873": {
+        "assignment": "Hydroxyproline, tryptophan",
+        "reference_number": 31
+    },
+    "874": {
+        "assignment": "C-C stretching, hypro",
+        "reference_number": 74
+    },
+    "875": {
+        "assignment": "Antisymmetric stretch vibration of choline group Nþ",
+        "reference_number": 42
+    },
+    "876": {
+        "assignment": "n",
+        "reference_number": 17
+    },
+    "877": {
+        "assignment": "C-C-Nþ symmetric stretching",
+        "reference_number": 73
+    },
+    "879": {
+        "assignment": "Hydroxyproline, tryptophan",
+        "reference_number": 31
+    },
+    "880": {
+        "assignment": "Tryptophan, d",
+        "reference_number": 39
+    },
+    "883": {
+        "assignment": "r",
+        "reference_number": 76
+    },
+    "884": {
+        "assignment": "Proteins, including collagen I",
+        "reference_number": 65
+    },
+    "885": {
+        "assignment": "Disaccharide",
+        "reference_number": 39
+    },
+    "889": {
+        "assignment": "Methylene rocking",
+        "reference_number": 77
+    },
+    "890": {
+        "assignment": "Protein bands",
+        "reference_number": 22
+    },
+    "891": {
+        "assignment": "Saccharide band",
+        "reference_number": 42
+    },
+    "893": {
+        "assignment": "Backbone, C-C skeletal",
+        "reference_number": 72
+    },
+    "898": {
+        "assignment": "Monosaccharides",
+        "reference_number": 39
+    },
+    "906": {
+        "assignment": "CH2 asymmetric stretch and CH stretch of lipids and proteins",
+        "reference_number": 68
+    },
+    "907": {
+        "assignment": "Formalin contamination peak on ﬁxed tissues",
+        "reference_number": 27
+    },
+    "908": {
+        "assignment": "CH2 asymmetric stretch of lipids and proteins",
+        "reference_number": 68
+    },
+    "913": {
+        "assignment": "Glucose",
+        "reference_number": 42
+    },
+    "915": {
+        "assignment": "Ribose vibration, one of the distinct RNA modes",
+        "reference_number": 72
+    },
+    "918": {
+        "assignment": "Proline, hydroxyproline",
+        "reference_number": 31
+    },
+    "919": {
+        "assignment": "CH2 asymmetric stretch of lipids and proteins",
+        "reference_number": 68
+    },
+    "920": {
+        "assignment": "C-C stretch of proline ring/glucose/lactic acid",
+        "reference_number": 74
+    },
+    "930": {
+        "assignment": "C-C stretch of proline and hydroxyproline",
+        "reference_number": 29
+    },
+    "931": {
+        "assignment": "Carbohydrates peak for solutions and solids",
+        "reference_number": 3
+    },
+    "932": {
+        "assignment": "Skeletal C-C, a -helix",
+        "reference_number": 23
+    },
+    "933": {
+        "assignment": "Proline, hydroxyproline, n",
+        "reference_number": 31
+    },
+    "934": {
+        "assignment": "C-C backbone",
+        "reference_number": 74
+    },
+    "935": {
+        "assignment": "C-C stretching mode of proline & valine & protein backbone",
+        "reference_number": 23
+    },
+    "937": {
+        "assignment": "Proline",
+        "reference_number": 31
+    },
+    "938": {
+        "assignment": "C-C stretch backbone",
+        "reference_number": 23
+    },
+    "941": {
+        "assignment": "Skeletal modes",
+        "reference_number": 39
+    },
+    "950": {
+        "assignment": "Most probably due to single bond stretching vibrations for the amino acids proli...",
+        "reference_number": 34
+    },
+    "951": {
+        "assignment": "ns",
+        "reference_number": 41
+    },
+    "956": {
+        "assignment": "Crotenoids",
+        "reference_number": 1
+    },
+    "957": {
+        "assignment": "Hydroxyapatite, carotenoid, cholesterol",
+        "reference_number": 23
+    },
+    "960": {
+        "assignment": "Symmetric stretching vibration of n1PO4 32",
+        "reference_number": 31
+    },
+    "962": {
+        "assignment": "Phoisphate symmetric stretching vibration of calcium hydroxyapatite",
+        "reference_number": 54
+    },
+    "963": {
+        "assignment": "Unassigned in protein assignments",
+        "reference_number": 17
+    },
+    "966": {
+        "assignment": "Hydroxyapatite",
+        "reference_number": 23
+    },
+    "968": {
+        "assignment": "Lipids",
+        "reference_number": 3
+    },
+    "970": {
+        "assignment": "Phosphate monoester groups of phosphorylated proteins & cellular nucleic acids",
+        "reference_number": 3
+    },
+    "971": {
+        "assignment": "n",
+        "reference_number": 41
+    },
+    "973": {
+        "assignment": "r",
+        "reference_number": 76
+    },
+    "974": {
+        "assignment": "Ribose vibration, one of the distinct RNA modes",
+        "reference_number": 72
+    },
+    "980": {
+        "assignment": "C-C stretching b-sheet",
+        "reference_number": 73
+    },
+    "996": {
+        "assignment": "C-O ribose, C-C",
+        "reference_number": 3
+    },
+    "999": {
+        "assignment": "n45",
+        "reference_number": 56
+    },
+    "1000": {
+        "assignment": "Phenylalanine",
+        "reference_number": 43
+    },
+    "1002": {
+        "assignment": "Phenylalanine",
+        "reference_number": 31
+    },
+    "1003": {
+        "assignment": "Phenylalanine, C-C skeletal",
+        "reference_number": 72
+    },
+    "1004": {
+        "assignment": "Phenylalanine",
+        "reference_number": 31
+    },
+    "1005": {
+        "assignment": "Phenylalanine",
+        "reference_number": 73
+    },
+    "1006": {
+        "assignment": "Carotenoids",
+        "reference_number": 1
+    },
+    "1008": {
+        "assignment": "Phenylalanine",
+        "reference_number": 59
+    },
+    "1016": {
+        "assignment": "Carbohydrates peak for solids",
+        "reference_number": 3
+    },
+    "1018": {
+        "assignment": "Stretching C-O ribose",
+        "reference_number": 78
+    },
+    "1022": {
+        "assignment": "Glycogen",
+        "reference_number": 3
+    },
+    "1023": {
+        "assignment": "Glycogen",
+        "reference_number": 3
+    },
+    "1025": {
+        "assignment": "Carbohydrates peak for solutions",
+        "reference_number": 3
+    },
+    "1030": {
+        "assignment": "Phenylalanine of collagen",
+        "reference_number": 31
+    },
+    "1031": {
+        "assignment": "d",
+        "reference_number": 17
+    },
+    "1032": {
+        "assignment": "CH2CH3 bending modes of collagen & phospholipids",
+        "reference_number": 17
+    },
+    "1033": {
+        "assignment": "Differences in collagen content",
+        "reference_number": 3
+    },
+    "1034": {
+        "assignment": "Phenylalanine of collagen",
+        "reference_number": 31
+    },
+    "1035": {
+        "assignment": "Collagen",
+        "reference_number": 80
+    },
+    "1043": {
+        "assignment": "Carbohydrates peak for solutions and solids",
+        "reference_number": 3
+    },
+    "1044": {
+        "assignment": "n3PO4 32",
+        "reference_number": 31
+    },
+    "1048": {
+        "assignment": "Glycogen",
+        "reference_number": 65
+    },
+    "1050": {
+        "assignment": "Amphetamine has a group of three bands at this region",
+        "reference_number": 75
+    },
+    "1053": {
+        "assignment": "C-O stretching, C-N stretching",
+        "reference_number": 72
+    },
+    "1055": {
+        "assignment": "In the solid, the most signiﬁcant difference between the two nucleic acids is th...",
+        "reference_number": 3
+    },
+    "1057": {
+        "assignment": "Lipids",
+        "reference_number": 3
+    },
+    "1061": {
+        "assignment": "C-C in-plane bending",
+        "reference_number": 66
+    },
+    "1063": {
+        "assignment": "C-C skeletal stretch random conformation",
+        "reference_number": 66
+    },
+    "1064": {
+        "assignment": "Skeletal C-C stretch of lipids",
+        "reference_number": 23
+    },
+    "1065": {
+        "assignment": "Palmitic acid",
+        "reference_number": 42
+    },
+    "1070": {
+        "assignment": "Triglycerides",
+        "reference_number": 54
+    },
+    "1071": {
+        "assignment": "Glucose",
+        "reference_number": 42
+    },
+    "1073": {
+        "assignment": "Carbonate symmetric stretching vibration of calcium carbonate apatite",
+        "reference_number": 54
+    },
+    "1076": {
+        "assignment": "C-C",
+        "reference_number": 43
+    },
+    "1078": {
+        "assignment": "n",
+        "reference_number": 17
+    },
+    "1080": {
+        "assignment": "Typical phospholipids",
+        "reference_number": 43
+    },
+    "1081": {
+        "assignment": "n1CO3 22, n3PO4 32, n",
+        "reference_number": 31
+    },
+    "1082": {
+        "assignment": "Carbohydrate residues of collagen",
+        "reference_number": 3
+    },
+    "1083": {
+        "assignment": "C-N stretching mode of proteins",
+        "reference_number": 24
+    },
+    "1084": {
+        "assignment": "Phosphodiester groups in nucleic acids",
+        "reference_number": 3
+    },
+    "1086": {
+        "assignment": "n",
+        "reference_number": 41
+    },
+    "1087": {
+        "assignment": "n1CO3 22, n3PO4 32, n",
+        "reference_number": 31
+    },
+    "1090": {
+        "assignment": "Symmetric phosphate stretching vibrations",
+        "reference_number": 3
+    },
+    "1093": {
+        "assignment": "Symmetric PO2 2 stretching vibration of the DNA backbone–phosphate backbone vibr...",
+        "reference_number": 72
+    },
+    "1094": {
+        "assignment": "DNA",
+        "reference_number": 43
+    },
+    "1095": {
+        "assignment": "Lipid",
+        "reference_number": 83
+    },
+    "1096": {
+        "assignment": "Phosphodioxy",
+        "reference_number": 42
+    },
+    "1099": {
+        "assignment": "n",
+        "reference_number": 31
+    },
+    "1100": {
+        "assignment": "C-C vibration mode of the gauche-bonded chain",
+        "reference_number": 77
+    },
+    "1104": {
+        "assignment": "Phenylalanine",
+        "reference_number": 41
+    },
+    "1105": {
+        "assignment": "Carbohydrates peak for solutions",
+        "reference_number": 3
+    },
+    "1111": {
+        "assignment": "Benzoid ring deformation",
+        "reference_number": 59
+    },
+    "1112": {
+        "assignment": "Saccharide band",
+        "reference_number": 42
+    },
+    "1117": {
+        "assignment": "Glucose",
+        "reference_number": 42
+    },
+    "1120": {
+        "assignment": "The strong C-O band of ribose",
+        "reference_number": 3
+    },
+    "1122": {
+        "assignment": "n22",
+        "reference_number": 56
+    },
+    "1123": {
+        "assignment": "",
+        "reference_number": 17
+    },
+    "1124": {
+        "assignment": "n",
+        "reference_number": 31
+    },
+    "1126": {
+        "assignment": "Parafﬁn",
+        "reference_number": 3
+    },
+    "1127": {
+        "assignment": "n",
+        "reference_number": 41
+    },
+    "1128": {
+        "assignment": "C-N stretching",
+        "reference_number": 73
+    },
+    "1130": {
+        "assignment": "C-C skeletal stretch transconformation",
+        "reference_number": 66
+    },
+    "1131": {
+        "assignment": "Palmitic acid",
+        "reference_number": 42
+    },
+    "1149": {
+        "assignment": "Carbohydrates peak for solids",
+        "reference_number": 3
+    },
+    "1150": {
+        "assignment": "Glycogen",
+        "reference_number": 3
+    },
+    "1152": {
+        "assignment": "n",
+        "reference_number": 17
+    },
+    "1153": {
+        "assignment": "Carbohydrates peak for solutions",
+        "reference_number": 3
+    },
+    "1155": {
+        "assignment": "C-C",
+        "reference_number": 3
+    },
+    "1156": {
+        "assignment": "C-C, C-N stretching",
+        "reference_number": 72
+    },
+    "1157": {
+        "assignment": "In-plane vibrations of the conjugated 55C-C55",
+        "reference_number": 55
+    },
+    "1158": {
+        "assignment": "C-C/C-N stretching",
+        "reference_number": 73
+    },
+    "1161": {
+        "assignment": "Deformative vibrations of quinoid ring",
+        "reference_number": 59
+    },
+    "1163": {
+        "assignment": "Tyrosine",
+        "reference_number": 31
+    },
+    "1167": {
+        "assignment": "N55Quinoid ring55N stretching and C-H in plane bending",
+        "reference_number": 59
+    },
+    "1168": {
+        "assignment": "Lipids",
+        "reference_number": 3
+    },
+    "1169": {
+        "assignment": "Tyrosine",
+        "reference_number": 31
+    },
+    "1170": {
+        "assignment": "C-H in-plane bending mode of tyrosine",
+        "reference_number": 31
+    },
+    "1172": {
+        "assignment": "d",
+        "reference_number": 17
+    },
+    "1173": {
+        "assignment": "Cytosine, guanine",
+        "reference_number": 62
+    },
+    "1174": {
+        "assignment": "Tyrosine, phenylalanine, C-H bend",
+        "reference_number": 72
+    },
+    "1176": {
+        "assignment": "C-H bending tyrosine",
+        "reference_number": 73
+    },
+    "1177": {
+        "assignment": "Cytosine, guanine",
+        "reference_number": 62
+    },
+    "1180": {
+        "assignment": "Cytosine, guanine",
+        "reference_number": 62
+    },
+    "1200": {
+        "assignment": "Nucleic acids and phosphates",
+        "reference_number": 80
+    },
+    "1203": {
+        "assignment": "C-C6H5 stretch mode",
+        "reference_number": 66
+    },
+    "1204": {
+        "assignment": "Amide III & CH2 wagging vibrations from glycine backbone & proline side chains",
+        "reference_number": 3
+    },
+    "1205": {
+        "assignment": "Differences in collagen content",
+        "reference_number": 3
+    },
+    "1206": {
+        "assignment": "Hydroxyproline, tyrosine",
+        "reference_number": 74
+    },
+    "1208": {
+        "assignment": "n",
+        "reference_number": 31
+    },
+    "1209": {
+        "assignment": "Tryptophan & phenylalanine n",
+        "reference_number": 46
+    },
+    "1216": {
+        "assignment": "Stretching of C-N",
+        "reference_number": 59
+    },
+    "1220": {
+        "assignment": "C55N55C stretching",
+        "reference_number": 59
+    },
+    "1223": {
+        "assignment": "n",
+        "reference_number": 17
+    },
+    "1224": {
+        "assignment": "Amide III",
+        "reference_number": 41
+    },
+    "1230": {
+        "assignment": "Antisymmetric phosphate stretching vibration",
+        "reference_number": 3
+    },
+    "1234": {
+        "assignment": "A concerted ring mode",
+        "reference_number": 61
+    },
+    "1235": {
+        "assignment": "Amide III",
+        "reference_number": 39
+    },
+    "1237": {
+        "assignment": "Amide III & CH2 wagging vibrations from glycine backbone & proline side chains",
+        "reference_number": 3
+    },
+    "1239": {
+        "assignment": "Amide III",
+        "reference_number": 66
+    },
+    "1240": {
+        "assignment": "One of the two most distinct peaks for RNA",
+        "reference_number": 72
+    },
+    "1241": {
+        "assignment": "Asymmetric phosphate [PO2 2 (asym",
+        "reference_number": 31
+    },
+    "1242": {
+        "assignment": "Amide III",
+        "reference_number": 41
+    },
+    "1243": {
+        "assignment": "Amide III",
+        "reference_number": 3
+    },
+    "1245": {
+        "assignment": "Amide III",
+        "reference_number": 39
+    },
+    "1246": {
+        "assignment": ", which assigned to amide III band",
+        "reference_number": 31
+    },
+    "1247": {
+        "assignment": "Amide III",
+        "reference_number": 74
+    },
+    "1250": {
+        "assignment": "Amide III",
+        "reference_number": 59
+    },
+    "1252": {
+        "assignment": "C-O4 aromatic stretch",
+        "reference_number": 71
+    },
+    "1254": {
+        "assignment": "Formalin contamination on ﬁxed tissues",
+        "reference_number": 27
+    },
+    "1255": {
+        "assignment": "Lipids",
+        "reference_number": 3
+    },
+    "1257": {
+        "assignment": "A, T",
+        "reference_number": 72
+    },
+    "1258": {
+        "assignment": "Amide III, adenine, cytosine",
+        "reference_number": 23
+    },
+    "1259": {
+        "assignment": "Guanine, cytosine",
+        "reference_number": 62
+    },
+    "1260": {
+        "assignment": "Amide III",
+        "reference_number": 3
+    },
+    "1263": {
+        "assignment": "T, A",
+        "reference_number": 72
+    },
+    "1264": {
+        "assignment": "Triglycerides",
+        "reference_number": 54
+    },
+    "1265": {
+        "assignment": "Amide III of collagen",
+        "reference_number": 27
+    },
+    "1266": {
+        "assignment": "Amide III",
+        "reference_number": 17
+    },
+    "1267": {
+        "assignment": "C-H",
+        "reference_number": 43
+    },
+    "1268": {
+        "assignment": "d",
+        "reference_number": 41
+    },
+    "1270": {
+        "assignment": "Typical phospholipids",
+        "reference_number": 43
+    },
+    "1275": {
+        "assignment": "Amide III",
+        "reference_number": 39
+    },
+    "1278": {
+        "assignment": "Proteins, including collagen I",
+        "reference_number": 65
+    },
+    "1279": {
+        "assignment": "Amide III",
+        "reference_number": 23
+    },
+    "1280": {
+        "assignment": "Amide III & CH2 wagging vibrations from glycine backbone & proline side chains",
+        "reference_number": 3
+    },
+    "1283": {
+        "assignment": "Differences in collagen content",
+        "reference_number": 3
+    },
+    "1288": {
+        "assignment": "Phosphodiester groups in nucleic acids",
+        "reference_number": 3
+    },
+    "1290": {
+        "assignment": "Cytosine",
+        "reference_number": 62
+    },
+    "1294": {
+        "assignment": "Methylene twisting",
+        "reference_number": 77
+    },
+    "1296": {
+        "assignment": "CH2 deformation",
+        "reference_number": 66
+    },
+    "1298": {
+        "assignment": "Palmitic acid",
+        "reference_number": 42
+    },
+    "1300": {
+        "assignment": "-",
+        "reference_number": 34
+    },
+    "1301": {
+        "assignment": "Assign from Parker",
+        "reference_number": 43
+    },
+    "1302": {
+        "assignment": "d",
+        "reference_number": 31
+    },
+    "1304": {
+        "assignment": "CH2 deformation",
+        "reference_number": 23
+    },
+    "1307": {
+        "assignment": "CH3/CH2 twisting or bending mode of lipid/ collagen",
+        "reference_number": 31
+    },
+    "1308": {
+        "assignment": "C-N asymmetric stretching in asymmetric aromatic amines",
+        "reference_number": 59
+    },
+    "1309": {
+        "assignment": "CH3/CH2 twisting or bending mode of lipid/ collagen",
+        "reference_number": 31
+    },
+    "1313": {
+        "assignment": "CH3CH2 twisting mode of collagen/lipid",
+        "reference_number": 45
+    },
+    "1315": {
+        "assignment": "Guanine",
+        "reference_number": 62
+    },
+    "1318": {
+        "assignment": "G",
+        "reference_number": 72
+    },
+    "1319": {
+        "assignment": "Guanine",
+        "reference_number": 62
+    },
+    "1320": {
+        "assignment": "G",
+        "reference_number": 73
+    },
+    "1321": {
+        "assignment": "Amide III",
+        "reference_number": 41
+    },
+    "1322": {
+        "assignment": "CH3CH2 twisting, collagen",
+        "reference_number": 17
+    },
+    "1323": {
+        "assignment": "Guanine",
+        "reference_number": 62
+    },
+    "1324": {
+        "assignment": "CH3CH2 wagging mode present in collagen & purine bases of DNA",
+        "reference_number": 46
+    },
+    "1330": {
+        "assignment": "Typical phospholipids",
+        "reference_number": 43
+    },
+    "1332": {
+        "assignment": "-C stretch of Phenyl",
+        "reference_number": 1
+    },
+    "1333": {
+        "assignment": "Guanine",
+        "reference_number": 62
+    },
+    "1335": {
+        "assignment": "CH3CH2 wagging, collagen",
+        "reference_number": 17
+    },
+    "1336": {
+        "assignment": "Polynucleotide chain",
+        "reference_number": 23
+    },
+    "1337": {
+        "assignment": "Amide III & CH2 wagging vibrations from glycine backbone & proline side chain",
+        "reference_number": 3
+    },
+    "1339": {
+        "assignment": "C-C stretch of phenyl",
+        "reference_number": 1
+    },
+    "1340": {
+        "assignment": "Nucleic acid mode",
+        "reference_number": 1
+    },
+    "1342": {
+        "assignment": "G",
+        "reference_number": 73
+    },
+    "1343": {
+        "assignment": "CH3, CH2 wagging",
+        "reference_number": 74
+    },
+    "1347": {
+        "assignment": "An unassigned mode",
+        "reference_number": 61
+    },
+    "1350": {
+        "assignment": "Carbon particle",
+        "reference_number": 25
+    },
+    "1359": {
+        "assignment": "Tryptophan",
+        "reference_number": 31
+    },
+    "1360": {
+        "assignment": "Tryptophan",
+        "reference_number": 39
+    },
+    "1365": {
+        "assignment": "Tryptophan",
+        "reference_number": 31
+    },
+    "1367": {
+        "assignment": "ns",
+        "reference_number": 41
+    },
+    "1369": {
+        "assignment": "Guanine, TRP",
+        "reference_number": 23
+    },
+    "1370": {
+        "assignment": "The most pronounced saccharide band",
+        "reference_number": 42
+    },
+    "1373": {
+        "assignment": "T, A, G",
+        "reference_number": 72
+    },
+    "1378": {
+        "assignment": "Parafﬁn",
+        "reference_number": 3
+    },
+    "1379": {
+        "assignment": "dCH3 symmetric",
+        "reference_number": 76
+    },
+    "1386": {
+        "assignment": "CH3 band",
+        "reference_number": 23
+    },
+    "1391": {
+        "assignment": "CH rocking",
+        "reference_number": 71
+    },
+    "1392": {
+        "assignment": "C-N stretching, in quinoid ring-benzoid ring-quinoid ring",
+        "reference_number": 59
+    },
+    "1393": {
+        "assignment": "CH rocking",
+        "reference_number": 71
+    },
+    "1398": {
+        "assignment": "C55O symmetric stretch",
+        "reference_number": 66
+    },
+    "1400": {
+        "assignment": "NH in-plane deformation",
+        "reference_number": 61
+    },
+    "1401": {
+        "assignment": "Bending modes of methyl groups",
+        "reference_number": 3
+    },
+    "1406": {
+        "assignment": "ns COO2",
+        "reference_number": 41
+    },
+    "1409": {
+        "assignment": "ns COO2",
+        "reference_number": 41
+    },
+    "1417": {
+        "assignment": "C55C stretching in quinoid ring",
+        "reference_number": 75
+    },
+    "1421": {
+        "assignment": "A, G",
+        "reference_number": 72
+    },
+    "1422": {
+        "assignment": "Deoxyribose,",
+        "reference_number": 62
+    },
+    "1423": {
+        "assignment": "NH in-plane deformation",
+        "reference_number": 61
+    },
+    "1424": {
+        "assignment": "Deoxyribose,",
+        "reference_number": 62
+    },
+    "1436": {
+        "assignment": "CH2 scissoring",
+        "reference_number": 66
+    },
+    "1437": {
+        "assignment": "CH2",
+        "reference_number": 43
+    },
+    "1439": {
+        "assignment": "CH2 bending mode in normal tissue",
+        "reference_number": 18
+    },
+    "1440": {
+        "assignment": "CH2 and CH3 deformation vibrations",
+        "reference_number": 2
+    },
+    "1441": {
+        "assignment": "CH2 scissoring & CH3 bending in lipids",
+        "reference_number": 46
+    },
+    "1442": {
+        "assignment": "Fatty acids",
+        "reference_number": 1
+    },
+    "1443": {
+        "assignment": "CH2 deformation",
+        "reference_number": 23
+    },
+    "1444": {
+        "assignment": "Cholesterol band",
+        "reference_number": 54
+    },
+    "1445": {
+        "assignment": "d",
+        "reference_number": 17
+    },
+    "1446": {
+        "assignment": "CH2 bending mode of proteins & lipids",
+        "reference_number": 74
+    },
+    "1447": {
+        "assignment": "CH2 bending mode of proteins & lipids",
+        "reference_number": 66
+    },
+    "1448": {
+        "assignment": "CH2CH3 deformation",
+        "reference_number": 31
+    },
+    "1449": {
+        "assignment": "C-H vibration",
+        "reference_number": 73
+    },
+    "1450": {
+        "assignment": "CH2 bending",
+        "reference_number": 18
+    },
+    "1451": {
+        "assignment": "CH2CH3 deformation",
+        "reference_number": 41
+    },
+    "1453": {
+        "assignment": "Structural protein modes of tumors",
+        "reference_number": 22
+    },
+    "1454": {
+        "assignment": "was lower for samples with squamous dysplasia than all other tissue types",
+        "reference_number": 22
+    },
+    "1455": {
+        "assignment": "Deoxyribose",
+        "reference_number": 62
+    },
+    "1457": {
+        "assignment": "Deoxyribose",
+        "reference_number": 62
+    },
+    "1458": {
+        "assignment": "Nucleic acid modes",
+        "reference_number": 1
+    },
+    "1459": {
+        "assignment": "Deoxyribose",
+        "reference_number": 62
+    },
+    "1460": {
+        "assignment": "CH2/CH3 deformation of lipids & collagen",
+        "reference_number": 31
+    },
+    "1462": {
+        "assignment": "dCH2, Disaccharides, sucrose",
+        "reference_number": 39
+    },
+    "1463": {
+        "assignment": "Fermi interaction d",
+        "reference_number": 41
+    },
+    "1465": {
+        "assignment": "Lipids",
+        "reference_number": 3
+    },
+    "1470": {
+        "assignment": "C55N stretching",
+        "reference_number": 59
+    },
+    "1472": {
+        "assignment": "Parafﬁn",
+        "reference_number": 3
+    },
+    "1485": {
+        "assignment": "G, A",
+        "reference_number": 72
+    },
+    "1488": {
+        "assignment": "Collagen",
+        "reference_number": 26
+    },
+    "1490": {
+        "assignment": "DNA",
+        "reference_number": 43
+    },
+    "1491": {
+        "assignment": "C-N stretching vibration coupled with the in-plane C-H bending in amino radical...",
+        "reference_number": 66
+    },
+    "1492": {
+        "assignment": "Formalin peak appearing in the ﬁxed normal and tumor tissues",
+        "reference_number": 27
+    },
+    "1499": {
+        "assignment": "C55C stretching in benzenoid ring",
+        "reference_number": 59
+    },
+    "1506": {
+        "assignment": "N55H bending",
+        "reference_number": 59
+    },
+    "1510": {
+        "assignment": "A",
+        "reference_number": 72
+    },
+    "1513": {
+        "assignment": "Cytosine",
+        "reference_number": 62
+    },
+    "1514": {
+        "assignment": "n",
+        "reference_number": 59
+    },
+    "1515": {
+        "assignment": "Cytosine",
+        "reference_number": 62
+    },
+    "1517": {
+        "assignment": "b -carotene accumulation",
+        "reference_number": 54
+    },
+    "1518": {
+        "assignment": "n",
+        "reference_number": 17
+    },
+    "1520": {
+        "assignment": "Carotene",
+        "reference_number": 43
+    },
+    "1523": {
+        "assignment": "were consistently observed from normal blood serum samples, whereas no peaks or...",
+        "reference_number": 51
+    },
+    "1524": {
+        "assignment": "Carotenoid",
+        "reference_number": 1
+    },
+    "1525": {
+        "assignment": "In-plane vibrations of the conjugated -C55C-",
+        "reference_number": 55
+    },
+    "1528": {
+        "assignment": "Carotenoid",
+        "reference_number": 1
+    },
+    "1543": {
+        "assignment": "n11",
+        "reference_number": 59
+    },
+    "1544": {
+        "assignment": "Amide II",
+        "reference_number": 3
+    },
+    "1545": {
+        "assignment": "C6-H deformation mode",
+        "reference_number": 61
+    },
+    "1546": {
+        "assignment": "Bound & free NADH",
+        "reference_number": 43
+    },
+    "1548": {
+        "assignment": "Tryptophan",
+        "reference_number": 17
+    },
+    "1554": {
+        "assignment": "Amide II",
+        "reference_number": 66
+    },
+    "1558": {
+        "assignment": "Tryptophan",
+        "reference_number": 31
+    },
+    "1560": {
+        "assignment": "Tryptophan",
+        "reference_number": 45
+    },
+    "1573": {
+        "assignment": "Guanine, adenine, TRP",
+        "reference_number": 23
+    },
+    "1575": {
+        "assignment": "Ring breathing modes in the DNA bases",
+        "reference_number": 72
+    },
+    "1576": {
+        "assignment": "Nucleic acid mode",
+        "reference_number": 1
+    },
+    "1577": {
+        "assignment": "Bound & free NADH",
+        "reference_number": 43
+    },
+    "1578": {
+        "assignment": "Guanine",
+        "reference_number": 62
+    },
+    "1579": {
+        "assignment": "Pyrimidine ring",
+        "reference_number": 59
+    },
+    "1580": {
+        "assignment": "Pyrimidine ring",
+        "reference_number": 46
+    },
+    "1582": {
+        "assignment": "d",
+        "reference_number": 17
+    },
+    "1583": {
+        "assignment": "C55C bending mode of phenylalanine",
+        "reference_number": 45
+    },
+    "1585": {
+        "assignment": "C55C oleﬁnic stretch",
+        "reference_number": 66
+    },
+    "1590": {
+        "assignment": "Carbon particles",
+        "reference_number": 25
+    },
+    "1593": {
+        "assignment": "C55N and C55C stretching in quinoid ring",
+        "reference_number": 59
+    },
+    "1602": {
+        "assignment": "Phenylalanine",
+        "reference_number": 17
+    },
+    "1603": {
+        "assignment": "C55C in-plane bending mode of phenylalanine & tyrosine",
+        "reference_number": 1
+    },
+    "1605": {
+        "assignment": "Cytosine",
+        "reference_number": 62
+    },
+    "1607": {
+        "assignment": "Tyrosine, phenylalanine ring vibration",
+        "reference_number": 41
+    },
+    "1610": {
+        "assignment": "Cytosine",
+        "reference_number": 62
+    },
+    "1614": {
+        "assignment": "Tyrosine",
+        "reference_number": 31
+    },
+    "1615": {
+        "assignment": "Tyrosine, tryptophan, C55C",
+        "reference_number": 72
+    },
+    "1616": {
+        "assignment": "C55C stretching mode of tyrosine & tryptophan",
+        "reference_number": 59
+    },
+    "1618": {
+        "assignment": "n",
+        "reference_number": 17
+    },
+    "1620": {
+        "assignment": "n",
+        "reference_number": 76
+    },
+    "1622": {
+        "assignment": "Tryptophan",
+        "reference_number": 31
+    },
+    "1628": {
+        "assignment": "Ca55Ca stretch",
+        "reference_number": 71
+    },
+    "1634": {
+        "assignment": "Amide I",
+        "reference_number": 3
+    },
+    "1635": {
+        "assignment": "Differences in collagen content",
+        "reference_number": 3
+    },
+    "1637": {
+        "assignment": "Amide I band",
+        "reference_number": 66
+    },
+    "1638": {
+        "assignment": "Intermolecular bending mode of water",
+        "reference_number": 23
+    },
+    "1645": {
+        "assignment": "Amide I",
+        "reference_number": 23
+    },
+    "1647": {
+        "assignment": "Random coils",
+        "reference_number": 41
+    },
+    "1650": {
+        "assignment": "",
+        "reference_number": 43
+    },
+    "1653": {
+        "assignment": "Carbonyl stretch",
+        "reference_number": 61
+    },
+    "1654": {
+        "assignment": "Due to a combination of C55C stretch & the amide I bands þ amide I",
+        "reference_number": 74
+    },
+    "1655": {
+        "assignment": "and 1302 to 1265 cm21 versus formalin ﬁxing times varying from 2 to 24 h were al...",
+        "reference_number": 27
+    },
+    "1656": {
+        "assignment": "n",
+        "reference_number": 41
+    },
+    "1657": {
+        "assignment": "Fatty acids",
+        "reference_number": 74
+    },
+    "1658": {
+        "assignment": "Amide I",
+        "reference_number": 41
+    },
+    "1659": {
+        "assignment": "Amide I vibration",
+        "reference_number": 6
+    },
+    "1660": {
+        "assignment": "Amide I band",
+        "reference_number": 59
+    },
+    "1662": {
+        "assignment": "Nucleic acid modes",
+        "reference_number": 1
+    },
+    "1663": {
+        "assignment": "DNA",
+        "reference_number": 65
+    },
+    "1665": {
+        "assignment": "Amide I",
+        "reference_number": 31
+    },
+    "1666": {
+        "assignment": "Collagen",
+        "reference_number": 26
+    },
+    "1667": {
+        "assignment": "Protein band",
+        "reference_number": 1
+    },
+    "1669": {
+        "assignment": "Carbonyl stretch",
+        "reference_number": 61
+    },
+    "1670": {
+        "assignment": "Amide I",
+        "reference_number": 32
+    },
+    "1672": {
+        "assignment": "C55C stretch",
+        "reference_number": 71
+    },
+    "1673": {
+        "assignment": "Amide I",
+        "reference_number": 66
+    },
+    "1674": {
+        "assignment": "C55C stretch vibration",
+        "reference_number": 42
+    },
+    "1676": {
+        "assignment": "Amide I",
+        "reference_number": 41
+    },
+    "1678": {
+        "assignment": "Bound & free NADH",
+        "reference_number": 43
+    },
+    "1680": {
+        "assignment": "), amide III (1220–1300 cm21), and n(C- C) stretching (probably in amino acids p...",
+        "reference_number": 34
+    },
+    "1682": {
+        "assignment": "One of absorption positions for the C55O stretching vibrations of cortisone",
+        "reference_number": 6
+    },
+    "1685": {
+        "assignment": "Amide I (disordered structure",
+        "reference_number": 39
+    },
+    "1697": {
+        "assignment": "Amide I",
+        "reference_number": 41
+    },
+    "1700": {
+        "assignment": ", which contain signals related to protein and lipid con- formations and nucleic...",
+        "reference_number": 17
+    },
+    "1701": {
+        "assignment": "Symmetric ring breathing mode of phenylalanine",
+        "reference_number": 66
+    },
+    "1710": {
+        "assignment": "One of absorption positions for the C55O stretching vibrations of cortisone",
+        "reference_number": 6
+    },
+    "1729": {
+        "assignment": "Ester group",
+        "reference_number": 42
+    },
+    "1732": {
+        "assignment": "One of absorption positions for the C55O stretching vibrations of cortisone",
+        "reference_number": 6
+    },
+    "1734": {
+        "assignment": "Esters, C55O stretching",
+        "reference_number": 68
+    },
+    "1736": {
+        "assignment": "C55O ester",
+        "reference_number": 73
+    },
+    "1738": {
+        "assignment": "Lipids",
+        "reference_number": 3
+    },
+    "1739": {
+        "assignment": "Ester group",
+        "reference_number": 42
+    },
+    "1740": {
+        "assignment": "Ester group",
+        "reference_number": 42
+    },
+    "1744": {
+        "assignment": "Carbonyl feature of lipid spectra",
+        "reference_number": 29
+    },
+    "1745": {
+        "assignment": "band, which is assigned to the ester group (C55O) vibration of triglycerides, is...",
+        "reference_number": 44
+    },
+    "1746": {
+        "assignment": "C55O stretch",
+        "reference_number": 23
+    },
+    "1747": {
+        "assignment": "C55O, lipids",
+        "reference_number": 41
+    },
+    "1750": {
+        "assignment": "C55O",
+        "reference_number": 43
+    },
+    "1754": {
+        "assignment": "(C55O), 1656 cm21 (C55C), 1440 cm21 (CH2 bend), and 1300 cm21 (CH2 twist)",
+        "reference_number": 41
+    },
+    "1756": {
+        "assignment": "One of absorption positions for the C55O stretching vibrations of cortisone",
+        "reference_number": 6
+    },
+    "1760": {
+        "assignment": "",
+        "reference_number": 39
+    },
+    "2095": {
+        "assignment": "C-N stretch",
+        "reference_number": 61
+    },
+    "2225": {
+        "assignment": "C",
+        "reference_number": 16
+    },
+    "2343": {
+        "assignment": "Asymmetric stretching band of CO2 2 hydrates",
+        "reference_number": 78
+    },
+    "2850": {
+        "assignment": "ns CH2, lipids, fatty acids",
+        "reference_number": 39
+    },
+    "2883": {
+        "assignment": "CH2 asymmetric stretch of lipids and proteins",
+        "reference_number": 68
+    },
+    "2885": {
+        "assignment": "ns CH3, lipids, fatty acids",
+        "reference_number": 39
+    },
+    "2886": {
+        "assignment": "Fermi resonance CH2 stretch",
+        "reference_number": 42
+    },
+    "2900": {
+        "assignment": "CH stretch",
+        "reference_number": 91
+    },
+    "2915": {
+        "assignment": "CH band of lipids and proteins",
+        "reference_number": 29
+    },
+    "2928": {
+        "assignment": "Symmetric CH3 stretch",
+        "reference_number": 29
+    },
+    "2933": {
+        "assignment": "CH2 asymmetric stretch",
+        "reference_number": 68
+    },
+    "2935": {
+        "assignment": "Chain end CH3 symmetric band",
+        "reference_number": 42
+    },
+    "2940": {
+        "assignment": "C-H vibrations in lipids & proteins",
+        "reference_number": 33
+    },
+    "2960": {
+        "assignment": "Out-of-plane chain end antisymmetric CH3 stretch band",
+        "reference_number": 42
+    },
+    "3000": {
+        "assignment": "CH stretching",
+        "reference_number": 85
+    },
+    "3008": {
+        "assignment": "nas",
+        "reference_number": 39
+    },
+    "3010": {
+        "assignment": "Unsaturated 55CH stretch",
+        "reference_number": 42
+    },
+    "3015": {
+        "assignment": "n55CH of lipids",
+        "reference_number": 71
+    },
+    "3050": {
+        "assignment": "Contributions from acyl chans",
+        "reference_number": 42
+    },
+    "3100": {
+        "assignment": "CH, CH2, & CH3 symmetric and antisymmetric stretching",
+        "reference_number": 90
+    },
+    "3232": {
+        "assignment": "O–H & N-H stretching vibrations",
+        "reference_number": 53
+    },
+    "3300": {
+        "assignment": "Attributed to OH stretch",
+        "reference_number": 42
+    },
+    "3329": {
+        "assignment": "N-H vibration of proteins",
+        "reference_number": 36
+    },
+    "3500": {
+        "assignment": "Stretching vibrations of CH, NH, and OH groups",
+        "reference_number": 42
+    },
+    "3550": {
+        "assignment": "O-H stretching vibration",
+        "reference_number": 94
+    },
+    "3800": {
+        "assignment": "Region of the OH-NH-CH stretching vibrations",
+        "reference_number": 78
+    }
+}

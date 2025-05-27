@@ -1,35 +1,39 @@
+from functions.configs import CURRENT_DIR, create_logs
 from typing import Any, Callable, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import ramanspy as rp
 import matplotlib.pyplot as plt
+import pickle as pkl
+import os
+import traceback
+
 
 class RamanPipeline:
     """
     A class to handle the preprocessing of Raman spectral data.
-    
+
     Attributes:
     -----------
     region : tuple
         The range of wavenumbers to consider for analysis.
     """
-    
-    def __init__(self, region: tuple[int, int]=(1050, 1700)):
+
+    def __init__(self, region: tuple[int, int] = (1050, 1700)):
         """
         Initializes the RamanPipeline class.
         """
         self.region = region
 
-
     def pipeline_hirschsprung_multi(self,
-        hirsch_dfs: List[pd.DataFrame], 
-        normal_dfs: List[pd.DataFrame],
-        wavenumber_rowname: str = 'wavenumber',
-        region: Tuple[int, int] = (1050, 1700)
-    ) -> Tuple[np.ndarray, list, np.ndarray, pd.DataFrame]:
+                                    hirsch_dfs: List[pd.DataFrame],
+                                    normal_dfs: List[pd.DataFrame],
+                                    wavenumber_rowname: str = 'wavenumber',
+                                    region: Tuple[int, int] = (1050, 1700)
+                                    ) -> Tuple[np.ndarray, list, np.ndarray, pd.DataFrame]:
         """
         Preprocessing pipeline for multiple Hirshsprung disease and normal Raman DataFrames.
-        
+
         Parameters:
         ----------
         hirsch_dfs : List[pd.DataFrame]
@@ -38,7 +42,7 @@ class RamanPipeline:
             List of DataFrames containing normal Raman spectra.
         region : Tuple[int, int], optional
             The range of wavenumbers to consider for analysis (default is (1050, 1700)).
-            
+
         Returns:
         -------
         processed_data : np.ndarray
@@ -49,20 +53,23 @@ class RamanPipeline:
             The wavenumbers corresponding to the spectral data.
         merged_df : pd.DataFrame
             The merged DataFrame containing all spectra, with wavenumbers as the first column.
-        
+
         """
-        
+
         # Handle empty input cases
         if not hirsch_dfs and not normal_dfs:
-            raise ValueError("Both hirsch_dfs and normal_dfs are empty. At least one must be provided.")
+            raise ValueError(
+                "Both hirsch_dfs and normal_dfs are empty. At least one must be provided.")
         elif hirsch_dfs:
             wavenumbers = hirsch_dfs[0]['wavenumber'].values
         else:
             wavenumbers = normal_dfs[0]['wavenumber'].values
 
         # Concatenate all hirsch and normal DataFrames (drop wavenumber, keep only intensity columns)
-        all_hirsch = [df.drop(wavenumber_rowname, axis=1) for df in hirsch_dfs] if hirsch_dfs else []
-        all_normal = [df.drop(wavenumber_rowname, axis=1) for df in normal_dfs] if normal_dfs else []
+        all_hirsch = [df.drop(wavenumber_rowname, axis=1)
+                      for df in hirsch_dfs] if hirsch_dfs else []
+        all_normal = [df.drop(wavenumber_rowname, axis=1)
+                      for df in normal_dfs] if normal_dfs else []
         merged_df = pd.concat(all_hirsch + all_normal, axis=1)
 
         intensities = merged_df.values.T  # shape: (n_samples, n_wavenumbers)
@@ -88,7 +95,6 @@ class RamanPipeline:
         # Return processed data, labels, and wavenumbers for further analysis
         return data.spectral_data, labels, data.spectral_axis, merged_df
 
-
     def preprocess(
         self,
         dfs: List[pd.DataFrame],
@@ -98,7 +104,9 @@ class RamanPipeline:
         region: Tuple[int, int] = (1050, 1700),
         preprocessing_steps: Optional[List[Callable]] = None,
         visualize_steps: bool = False,
-        max_plot_visualize_steps: int = 10
+        max_plot_visualize_steps: int = 10,
+        save_pkl: bool = False,
+        save_pkl_name: Optional[str] = None
     ) -> dict[str, Any]:
         """
         Dynamic preprocessing pipeline for generic Raman spectral DataFrames.
@@ -132,12 +140,13 @@ class RamanPipeline:
                 'raw': pd.DataFrame
             }
         """
-        
+
         if type(dfs) is not list:
             dfs = [dfs]
 
         # Merge all DataFrames
-        merged_df = pd.concat(dfs, axis=1 if dfs[0].index.name == wavenumber_col else 0)
+        merged_df = pd.concat(
+            dfs, axis=1 if dfs[0].index.name == wavenumber_col else 0)
 
         # Check if index is wavenumber
         if merged_df.index.name == wavenumber_col:
@@ -149,10 +158,12 @@ class RamanPipeline:
             wavenumbers = merged_df[wavenumber_col].values
             if intensity_cols is None:
                 exclude = {wavenumber_col}
-                intensity_cols = [col for col in merged_df.columns if col not in exclude]
+                intensity_cols = [
+                    col for col in merged_df.columns if col not in exclude]
             intensities = merged_df[intensity_cols].values
         else:
-            raise ValueError(f"Wavenumber column '{wavenumber_col}' not found in DataFrame index or columns.")
+            raise ValueError(
+                f"Wavenumber column '{wavenumber_col}' not found in DataFrame index or columns.")
 
         # Labels: assign the provided label to all spectra
         n_spectra = intensities.shape[0] if intensities.ndim == 2 else 1
@@ -172,7 +183,8 @@ class RamanPipeline:
         spectra = rp.SpectralContainer(intensities, wavenumbers)
 
         if visualize_steps:
-            fig, axes = plt.subplots(len(preprocessing_steps) + 1, 1, figsize=(12, 3 * (len(preprocessing_steps) + 1)), sharex=True)
+            fig, axes = plt.subplots(len(preprocessing_steps) + 1, 1,
+                                     figsize=(12, 3 * (len(preprocessing_steps) + 1)), sharex=True)
             axes[0].set_title("Raw Spectra")
             for spectrum in spectra.spectral_data[:max_plot_visualize_steps]:
                 axes[0].plot(spectra.spectral_axis, spectrum, alpha=0.6)
@@ -182,7 +194,8 @@ class RamanPipeline:
             if visualize_steps:
                 axes[i + 1].set_title(f"After {step.__class__.__name__}")
                 for spectrum in spectra.spectral_data[:max_plot_visualize_steps]:
-                    axes[i + 1].plot(spectra.spectral_axis, spectrum, alpha=0.6)
+                    axes[i + 1].plot(spectra.spectral_axis,
+                                     spectrum, alpha=0.6)
 
         if visualize_steps:
             for ax in axes:
@@ -191,25 +204,44 @@ class RamanPipeline:
             plt.tight_layout()
             plt.show()
 
-        return {"processed": spectra, 
-                "labels": labels, 
-                "raw" : merged_df}
-    
-     
+        data = {"processed": spectra,
+                "labels": labels,
+                "raw": merged_df}
+
+        if save_pkl:
+            try:
+                save_dir = os.path.join(
+                    CURRENT_DIR, "data", "preprocessed_data")
+                os.makedirs(save_dir, exist_ok=True)
+                save_pkl_name = save_pkl_name if save_pkl_name else f"{label}_preprocessed.pkl"
+                pkl_path = os.path.join(
+                    save_dir, save_pkl_name)
+                pkl_path += ".pkl" if not pkl_path.endswith('.pkl') else ''
+                with open(pkl_path, 'wb') as f:
+                    pkl.dump(data, f)
+            except Exception as e:
+                create_logs("RamanPipeline", "preprocess_error",
+                            f"Error saving preprocessed data: {e}\n{traceback.format_exc()}", status='error')
+                raise e
+
+        return data
+
+
 class SNV:
     def __call__(self, spectra):
         # spectra: 2D numpy array (n_samples, n_features)
-        return np.apply_along_axis(self.snv_normalisation, 1, spectra) 
-    
+        return np.apply_along_axis(self.snv_normalisation, 1, spectra)
+
     def apply(self, spectra):
         data = spectra.spectral_data
-        snv_data = (data - np.mean(data, axis=1, keepdims=True)) / np.std(data, axis=1, keepdims=True)
+        snv_data = (data - np.mean(data, axis=1, keepdims=True)) / \
+            np.std(data, axis=1, keepdims=True)
         return rp.SpectralContainer(snv_data, spectra.spectral_axis)
-    
+
     def snv_normalisation(spectrum):
         # spectrum: 1D numpy array
-        return (spectrum - np.mean(spectrum)) / np.std(spectrum) 
-    
+        return (spectrum - np.mean(spectrum)) / np.std(spectrum)
+
 
 class MovingAverage:
     def __init__(self, window_length=15):

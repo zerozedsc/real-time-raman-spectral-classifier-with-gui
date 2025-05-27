@@ -15,11 +15,13 @@ from datetime import datetime
 import numpy as np
 import ramanspy as rp
 import onnxruntime as ort
+import matplotlib.pyplot as plt
 import skl2onnx
 import onnx
 import shap
 import time
 import sklearn
+import pickle
 
 
 class RamanML:
@@ -34,9 +36,15 @@ class RamanML:
 
     def __init__(self, region: Tuple[int, int] = (1050, 1700)):
         self.region = region
-        self.clf_model = None
+        self._model = None
         self.common_axis = None
         self.n_features_in = None
+        self.X_train = None
+        self.y_train = None
+        self.X_test = None
+        self.y_test = None
+        self.X_pred = None
+        self.y_pred = None
 
     def SVCMODEL(
         self,
@@ -170,6 +178,11 @@ class RamanML:
             print(
                 f"Training SVM with {len(X_train)} training samples and {len(X_test)} test samples.")
 
+            self.X_train = X_train
+            self.y_train = y_train
+            self.X_test = X_test
+            self.y_test = y_test
+
             crossValScore = 0
             decisionFunctionScore = 0
             if param_search:
@@ -197,7 +210,7 @@ class RamanML:
             # 4. Cross-validation and decision function
             crossValScore = cross_val_score(clf, X_train, y_train, cv=cv)
             decisionFunctionScore = clf.decision_function(X_test)
-            self.clf_model = clf
+            self._model = clf
 
             y_pred = clf.predict(X_test)
             conf_matrix = confusion_matrix(y_test, y_pred)
@@ -392,6 +405,12 @@ class RamanML:
             X_train, X_test, y_train, y_test = train_test_split(
                 X, y, test_size=test_size, stratify=y, random_state=random_state
             )
+
+            self.X_train = X_train
+            self.y_train = y_train
+            self.X_test = X_test
+            self.y_test = y_test
+
             print(
                 f"Training Random Forest with {len(X_train)} training samples and {len(X_test)} test samples.")
             crossValScore = 0
@@ -419,7 +438,7 @@ class RamanML:
             end_time = time.time() - start_time
             crossValScore = cross_val_score(clf, X_train, y_train, cv=cv)
             featureImportances = clf.feature_importances_
-            self.rf_model = clf
+            self._model = clf
 
             y_pred = clf.predict(X_test)
             conf_matrix = confusion_matrix(y_test, y_pred)
@@ -472,10 +491,8 @@ class RamanML:
         clf = model
 
         if clf is None:
-            if hasattr(self, "clf_model") and self.clf_model is not None:
-                clf = self.clf_model
-            elif hasattr(self, "rf_model") and self.rf_model is not None:
-                clf = self.rf_model
+            if hasattr(self, "_model") and self._model is not None:
+                clf = self._model
             else:
                 raise ValueError(
                     "No trained model found. Train a model first or provide one.")
@@ -504,6 +521,7 @@ class RamanML:
                 for spec in s.spectral_data:
                     X_test.append(spec)
         X_test = np.array(X_test)
+        self.X_pred = X_test
 
         print(
             f"Predicting {len(X_test)} test samples with {n_features} features.")
@@ -521,6 +539,7 @@ class RamanML:
             proba = None
             class_labels = None
 
+        self.y_pred = y_pred
         results = []
         for idx, pred in enumerate(y_pred):
             entry = {"predicted_label": pred}
@@ -569,7 +588,7 @@ class RamanML:
         Returns:
             dict: Same as predict(), but with thresholding applied.
         """
-        clf = model or getattr(self, "rf_model", None)
+        clf = model or getattr(self, "_model", None)
         if clf is None and clf is not RandomForestClassifier:
             raise ValueError("No trained RandomForest model found.")
 
@@ -590,6 +609,7 @@ class RamanML:
                 for spec in s.spectral_data:
                     X_test.append(spec)
         X_test = np.array(X_test)
+        self.X_pred = X_test
 
         # Predict probabilities
         proba = clf.predict_proba(X_test)
@@ -611,6 +631,7 @@ class RamanML:
             all_probabilities.append(
                 {str(class_labels[j]): float(p[j]) for j in range(len(class_labels))})
 
+        self.y_pred = y_pred
         label_counts = Counter(y_pred)
         total = len(y_pred)
         label_percentages = {label: count /
@@ -624,71 +645,10 @@ class RamanML:
             "all_probabilities": all_probabilities,
         }
 
-    def shap_explain(
-        self,
-        model: Union[SVC, RandomForestClassifier, None] = None,
-        background_data: np.ndarray = None,
-        test_data: np.ndarray = None,
-        nsamples: int = 100
-    ) -> dict:
-        """
-        Generate SHAP explanations for the given model and data.
 
-        Args:
-            model (sklearn classifier or None): The trained model to explain. If None, uses the stored model.
-            background_data (np.ndarray): Background data for SHAP explainer (usually a subset of training data).
-            test_data (np.ndarray): Data to explain (e.g., test set).
-            nsamples (int): Number of samples for SHAP estimation (default: 100).
-
-        Returns:
-            dict: {
-                "shap_values": SHAP values array,
-                "expected_value": SHAP expected value,
-                "explainer": SHAP explainer object,
-                "summary_plot": matplotlib figure object (summary plot),
-            }
-        """
-        if model is None:
-            if hasattr(self, "clf_model") and self.clf_model is not None:
-                model = self.clf_model
-            elif hasattr(self, "rf_model") and self.rf_model is not None:
-                model = self.rf_model
-            else:
-                raise ValueError(
-                    "No trained model found. Train a model first or provide one.")
-
-        if background_data is None or test_data is None:
-            raise ValueError(
-                "background_data and test_data must be provided as numpy arrays.")
-
-        # Choose SHAP explainer based on model type
-        if isinstance(model, RandomForestClassifier):
-            explainer = shap.TreeExplainer(model, background_data)
-        elif isinstance(model, SVC):
-            # For SVC, use KernelExplainer (slower)
-            explainer = shap.KernelExplainer(
-                model.predict_proba, background_data)
-        else:
-            raise ValueError("Unsupported model type for SHAP explanation.")
-
-        # Compute SHAP values
-        shap_values = explainer.shap_values(test_data, nsamples=nsamples)
-        expected_value = explainer.expected_value
-
-        # Generate summary plot (returns matplotlib figure)
-        summary_plot = shap.summary_plot(shap_values, test_data, show=False)
-        fig = shap.plt.gcf()
-
-        return {
-            "shap_values": shap_values,
-            "expected_value": expected_value,
-            "explainer": explainer,
-            "summary_plot": fig,
-        }
-
-
-class ONNXModel:
-    def __init__(self, onnx_path=None, meta_path=None, sess_options: Any | None = None,
+class MLModel:
+    def __init__(self, onnx_path: str = None, meta_path: str = None, pickle_path: str = None,
+                 sess_options: Any | None = None,
                  providers: Sequence[str | tuple[str,
                                                  dict[Any, Any]]] | None = None,
                  provider_options: Sequence[dict[Any,
@@ -699,16 +659,31 @@ class ONNXModel:
         self.common_axis = None
         self.n_features_in = None
         self.onnx_model = None
+        self.sklearn_model = None
         self.load_msg = None
         self.load_success = False
         load_data = {}
+
         if onnx_path and meta_path:
             load_data = self.load(onnx_path, meta_path, sess_options,
                                   providers, provider_options, **kwargs)
             self.load_msg = load_data.get("msg", None)
             self.load_success = load_data.get("success", False)
 
-    def save(self, model: Union[SVC, RandomForestClassifier], labels: list[str], filename: str, common_axis: np.ndarray, n_features_in: int, meta: dict = {
+        if pickle_path:
+            pickle_data = self.pickle_load(pickle_path, meta_path)
+            if pickle_data.get("success", False):
+                self.sklearn_model = pickle_data.get("model", None)
+                self.metadata = pickle_data.get("metadata", None)
+                self.common_axis = np.array(self.metadata["common_axis"])
+                self.n_features_in = int(self.metadata["n_features_in"])
+            else:
+                create_logs("pickle_load", "ML",
+                            f"Error loading pickle model: {pickle_data.get('detail', '')}", status='error')
+
+    def save(self, model: Union[SVC, RandomForestClassifier], labels: list[str], filename: str,
+             common_axis: np.ndarray, n_features_in: int, save_pickle: bool = True,
+             meta: dict = {
         "model_type": "", "model_name": "",
         "model_version": "", "model_description": "",
         "model_author": "", "model_date": "",
@@ -730,13 +705,20 @@ class ONNXModel:
             filename_safe = safe_filename(filename)
             onnx_path = os.path.join(model_dir, f"{filename_safe}.onnx")
             meta_path = os.path.join(model_dir, f"{filename_safe}.json")
+            pickle_path = os.path.join(model_dir, f"{filename_safe}.pkl")
 
             initial_type = [
                 ('float_input', FloatTensorType([None, n_features]))]
             onnx_model = convert_sklearn(model, initial_types=initial_type)
 
+            # Save the model to ONNX format
             with open(onnx_path, "wb") as f:
                 f.write(onnx_model.SerializeToString())
+
+            # Save the model to a pickle file
+            if save_pickle:
+                with open(pickle_path, "wb") as f:
+                    pickle.dump(model, f)
 
             # Save metadata
             meta = meta or {}
@@ -770,8 +752,13 @@ class ONNXModel:
 
             metadata.update(other_meta)
 
+            # save metadata to JSON
             with open(meta_path, "w") as f:
                 json.dump(metadata, f, indent=2)
+
+            save_str = f"(SAVED SUCCESS) onnx: {onnx_path} , metadata: {meta_path}"
+            if save_pickle:
+                save_str += f", pkl: {pickle_path}"
 
             create_logs("save_onnx", "ML",
                         f"Model saved to {onnx_path} and metadata to {meta_path}", status='info')
@@ -864,6 +851,54 @@ class ONNXModel:
             return {
                 "success": False,
                 "msg": "load_onnx_error",
+                "detail": f"{e} \n {traceback.format_exc()}",
+            }
+
+    def pickle_load(self, pickle_path: str, meta_path: str) -> dict:
+        """
+        Load a pickled model and its metadata.
+
+        Args:
+            pickle_path (str): Path to the pickled model file.
+            meta_path (str): Path to the metadata JSON file.
+
+        Returns:
+            dict: {
+                "model": loaded model,
+                "metadata": dict,
+                "success": True/False,
+                "msg": status message,
+            }
+        """
+        try:
+            model = None
+            with open(pickle_path, "rb") as f:
+                model = pickle.load(f)
+
+            self.sklearn_model = model
+
+            with open(meta_path, "r") as f:
+                metadata = json.load(f)
+
+            self.metadata = metadata
+            self.common_axis = np.array(metadata["common_axis"])
+            self.n_features_in = int(metadata["n_features_in"])
+
+            create_logs("pickle_load", "ML",
+                        f"Model loaded from {pickle_path} and metadata from {meta_path}", status='info')
+
+            return {
+                "model": model,
+                "metadata": metadata,
+                "success": True,
+                "msg": "pickle_load_success",
+            }
+        except Exception as e:
+            create_logs("pickle_load", "ML",
+                        f"Error loading pickled model: {e} \n {traceback.format_exc()}", status='error')
+            return {
+                "success": False,
+                "msg": "pickle_load_error",
                 "detail": f"{e} \n {traceback.format_exc()}",
             }
 

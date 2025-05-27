@@ -174,8 +174,9 @@ cython_debug/
 .pypirc
 
 #misc folder
-Tamura/
 thesis/
 test_rawdata/
 kenkyu_venv/
 .conda/
+data/preprocessed_data/
+models/

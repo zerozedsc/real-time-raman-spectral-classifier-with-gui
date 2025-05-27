@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def translate_confusion_matrix(conf_matrix: np.ndarray, labels: list) -> dict:
     """
     Translate a confusion matrix into a dictionary with label names.
@@ -15,7 +16,7 @@ def translate_confusion_matrix(conf_matrix: np.ndarray, labels: list) -> dict:
     -------
     dict
         Dictionary with structure: {true_label: {predicted_label: count, ...}, ...}
-        
+
     # Example usage:
     # conf_matrix = svc_data["confusion_matrix"]
     # labels = ["benign", "cancer"]
