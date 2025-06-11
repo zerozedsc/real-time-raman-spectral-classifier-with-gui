@@ -20,7 +20,7 @@ def translate_confusion_matrix(conf_matrix: np.ndarray, labels: list) -> dict:
     # Example usage:
     # conf_matrix = svc_data["confusion_matrix"]
     # labels = ["benign", "cancer"]
-    # print(translate_confusion_matrix(conf_matrix, labels))
+    # console_log(translate_confusion_matrix(conf_matrix, labels))
     """
     result = {}
     for i, true_label in enumerate(labels):

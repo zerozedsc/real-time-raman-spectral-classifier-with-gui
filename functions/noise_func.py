@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plt
 from typing import Tuple
 
+
 class RamanNoiseProcessor:
     """
     A class to process Raman spectral data by adding noise and detecting baseline regions.
@@ -12,6 +13,7 @@ class RamanNoiseProcessor:
     df : pd.DataFrame
         DataFrame containing Raman spectral data with wavenumber as index and intensity values as columns
     """
+
     def __init__(self, df: pd.DataFrame):
         self.df = df
 
@@ -30,7 +32,8 @@ class RamanNoiseProcessor:
         # Add noise to all numeric columns
         for col in noisy_df.columns:
             if np.issubdtype(noisy_df[col].dtype, np.number):
-                noise = np.random.normal(loc=0.0, scale=noise_level, size=noisy_df[col].shape)
+                noise = np.random.normal(
+                    loc=0.0, scale=noise_level, size=noisy_df[col].shape)
                 noisy_df[col] = noisy_df[col] + noise
         return noisy_df
 
@@ -38,7 +41,7 @@ class RamanNoiseProcessor:
         """
         Automatically detect flat (low-variance) region in the Raman spectrum.
         Uses a sliding window over the wavenumber axis (index).
-        
+
         Parameters:
         -----------
         window_size : int
@@ -66,7 +69,8 @@ class RamanNoiseProcessor:
         start_wn = wavenumber[min_idx]
         end_wn = wavenumber[min_idx + window_size - 1]
 
-        print(f"Auto-detected baseline region: {start_wn:.2f}–{end_wn:.2f} cm⁻¹")
+        console_log(
+            f"Auto-detected baseline region: {start_wn:.2f}–{end_wn:.2f} cm⁻¹")
 
         # Return the sliced baseline DataFrame
         baseline_df = self.df.loc[start_wn:end_wn]
@@ -79,11 +83,11 @@ class RamanNoiseProcessor:
         -----------
         window_size : int
             Size of the sliding window for baseline detection
-            
+
         Returns:
         --------
         pd.DataFrame with Gaussian noise added
-        
+
         """
         # Detect baseline region
         baseline_df = self.auto_detect_baseline_region(window_size=window_size)

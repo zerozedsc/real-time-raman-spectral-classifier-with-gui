@@ -13,6 +13,7 @@ import uuid
 import ast
 import traceback
 import re
+import random
 
 DEBUG = True
 
@@ -78,6 +79,48 @@ def create_logs(log_name, filename, log_message, status='info'):
         logger.warning(log_message)
     elif status == 'debug':
         logger.debug(log_message)
+
+
+def console_log(log_message, status='info', show_status=False, show_time=False, show=True, **kwargs) -> None:
+    """
+    Log messages to the console with different severity levels.
+
+    Args:
+        log_message (str): The message to log.
+        status (str): The severity level of the log message ('info', 'error', 'warning', 'debug').
+        show_status (bool): Whether to show the status prefix in the log message.
+        show_time (bool): Whether to include the current time in the log message.
+        show (bool): Whether to actually print the log message.
+        **kwargs: Additional keyword arguments, e.g., 'indent' for pprint indentation.
+
+    """
+    if not show:
+        return
+
+    st_dict = {
+        'info': "[INFO] ",
+        'error': "[ERROR] ",
+        'warning': "[WARNING] ",
+        'debug': "[DEBUG] "
+    }
+    time_str = ""
+
+    if show_time:
+        time_now = datetime.now().strftime(DATETIME_FT)
+        time_str = f"{time_now} - "
+
+    status_str = ""
+    if show_status:
+        status_str = st_dict.get(status, "")
+
+    indent = kwargs.get("indent", 1)
+    if indent <= 1:
+        return_str = f"{time_str}{status_str}{log_message}"
+        pprint(return_str, indent=indent)
+    else:
+        return_str = f"{time_str}{status_str}"
+        pprint(return_str)
+        pprint(log_message)
 
 
 def generate_id(i, n, id_type="uuid") -> str:

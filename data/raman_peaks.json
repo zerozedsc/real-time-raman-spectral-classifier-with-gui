@@ -100,7 +100,7 @@
         "reference_number": 42
     },
     "600": {
-        "assignment": "COO2",
+        "assignment": "COO- symmetric stretch",
         "reference_number": 6
     },
     "607": {
@@ -588,7 +588,7 @@
         "reference_number": 31
     },
     "1003": {
-        "assignment": "Phenylalanine, C-C skeletal",
+        "assignment": "Phenylalanine ring breathing",
         "reference_number": 72
     },
     "1004": {
@@ -1356,7 +1356,7 @@
         "reference_number": 73
     },
     "1450": {
-        "assignment": "CH2 bending",
+        "assignment": "CH2 bending (lipids/proteins)",
         "reference_number": 18
     },
     "1451": {
@@ -1668,7 +1668,7 @@
         "reference_number": 6
     },
     "1660": {
-        "assignment": "Amide I band",
+        "assignment": "Amide I (C=O stretch)",
         "reference_number": 59
     },
     "1662": {
