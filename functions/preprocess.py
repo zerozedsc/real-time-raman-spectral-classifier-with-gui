@@ -1028,7 +1028,7 @@ class BaselineCorrection:
             # =================== POLYNOMIAL METHODS ===================
             "Poly": {
                 "class": rp.preprocessing.baseline.Poly,
-                "default_params": {"poly_order": 2},
+                "default_params": {"poly_order": 2, "regions": None},
                 "requires_region": True,
                 "category": "polynomial",
                 "description": "Simple polynomial fitting",
@@ -1036,7 +1036,12 @@ class BaselineCorrection:
             },
             "ModPoly": {
                 "class": rp.preprocessing.baseline.ModPoly,
-                "default_params": {"poly_order": 6, "tol": 0.001, "max_iter": 200},
+                "default_params": {"poly_order": 2,
+                                   "tol": 0.001,
+                                   "max_iter": 250,
+                                   "weights": None,
+                                   "use_original": False,
+                                   "mask_initial_peaks": False},
                 "category": "polynomial",
                 "description": "Modified polynomial - Iteratively excludes peaks",
                 "suitable_for": ["peak_exclusion", "iterative"]
@@ -1050,8 +1055,8 @@ class BaselineCorrection:
                 "suitable_for": ["penalized", "robust_polynomial"]
             },
             "IModPoly": {
-                "class": rp.preprocessing.baseline.IModPoly,
-                "default_params": {"poly_order": 6, "tol": 0.001, "max_iter": 200},
+                "class": rp.preprocessing.baseline.IModPoly(),
+                "default_params": {"poly_order": 2, "tol": 0.001, "max_iter": 200},
                 "category": "polynomial",
                 "description": "Improved Modified polynomial - Enhanced peak detection",
                 "suitable_for": ["improved_peak_detection", "iterative"]
