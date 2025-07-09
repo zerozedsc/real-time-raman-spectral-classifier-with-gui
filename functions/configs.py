@@ -19,7 +19,6 @@ DEBUG = True
 
 # Global Constants
 CURRENT_DIR = os.getcwd()
-MAIN_TITLE = "Finance Planner"
 DATETIME_FT = '%d-%m-%Y %H:%M:%S'
 DATE_FT = '%d-%m-%Y'
 LOCAL_DATA = {}
