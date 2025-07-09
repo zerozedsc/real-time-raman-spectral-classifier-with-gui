@@ -7,6 +7,7 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 from configs.configs import create_logs
+from components.matplotlib_widget import plot_spectra
 
 def load_data_from_path(path: str) -> Union[pd.DataFrame, str]:
     """
@@ -27,6 +28,7 @@ def load_data_from_path(path: str) -> Union[pd.DataFrame, str]:
     elif extension == '.pkl':
         return _load_from_pkl(path)
     elif extension == '.txt':
+        # If a single txt is dropped, load its parent directory
         return _load_from_txt_directory(os.path.dirname(path))
     else:
         error_msg = f"Unsupported file type: {extension}"
@@ -106,44 +108,3 @@ def load_metadata_from_json(json_path: str) -> Union[dict, str]:
         create_logs("DataLoader", "metadata_loading", f"Error loading metadata {json_path}: {e}", status='error')
         return str(e)
 
-def plot_spectra(df: pd.DataFrame) -> Figure:
-    """
-    Generates a matplotlib Figure object containing a plot of the spectra.
-    Plots a maximum of 10 spectra for clarity.
-    """
-    fig = Figure(figsize=(8, 6), dpi=100)
-    ax = fig.add_subplot(111)
-    
-    # --- Robustness Check ---
-    if df is None or df.empty:
-        ax.text(0.5, 0.5, "No data to display.", ha='center', va='center', fontsize=14, color='gray')
-        ax.set_xticks([])
-        ax.set_yticks([])
-        fig.tight_layout()
-        return fig
-
-    # --- Plotting Logic ---
-    num_spectra = df.shape[1]
-    plot_title = "Loaded Raman Spectra"
-    
-    # Limit the number of plotted spectra for clarity
-    if num_spectra > 10:
-        df_to_plot = df.iloc[:, :10]
-        plot_title += f" (showing first 10 of {num_spectra})"
-    else:
-        df_to_plot = df
-
-    # Plot each spectrum
-    for column in df_to_plot.columns:
-        ax.plot(df_to_plot.index, df_to_plot[column], label=column)
-    
-    ax.set_title(plot_title, fontsize=16)
-    ax.set_xlabel("Wavenumber (cm⁻¹)", fontsize=12)
-    ax.set_ylabel("Intensity (a.u.)", fontsize=12)
-    ax.grid(True, which='both', linestyle='--', linewidth=0.5)
-    
-    # Add a legend
-    ax.legend()
-
-    fig.tight_layout()
-    return fig

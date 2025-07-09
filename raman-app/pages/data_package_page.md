@@ -1,53 +1,60 @@
 # `pages/data_package_page.py` Documentation
 
-This page is the main interface for managing all datasets within a project. It enables users to import multiple, uniquely named Raman datasets (e.g., "Tumor Spectra", "Control Group 1"), assign custom names, and save them to the project before moving to pre-processing.
+This page is the main interface for managing all datasets within a project. It enables users to:
+
+- Import multiple, uniquely named Raman datasets
+- Assign comprehensive metadata
+- Save datasets to the project before pre-processing
 
 ---
 
 ## Architecture & Workflow
 
-The page uses a two-panel layout:
+The page uses a **two-panel layout** for clear separation of concerns.
 
 ### Left Panel: Data Management
 
-- **Importer Group (`importer_group`):**
-     - Import new datasets.
-     - Fields:
-          - **Dataset Name:** Auto-filled from the selected file/folder name (editable).
-          - **Data Path:** Select via drag-and-drop or file browser.
-          - **Metadata Path:** Optional.
-     - Actions:
-          - **Preview:** Load and preview the dataset.
-          - **Add to Project:** Save the dataset to the project.
+#### **Importer Group (`importer_group`)**
 
-- **Project Datasets Group (`loaded_group`):**
-     - **Component:** `QListWidget` (`loaded_data_list`)
-     - Shows all dataset names currently loaded in the project (from `utils.RAMAN_DATA`).
-     - Selecting a dataset updates the right panel with its details.
+- **Dataset Name:** Auto-filled from the selected file/folder name (user-editable)
+- **Data Path:** Selectable via drag-and-drop or file browser
+- **Metadata Path:** Optional; file browser only allows `.json` files
+- **Actions:**  
+     - **Preview:** Preview the data  
+     - **Add to Project:** Add dataset to the project
 
-### Right Panel: Data Preview & Metadata
+#### **Project Datasets Group (`loaded_group`)**
 
-- **Components:**
-     - **MatplotlibWidget (`plot_widget`):** Plots the selected or previewed dataset.
-     - **QLabel (`info_label`):** Shows summary statistics (e.g., spectra count, wavenumber range).
-     - **Metadata Editor (`meta_editor_group`):**
-          - Editable when previewing a new dataset.
-          - Read-only for datasets already in the project.
-          - **Save Metadata:** Button to save metadata to a `.json` file.
+- **Component:** Scrollable `QListWidget` (`loaded_data_list`) using custom `DatasetItemWidget`
+- **Features:**  
+     - Handles many datasets without clutter  
+     - Each item shows dataset name and a permanently visible Remove ("X") button for deletion
 
 ---
 
-## Import Workflow
+### Right Panel: Data Preview & Metadata
 
-1. **Input:** User selects a data source. Dataset Name auto-fills. Metadata file is optional.
-2. **Preview:**
-      - User clicks **Preview**.
-      - `handle_preview_data` loads data into a temporary variable.
-      - Right panel updates with plot, info, and metadata editor.
-      - **Add to Project** button becomes enabled.
-3. **Commit:**
-      - User clicks **Add to Project**.
-      - Validates unique dataset name.
-      - Calls `PROJECT_MANAGER.add_dataframe_to_project()`.
-      - Saves DataFrame as `.pkl` and updates project `.json` config.
-      - Refreshes dataset list and clears importer fields.
+This panel is vertically split, with more space for data visualization.
+
+#### **Data Preview (`preview_group`)**
+
+- **Main Area:** Large, clear view of spectra using a `MatplotlibWidget` inside a themed frame
+- **Styling:** Plot background and legend match the application's theme
+- **Info Label:** Below the plot, summarizes data (spectra count, wavenumber range, etc.)
+
+#### **Metadata Editor (`meta_editor_group`)**
+
+- **Location:** Below the data preview
+- **Component:** `QTabWidget` with tabs: Sample, Instrument, Measurement, Notes
+- **Fields:** Editable when previewing new data; read-only for saved datasets
+- **Save Metadata:** Button to save entered info to a new `.json` file
+
+---
+
+## Import & Management Workflow
+
+1. **Input:** User selects a data source; Dataset Name auto-populates
+2. **Preview:** User clicks Preview; right panel updates with plot and metadata; "Add to Project" is enabled
+3. **Add to Project:** User clicks Add to Project; dataset is validated and saved as `.pkl`, project config updates, and dataset list refreshes
+4. **Selection:** Clicking a dataset displays its plot and metadata
+5. **Deletion:** Clicking "X" prompts for confirmation and, if confirmed, removes the dataset and its data file from the project

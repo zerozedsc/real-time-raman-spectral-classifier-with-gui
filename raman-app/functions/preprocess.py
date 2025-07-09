@@ -1,4 +1,4 @@
-from functions.configs import CURRENT_DIR, create_logs, console_log
+from utils import *
 from typing import Any, Callable, Dict, List, Optional, Tuple
 try:
     import torch
@@ -10,8 +10,9 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    console_log(
-        "Warning: PyTorch not available. Transformer1DBaseline will not work.")
+    create_logs("RamanPipeline", "torch_import_error",
+                "PyTorch is not available. Some advanced preprocessing steps will be skipped.", 
+                status='warning')
 
 import numpy as np
 import pandas as pd
@@ -1686,452 +1687,453 @@ class MultiScaleConv1D:
         return convolved
 
 
-class Transformer1DBaseline:
-    """
-    Transformer-based baseline correction for Raman spectra using PyTorch.
-
-    This method uses a real transformer architecture to learn and predict
-    baseline patterns in Raman spectra.
-    """
-
-    def __init__(self,
-                 d_model=64,
-                 nhead=8,
-                 num_layers=3,
-                 dim_feedforward=256,
-                 dropout=0.1,
-                 window_size=128,
-                 overlap=0.5,
-                 learning_rate=1e-3,
-                 epochs=50,
-                 device=None):
+if TORCH_AVAILABLE:
+    class Transformer1DBaseline:
         """
-        Initialize Transformer1DBaseline correction.
+        Transformer-based baseline correction for Raman spectra using PyTorch.
 
-        Parameters
-        ----------
-        d_model : int
-            Dimension of the model (embedding size).
-        nhead : int
-            Number of attention heads.
-        num_layers : int
-            Number of transformer encoder layers.
-        dim_feedforward : int
-            Dimension of feedforward network.
-        dropout : float
-            Dropout rate.
-        window_size : int
-            Size of the sliding window for processing.
-        overlap : float
-            Overlap between windows (0.0 to 1.0).
-        learning_rate : float
-            Learning rate for training.
-        epochs : int
-            Number of training epochs.
-        device : str, optional
-            Device to use ('cuda', 'cpu', or None for auto-detection).
+        This method uses a real transformer architecture to learn and predict
+        baseline patterns in Raman spectra.
         """
-        if not TORCH_AVAILABLE:
-            raise ImportError(
-                "PyTorch is not available. Please install it to use Transformer1DBaseline.")
 
-        self.d_model = d_model
-        self.nhead = nhead
-        self.num_layers = num_layers
-        self.dim_feedforward = dim_feedforward
-        self.dropout = dropout
-        self.window_size = window_size
-        self.overlap = overlap
-        self.learning_rate = learning_rate
-        self.epochs = epochs
+        def __init__(self,
+                    d_model=64,
+                    nhead=8,
+                    num_layers=3,
+                    dim_feedforward=256,
+                    dropout=0.1,
+                    window_size=128,
+                    overlap=0.5,
+                    learning_rate=1e-3,
+                    epochs=50,
+                    device=None):
+            """
+            Initialize Transformer1DBaseline correction.
 
-        # Set device
-        if device is None:
+            Parameters
+            ----------
+            d_model : int
+                Dimension of the model (embedding size).
+            nhead : int
+                Number of attention heads.
+            num_layers : int
+                Number of transformer encoder layers.
+            dim_feedforward : int
+                Dimension of feedforward network.
+            dropout : float
+                Dropout rate.
+            window_size : int
+                Size of the sliding window for processing.
+            overlap : float
+                Overlap between windows (0.0 to 1.0).
+            learning_rate : float
+                Learning rate for training.
+            epochs : int
+                Number of training epochs.
+            device : str, optional
+                Device to use ('cuda', 'cpu', or None for auto-detection).
+            """
+            if not TORCH_AVAILABLE:
+                raise ImportError(
+                    "PyTorch is not available. Please install it to use Transformer1DBaseline.")
+
+            self.d_model = d_model
+            self.nhead = nhead
+            self.num_layers = num_layers
+            self.dim_feedforward = dim_feedforward
+            self.dropout = dropout
+            self.window_size = window_size
+            self.overlap = overlap
+            self.learning_rate = learning_rate
+            self.epochs = epochs
+
+            # Set device
+            if device is None:
+                self.device = torch.device(
+                    'cuda' if torch.cuda.is_available() else 'cpu')
+            else:
+                self.device = torch.device(device)
+
+            # Initialize model
+            self.model = None
+
+        def __call__(self, spectra):
+            """Apply baseline correction to numpy array format (for sklearn pipelines)."""
+            if spectra.ndim == 1:
+                return self._correct_spectrum(spectra)
+            else:
+                return np.array([self._correct_spectrum(spectrum) for spectrum in spectra])
+
+        def apply(self, spectra):
+            """Apply baseline correction to ramanspy SpectralContainer format."""
+            data = spectra.spectral_data
+
+            if data.ndim == 1:
+                corrected_data = self._correct_spectrum(data)
+            else:
+                corrected_data = np.array(
+                    [self._correct_spectrum(spectrum) for spectrum in data])
+
+            return rp.SpectralContainer(corrected_data, spectra.spectral_axis)
+
+        def _correct_spectrum(self, spectrum):
+            """
+            Apply transformer-based baseline correction to a single spectrum.
+
+            Parameters
+            ----------
+            spectrum : np.ndarray
+                1D array representing a single spectrum.
+
+            Returns
+            -------
+            np.ndarray
+                Baseline-corrected spectrum.
+            """
+            spectrum = np.asarray(spectrum)
+
+            # Initialize and train model if not already done
+            if self.model is None:
+                self._initialize_model(len(spectrum))
+                self._train_model(spectrum)
+
+            # Predict baseline
+            baseline = self._predict_baseline(spectrum)
+
+            # Return corrected spectrum
+            corrected = spectrum - baseline
+            return corrected
+
+        def _initialize_model(self, spectrum_length):
+            """Initialize the transformer model."""
+            self.spectrum_length = spectrum_length
+            self.model = BaselineTransformer(
+                spectrum_length=spectrum_length,
+                d_model=self.d_model,
+                nhead=self.nhead,
+                num_layers=self.num_layers,
+                dim_feedforward=self.dim_feedforward,
+                dropout=self.dropout,
+                window_size=self.window_size
+            ).to(self.device)
+
+        def _train_model(self, spectrum):
+            """
+            Train the transformer model on the input spectrum.
+
+            This uses self-supervised learning where the model learns to reconstruct
+            the smoothed version of the spectrum (pseudo-baseline).
+            """
+            # Create training data (smoothed version as target baseline)
+            baseline_target = self._create_pseudo_baseline(spectrum)
+
+            # Convert to tensors
+            input_tensor = torch.FloatTensor(spectrum).unsqueeze(0).to(self.device)
+            target_tensor = torch.FloatTensor(
+                baseline_target).unsqueeze(0).to(self.device)
+
+            # Setup optimizer
+            optimizer = torch.optim.Adam(
+                self.model.parameters(), lr=self.learning_rate)
+            criterion = nn.MSELoss()
+
+            # Training loop
+            self.model.train()
+            for epoch in range(self.epochs):
+                optimizer.zero_grad()
+
+                # Forward pass
+                predicted_baseline = self.model(input_tensor)
+                loss = criterion(predicted_baseline, target_tensor)
+
+                # Backward pass
+                loss.backward()
+                optimizer.step()
+
+                # Optional: console_log progress
+                if epoch % 10 == 0:
+                    console_log(
+                        f"Epoch {epoch}/{self.epochs}, Loss: {loss.item():.6f}")
+
+        def _predict_baseline(self, spectrum):
+            """Predict baseline using trained model."""
+            self.model.eval()
+            with torch.no_grad():
+                input_tensor = torch.FloatTensor(
+                    spectrum).unsqueeze(0).to(self.device)
+                baseline = self.model(input_tensor)
+                return baseline.cpu().numpy().squeeze()
+
+        def _create_pseudo_baseline(self, spectrum):
+            """
+            Create pseudo-baseline for training using multiple smoothing techniques.
+            """
+            # Method 1: Heavy smoothing with large kernel
+            kernel_size = max(21, len(spectrum) // 20)
+            if kernel_size % 2 == 0:
+                kernel_size += 1
+
+            baseline1 = np.convolve(spectrum, np.ones(
+                kernel_size)/kernel_size, mode='same')
+
+            # Method 2: Percentile-based smoothing
+            from scipy import ndimage
+            baseline2 = ndimage.percentile_filter(
+                spectrum, percentile=10, size=kernel_size)
+
+            # Method 3: Morphological opening (removes peaks)
+            from scipy.ndimage import grey_opening
+            baseline3 = grey_opening(spectrum, size=kernel_size//3)
+
+            # Combine baselines
+            baseline = (baseline1 + baseline2 + baseline3) / 3
+
+            return baseline
+
+
+    class BaselineTransformer(nn.Module):
+        """
+        Transformer model for baseline prediction.
+        """
+
+        def __init__(self, spectrum_length, d_model=64, nhead=8, num_layers=3,
+                    dim_feedforward=256, dropout=0.1, window_size=128):
+            super(BaselineTransformer, self).__init__()
+
+            self.spectrum_length = spectrum_length
+            self.d_model = d_model
+            self.window_size = window_size
+
+            # Input projection
+            self.input_projection = nn.Linear(1, d_model)
+
+            # Positional encoding with dynamic max_len
+            max_len = max(spectrum_length + 1000, 10000)  # Add buffer for safety
+            self.pos_encoding = PositionalEncoding(
+                d_model, dropout, max_len=max_len)
+
+            # Transformer encoder
+            encoder_layer = TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=nhead,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout,
+                batch_first=True
+            )
+            self.transformer_encoder = TransformerEncoder(
+                encoder_layer, num_layers)
+
+            # Output projection
+            self.output_projection = nn.Linear(d_model, 1)
+
+            # Smoothing layer with adaptive kernel size
+            kernel_size = min(21, spectrum_length // 10)  # Adaptive kernel size
+            if kernel_size % 2 == 0:
+                kernel_size += 1
+            kernel_size = max(3, kernel_size)  # Ensure minimum size
+
+            padding = kernel_size // 2
+            self.smooth_conv = nn.Conv1d(
+                1, 1, kernel_size=kernel_size, padding=padding, bias=False)
+            # Initialize smoothing kernel
+            with torch.no_grad():
+                self.smooth_conv.weight.fill_(1.0/kernel_size)
+
+        def forward(self, x):
+            """
+            Forward pass.
+
+            Parameters
+            ----------
+            x : torch.Tensor
+                Input spectrum of shape (batch_size, spectrum_length)
+
+            Returns
+            -------
+            torch.Tensor
+                Predicted baseline of shape (batch_size, spectrum_length)
+            """
+            # Reshape for transformer: (batch_size, seq_len, 1)
+            x = x.unsqueeze(-1)
+
+            # Project to model dimension
+            x = self.input_projection(x)  # (batch_size, seq_len, d_model)
+
+            # Add positional encoding
+            x = self.pos_encoding(x)
+
+            # Apply transformer
+            x = self.transformer_encoder(x)  # (batch_size, seq_len, d_model)
+
+            # Project back to single dimension
+            x = self.output_projection(x)  # (batch_size, seq_len, 1)
+
+            # Squeeze last dimension
+            x = x.squeeze(-1)  # (batch_size, seq_len)
+
+            # Apply smoothing
+            x = x.unsqueeze(1)  # (batch_size, 1, seq_len)
+            x = self.smooth_conv(x)  # (batch_size, 1, seq_len)
+            x = x.squeeze(1)  # (batch_size, seq_len)
+
+            return x
+
+
+    class PositionalEncoding(nn.Module):
+        """
+        Positional encoding for transformer.
+        """
+
+        def __init__(self, d_model, dropout=0.1, max_len=5000):
+            super(PositionalEncoding, self).__init__()
+            self.dropout = nn.Dropout(p=dropout)
+
+            pe = torch.zeros(max_len, d_model)
+            position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+            div_term = torch.exp(torch.arange(0, d_model, 2).float() *
+                                (-np.log(10000.0) / d_model))
+
+            pe[:, 0::2] = torch.sin(position * div_term)
+            pe[:, 1::2] = torch.cos(position * div_term)
+            # Keep pe as (max_len, d_model) - don't transpose
+            pe = pe.unsqueeze(0)  # Shape: (1, max_len, d_model)
+
+            self.register_buffer('pe', pe)
+
+        def forward(self, x):
+            # x shape: (batch_size, seq_len, d_model)
+            seq_len = x.size(1)
+
+            # Handle case where sequence is longer than max_len
+            if seq_len > self.pe.size(1):
+                # Extend positional encoding if needed
+                self._extend_pe(seq_len, x.device)
+
+            # Add positional encoding: (batch_size, seq_len, d_model)
+            x = x + self.pe[:, :seq_len, :]
+            return self.dropout(x)
+
+        def _extend_pe(self, new_max_len, device):
+            """Extend positional encoding if sequence is longer than max_len."""
+            old_max_len = self.pe.size(1)
+            d_model = self.pe.size(2)
+
+            # Create extended positional encoding
+            pe_extended = torch.zeros(new_max_len, d_model, device=device)
+            position = torch.arange(
+                0, new_max_len, dtype=torch.float, device=device).unsqueeze(1)
+            div_term = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float, device=device) *
+                                (-np.log(10000.0) / d_model))
+
+            pe_extended[:, 0::2] = torch.sin(position * div_term)
+            pe_extended[:, 1::2] = torch.cos(position * div_term)
+            # Shape: (1, new_max_len, d_model)
+            pe_extended = pe_extended.unsqueeze(0)
+
+            # Update the registered buffer
+            self.register_buffer('pe', pe_extended)
+
+
+    class LightweightTransformer1D:
+        """
+        Lightweight transformer for faster processing with pre-trained patterns.
+        """
+
+        def __init__(self,
+                    pattern_library_size=5,
+                    d_model=32,
+                    nhead=4,
+                    num_layers=2,
+                    epochs=20):
+            """
+            Initialize lightweight transformer.
+
+            Parameters
+            ----------
+            pattern_library_size : int
+                Number of baseline patterns to learn.
+            d_model : int
+                Model dimension (smaller for speed).
+            nhead : int
+                Number of attention heads.
+            num_layers : int
+                Number of transformer layers.
+            epochs : int
+                Training epochs.
+            """
+            self.pattern_library_size = pattern_library_size
+            self.d_model = d_model
+            self.nhead = nhead
+            self.num_layers = num_layers
+            self.epochs = epochs
+
             self.device = torch.device(
                 'cuda' if torch.cuda.is_available() else 'cpu')
-        else:
-            self.device = torch.device(device)
-
-        # Initialize model
-        self.model = None
-
-    def __call__(self, spectra):
-        """Apply baseline correction to numpy array format (for sklearn pipelines)."""
-        if spectra.ndim == 1:
-            return self._correct_spectrum(spectra)
-        else:
-            return np.array([self._correct_spectrum(spectrum) for spectrum in spectra])
-
-    def apply(self, spectra):
-        """Apply baseline correction to ramanspy SpectralContainer format."""
-        data = spectra.spectral_data
-
-        if data.ndim == 1:
-            corrected_data = self._correct_spectrum(data)
-        else:
-            corrected_data = np.array(
-                [self._correct_spectrum(spectrum) for spectrum in data])
-
-        return rp.SpectralContainer(corrected_data, spectra.spectral_axis)
-
-    def _correct_spectrum(self, spectrum):
-        """
-        Apply transformer-based baseline correction to a single spectrum.
-
-        Parameters
-        ----------
-        spectrum : np.ndarray
-            1D array representing a single spectrum.
-
-        Returns
-        -------
-        np.ndarray
-            Baseline-corrected spectrum.
-        """
-        spectrum = np.asarray(spectrum)
-
-        # Initialize and train model if not already done
-        if self.model is None:
-            self._initialize_model(len(spectrum))
-            self._train_model(spectrum)
-
-        # Predict baseline
-        baseline = self._predict_baseline(spectrum)
-
-        # Return corrected spectrum
-        corrected = spectrum - baseline
-        return corrected
-
-    def _initialize_model(self, spectrum_length):
-        """Initialize the transformer model."""
-        self.spectrum_length = spectrum_length
-        self.model = BaselineTransformer(
-            spectrum_length=spectrum_length,
-            d_model=self.d_model,
-            nhead=self.nhead,
-            num_layers=self.num_layers,
-            dim_feedforward=self.dim_feedforward,
-            dropout=self.dropout,
-            window_size=self.window_size
-        ).to(self.device)
-
-    def _train_model(self, spectrum):
-        """
-        Train the transformer model on the input spectrum.
-
-        This uses self-supervised learning where the model learns to reconstruct
-        the smoothed version of the spectrum (pseudo-baseline).
-        """
-        # Create training data (smoothed version as target baseline)
-        baseline_target = self._create_pseudo_baseline(spectrum)
-
-        # Convert to tensors
-        input_tensor = torch.FloatTensor(spectrum).unsqueeze(0).to(self.device)
-        target_tensor = torch.FloatTensor(
-            baseline_target).unsqueeze(0).to(self.device)
-
-        # Setup optimizer
-        optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=self.learning_rate)
-        criterion = nn.MSELoss()
-
-        # Training loop
-        self.model.train()
-        for epoch in range(self.epochs):
-            optimizer.zero_grad()
-
-            # Forward pass
-            predicted_baseline = self.model(input_tensor)
-            loss = criterion(predicted_baseline, target_tensor)
-
-            # Backward pass
-            loss.backward()
-            optimizer.step()
-
-            # Optional: console_log progress
-            if epoch % 10 == 0:
-                console_log(
-                    f"Epoch {epoch}/{self.epochs}, Loss: {loss.item():.6f}")
-
-    def _predict_baseline(self, spectrum):
-        """Predict baseline using trained model."""
-        self.model.eval()
-        with torch.no_grad():
-            input_tensor = torch.FloatTensor(
-                spectrum).unsqueeze(0).to(self.device)
-            baseline = self.model(input_tensor)
-            return baseline.cpu().numpy().squeeze()
-
-    def _create_pseudo_baseline(self, spectrum):
-        """
-        Create pseudo-baseline for training using multiple smoothing techniques.
-        """
-        # Method 1: Heavy smoothing with large kernel
-        kernel_size = max(21, len(spectrum) // 20)
-        if kernel_size % 2 == 0:
-            kernel_size += 1
-
-        baseline1 = np.convolve(spectrum, np.ones(
-            kernel_size)/kernel_size, mode='same')
-
-        # Method 2: Percentile-based smoothing
-        from scipy import ndimage
-        baseline2 = ndimage.percentile_filter(
-            spectrum, percentile=10, size=kernel_size)
-
-        # Method 3: Morphological opening (removes peaks)
-        from scipy.ndimage import grey_opening
-        baseline3 = grey_opening(spectrum, size=kernel_size//3)
-
-        # Combine baselines
-        baseline = (baseline1 + baseline2 + baseline3) / 3
-
-        return baseline
-
-
-class BaselineTransformer(nn.Module):
-    """
-    Transformer model for baseline prediction.
-    """
-
-    def __init__(self, spectrum_length, d_model=64, nhead=8, num_layers=3,
-                 dim_feedforward=256, dropout=0.1, window_size=128):
-        super(BaselineTransformer, self).__init__()
-
-        self.spectrum_length = spectrum_length
-        self.d_model = d_model
-        self.window_size = window_size
-
-        # Input projection
-        self.input_projection = nn.Linear(1, d_model)
-
-        # Positional encoding with dynamic max_len
-        max_len = max(spectrum_length + 1000, 10000)  # Add buffer for safety
-        self.pos_encoding = PositionalEncoding(
-            d_model, dropout, max_len=max_len)
-
-        # Transformer encoder
-        encoder_layer = TransformerEncoderLayer(
-            d_model=d_model,
-            nhead=nhead,
-            dim_feedforward=dim_feedforward,
-            dropout=dropout,
-            batch_first=True
-        )
-        self.transformer_encoder = TransformerEncoder(
-            encoder_layer, num_layers)
-
-        # Output projection
-        self.output_projection = nn.Linear(d_model, 1)
-
-        # Smoothing layer with adaptive kernel size
-        kernel_size = min(21, spectrum_length // 10)  # Adaptive kernel size
-        if kernel_size % 2 == 0:
-            kernel_size += 1
-        kernel_size = max(3, kernel_size)  # Ensure minimum size
-
-        padding = kernel_size // 2
-        self.smooth_conv = nn.Conv1d(
-            1, 1, kernel_size=kernel_size, padding=padding, bias=False)
-        # Initialize smoothing kernel
-        with torch.no_grad():
-            self.smooth_conv.weight.fill_(1.0/kernel_size)
-
-    def forward(self, x):
-        """
-        Forward pass.
-
-        Parameters
-        ----------
-        x : torch.Tensor
-            Input spectrum of shape (batch_size, spectrum_length)
-
-        Returns
-        -------
-        torch.Tensor
-            Predicted baseline of shape (batch_size, spectrum_length)
-        """
-        # Reshape for transformer: (batch_size, seq_len, 1)
-        x = x.unsqueeze(-1)
-
-        # Project to model dimension
-        x = self.input_projection(x)  # (batch_size, seq_len, d_model)
-
-        # Add positional encoding
-        x = self.pos_encoding(x)
-
-        # Apply transformer
-        x = self.transformer_encoder(x)  # (batch_size, seq_len, d_model)
-
-        # Project back to single dimension
-        x = self.output_projection(x)  # (batch_size, seq_len, 1)
-
-        # Squeeze last dimension
-        x = x.squeeze(-1)  # (batch_size, seq_len)
-
-        # Apply smoothing
-        x = x.unsqueeze(1)  # (batch_size, 1, seq_len)
-        x = self.smooth_conv(x)  # (batch_size, 1, seq_len)
-        x = x.squeeze(1)  # (batch_size, seq_len)
-
-        return x
-
-
-class PositionalEncoding(nn.Module):
-    """
-    Positional encoding for transformer.
-    """
-
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
-        super(PositionalEncoding, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
-
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2).float() *
-                             (-np.log(10000.0) / d_model))
-
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        # Keep pe as (max_len, d_model) - don't transpose
-        pe = pe.unsqueeze(0)  # Shape: (1, max_len, d_model)
-
-        self.register_buffer('pe', pe)
-
-    def forward(self, x):
-        # x shape: (batch_size, seq_len, d_model)
-        seq_len = x.size(1)
-
-        # Handle case where sequence is longer than max_len
-        if seq_len > self.pe.size(1):
-            # Extend positional encoding if needed
-            self._extend_pe(seq_len, x.device)
-
-        # Add positional encoding: (batch_size, seq_len, d_model)
-        x = x + self.pe[:, :seq_len, :]
-        return self.dropout(x)
-
-    def _extend_pe(self, new_max_len, device):
-        """Extend positional encoding if sequence is longer than max_len."""
-        old_max_len = self.pe.size(1)
-        d_model = self.pe.size(2)
-
-        # Create extended positional encoding
-        pe_extended = torch.zeros(new_max_len, d_model, device=device)
-        position = torch.arange(
-            0, new_max_len, dtype=torch.float, device=device).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float, device=device) *
-                             (-np.log(10000.0) / d_model))
-
-        pe_extended[:, 0::2] = torch.sin(position * div_term)
-        pe_extended[:, 1::2] = torch.cos(position * div_term)
-        # Shape: (1, new_max_len, d_model)
-        pe_extended = pe_extended.unsqueeze(0)
-
-        # Update the registered buffer
-        self.register_buffer('pe', pe_extended)
-
-
-class LightweightTransformer1D:
-    """
-    Lightweight transformer for faster processing with pre-trained patterns.
-    """
-
-    def __init__(self,
-                 pattern_library_size=5,
-                 d_model=32,
-                 nhead=4,
-                 num_layers=2,
-                 epochs=20):
-        """
-        Initialize lightweight transformer.
-
-        Parameters
-        ----------
-        pattern_library_size : int
-            Number of baseline patterns to learn.
-        d_model : int
-            Model dimension (smaller for speed).
-        nhead : int
-            Number of attention heads.
-        num_layers : int
-            Number of transformer layers.
-        epochs : int
-            Training epochs.
-        """
-        self.pattern_library_size = pattern_library_size
-        self.d_model = d_model
-        self.nhead = nhead
-        self.num_layers = num_layers
-        self.epochs = epochs
-
-        self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = None
-        self.pattern_library = []
-
-    def __call__(self, spectra):
-        """Apply baseline correction to numpy array format."""
-        if spectra.ndim == 1:
-            return self._correct_spectrum(spectra)
-        else:
-            return np.array([self._correct_spectrum(spectrum) for spectrum in spectra])
-
-    def apply(self, spectra):
-        """Apply baseline correction to ramanspy SpectralContainer format."""
-        data = spectra.spectral_data
-
-        if data.ndim == 1:
-            corrected_data = self._correct_spectrum(data)
-        else:
-            corrected_data = np.array(
-                [self._correct_spectrum(spectrum) for spectrum in data])
-
-        return rp.SpectralContainer(corrected_data, spectra.spectral_axis)
-
-    def _correct_spectrum(self, spectrum):
-        """Apply lightweight transformer baseline correction."""
-        spectrum = np.asarray(spectrum)
-
-        # Quick pattern matching first
-        if len(self.pattern_library) > 0:
-            baseline = self._pattern_match_baseline(spectrum)
-        else:
-            # Fallback to simple smoothing
-            baseline = self._simple_baseline(spectrum)
-
-        return spectrum - baseline
-
-    def _pattern_match_baseline(self, spectrum):
-        """Match spectrum to learned patterns."""
-        # Simple implementation - can be enhanced
-        similarities = []
-        for pattern in self.pattern_library:
-            if len(pattern) == len(spectrum):
-                # Compute similarity (correlation)
-                corr = np.corrcoef(spectrum, pattern)[0, 1]
-                similarities.append(corr if not np.isnan(corr) else 0)
+            self.model = None
+            self.pattern_library = []
+
+        def __call__(self, spectra):
+            """Apply baseline correction to numpy array format."""
+            if spectra.ndim == 1:
+                return self._correct_spectrum(spectra)
             else:
-                similarities.append(0)
+                return np.array([self._correct_spectrum(spectrum) for spectrum in spectra])
 
-        if similarities:
-            best_match_idx = np.argmax(similarities)
-            return self.pattern_library[best_match_idx] * 0.8  # Scale down
-        else:
-            return self._simple_baseline(spectrum)
+        def apply(self, spectra):
+            """Apply baseline correction to ramanspy SpectralContainer format."""
+            data = spectra.spectral_data
 
-    def _simple_baseline(self, spectrum):
-        """Simple baseline estimation."""
-        kernel_size = max(15, len(spectrum) // 30)
-        if kernel_size % 2 == 0:
-            kernel_size += 1
+            if data.ndim == 1:
+                corrected_data = self._correct_spectrum(data)
+            else:
+                corrected_data = np.array(
+                    [self._correct_spectrum(spectrum) for spectrum in data])
 
-        baseline = np.convolve(spectrum, np.ones(
-            kernel_size)/kernel_size, mode='same')
-        return baseline
+            return rp.SpectralContainer(corrected_data, spectra.spectral_axis)
 
-    def learn_patterns(self, spectra_list):
-        """Learn baseline patterns from a list of spectra."""
-        for spectrum in spectra_list[:self.pattern_library_size]:
-            baseline = self._simple_baseline(spectrum)
-            self.pattern_library.append(baseline)
+        def _correct_spectrum(self, spectrum):
+            """Apply lightweight transformer baseline correction."""
+            spectrum = np.asarray(spectrum)
+
+            # Quick pattern matching first
+            if len(self.pattern_library) > 0:
+                baseline = self._pattern_match_baseline(spectrum)
+            else:
+                # Fallback to simple smoothing
+                baseline = self._simple_baseline(spectrum)
+
+            return spectrum - baseline
+
+        def _pattern_match_baseline(self, spectrum):
+            """Match spectrum to learned patterns."""
+            # Simple implementation - can be enhanced
+            similarities = []
+            for pattern in self.pattern_library:
+                if len(pattern) == len(spectrum):
+                    # Compute similarity (correlation)
+                    corr = np.corrcoef(spectrum, pattern)[0, 1]
+                    similarities.append(corr if not np.isnan(corr) else 0)
+                else:
+                    similarities.append(0)
+
+            if similarities:
+                best_match_idx = np.argmax(similarities)
+                return self.pattern_library[best_match_idx] * 0.8  # Scale down
+            else:
+                return self._simple_baseline(spectrum)
+
+        def _simple_baseline(self, spectrum):
+            """Simple baseline estimation."""
+            kernel_size = max(15, len(spectrum) // 30)
+            if kernel_size % 2 == 0:
+                kernel_size += 1
+
+            baseline = np.convolve(spectrum, np.ones(
+                kernel_size)/kernel_size, mode='same')
+            return baseline
+
+        def learn_patterns(self, spectra_list):
+            """Learn baseline patterns from a list of spectra."""
+            for spectrum in spectra_list[:self.pattern_library_size]:
+                baseline = self._simple_baseline(spectrum)
+                self.pattern_library.append(baseline)

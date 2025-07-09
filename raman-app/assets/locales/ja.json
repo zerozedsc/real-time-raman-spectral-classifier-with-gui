@@ -3,7 +3,7 @@
         "font_family": "'Inter', 'Noto Sans JP', 'sans-serif'"
     },
     "MAIN_WINDOW": {
-        "title": "ラマン分光分類器"
+        "title": "リアルタイム・ラマン分類器"
     },
     "HOME_PAGE": {
         "subtitle": "疾患検出プラットフォーム",
@@ -13,7 +13,10 @@
         "no_recent_projects": "最近使用したプロジェクトはありません。",
         "new_project_dialog_title": "新規プロジェクトを作成",
         "new_project_dialog_label": "プロジェクト名:",
-        "open_project_dialog_title": "プロジェクトを開く"
+        "open_project_dialog_title": "プロジェクトを開く",
+        "new_project_desc": "新しい分析プロジェクトを作成します。",
+        "open_project_desc": "既存のプロジェクトファイルを開きます。",
+        "last_modified_label": "最終更新: {date}"
     },
     "DATA_PACKAGE_PAGE": {
         "importer_title": "新規データセットのインポート",
@@ -22,7 +25,7 @@
         "dataset_name_placeholder": "例: 「対照群A」",
         "drag_drop_data_prompt": "ここにデータファイル/フォルダをドラッグ＆ドロップ",
         "browse_data_button": "データを参照...",
-        "drag_drop_meta_prompt": "ここにメタデータファイルをドラッグ＆ドロップ (任意)",
+        "drag_drop_meta_prompt": "ここにメタデータファイルをドラッグ＆ドロップ (JSON形式)",
         "browse_meta_button": "メタデータを参照...",
         "preview_button": "プレビュー",
         "add_to_project_button": "プロジェクトに追加",
@@ -69,10 +72,79 @@
         "confirm": "確認",
         "cancel": "キャンセル"
     },
+    "PREPROCESS": {
+        "page_title": "前処理",
+        "input_datasets_title": "入力データセット",
+        "pipeline_config_title": "パイプライン設定",
+        "output_config_title": "出力設定",
+        "parameters_title": "パラメータ",
+        "parameters_for_step": "{step}のパラメータ",
+        "visualization_title": "可視化",
+        "add_step_button": "ステップを追加",
+        "remove_step_button": "ステップを削除",
+        "clear_pipeline_button": "パイプラインをクリア",
+        "output_name_label": "出力データセット名",
+        "output_name_placeholder": "例: processed_data",
+        "run_button": "前処理を実行",
+        "no_params_label": "このステップにはパラメータがありません",
+        "raw_spectra_title": "生スペクトル",
+        "processed_spectra_title": "前処理済みスペクトル: {name}",
+        "overwrite_confirm_title": "上書き確認",
+        "overwrite_confirm_text": "データセット「{name}」は既に存在します。上書きしますか？",
+        "PARAMS": {
+            "region_start": "開始波数 (cm⁻¹)",
+            "region_end": "終了波数 (cm⁻¹)",
+            "window_length": "ウィンドウ長",
+            "polyorder": "多項式次数",
+            "lam": "平滑化パラメータ (λ)",
+            "p": "非対称パラメータ",
+            "kernel_sizes": "カーネルサイズ",
+            "weights": "重み",
+            "iterations": "反復回数",
+            "alpha": "アルファ値",
+            "beta": "ベータ値",
+            "gamma": "ガンマ値",
+            "threshold": "閾値",
+            "mode": "モード",
+            "sigma": "シグマ値",
+            "order": "オーダー",
+            "num_std": "標準偏差の倍数",
+            "max_iter": "最大反復回数",
+            "tol": "許容誤差",
+            "ratio": "比率",
+            "niter": "反復回数",
+            "method": "手法",
+            "baseline_points": "ベースライン点数",
+            "segment_length": "セグメント長",
+            "diff_order": "差分次数",
+            "penalty": "ペナルティ",
+            "n_components": "成分数",
+            "whittaker_lambda": "ホイッタカー λ",
+            "asym_factor": "非対称因子",
+            "smooth_half_window": "平滑化半ウィンドウ",
+            "smooth_iter": "平滑化反復",
+            "peak_half_window": "ピーク半ウィンドウ",
+            "peak_iter": "ピーク反復",
+            "min_length": "最小長",
+            "max_length": "最大長",
+            "degree": "次数",
+            "quantile": "分位数",
+            "cost": "コスト",
+            "eps": "イプシロン",
+            "half_window": "半ウィンドウ",
+            "num_knots": "ノット数",
+            "spline_degree": "スプライン次数",
+            "diff_matrix": "差分行列",
+            "weights_threshold": "重み閾値"
+        }
+    },
     "TABS": {
         "data": "データ",
         "preprocessing": "前処理",
-        "machine_learning": "機械学習"
+        "machine_learning": "機械学習",
+        "analysis": "分析",
+        "visualization": "可視化",
+        "real_time": "リアルタイム"
     },
     "NOTIFICATIONS": {
         "project_loaded_success": "プロジェクト「{name}」が正常に読み込まれました。",
@@ -90,6 +162,11 @@
         "meta_save_success": "メタデータが正常にファイルに保存されました。",
         "meta_save_error": "メタデータの保存に失敗しました: {error}",
         "dataset_remove_success": "データセット「{name}」を削除しました。",
-        "dataset_remove_error": "データセット「{name}」の削除に失敗しました。"
+        "dataset_remove_error": "データセット「{name}」の削除に失敗しました。",
+        "no_input_data_selected": "入力データセットが選択されていません。",
+        "output_name_missing": "出力データセット名を入力してください。",
+        "pipeline_is_empty": "パイプラインが空です。処理ステップを追加してください。",
+        "preprocess_success": "前処理が正常に完了しました。データセット「{name}」を作成しました。",
+        "preprocess_error": "前処理中にエラーが発生しました: {error}"
     }
 }

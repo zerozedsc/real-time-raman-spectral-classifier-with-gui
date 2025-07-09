@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt
 
 from components.app_tabs import AppTabBar
 from pages.data_package_page import DataPackagePage
+from pages.preprocess_page import PreprocessPage  # Import the new page
 from utils import LOCALIZE
 
 class WorkspacePage(QWidget):
@@ -25,11 +26,13 @@ class WorkspacePage(QWidget):
         self.page_stack = QStackedWidget()
         self.page_stack.setObjectName("workspaceStack")
 
+        # --- Instantiate all pages ---
         self.data_page = DataPackagePage()
-        self.preprocessing_page = QLabel(LOCALIZE("TABS.preprocessing") + " Page Content", alignment=Qt.AlignmentFlag.AlignCenter)
+        self.preprocessing_page = PreprocessPage() # Replace QLabel with the new page
         self.ml_page = QLabel(LOCALIZE("TABS.machine_learning") + " Page Content", alignment=Qt.AlignmentFlag.AlignCenter)
         self.realtime_page = QLabel(LOCALIZE("TABS.real_time") + " Page Content", alignment=Qt.AlignmentFlag.AlignCenter)
         
+        # --- Add pages to the stack ---
         self.page_stack.addWidget(self.data_page)
         self.page_stack.addWidget(self.preprocessing_page)
         self.page_stack.addWidget(self.ml_page)
@@ -46,8 +49,9 @@ class WorkspacePage(QWidget):
         """
         print(f"Workspace is loading project: {project_path}")
         
-        # --- CRUCIAL: Trigger the data page to update its UI ---
+        # --- CRUCIAL: Trigger pages to update their UI ---
         self.data_page.load_project_data()
+        self.preprocessing_page.load_project_data() # Add this line
         
         # Ensure the view is on the first tab when a project is loaded
         self.page_stack.setCurrentIndex(0)

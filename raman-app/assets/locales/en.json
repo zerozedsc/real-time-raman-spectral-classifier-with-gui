@@ -3,7 +3,7 @@
         "font_family": "'Inter', 'sans-serif'"
     },
     "MAIN_WINDOW": {
-        "title": "Raman Spectral Classifier"
+        "title": "Real-time Raman Classifier"
     },
     "HOME_PAGE": {
         "subtitle": "Disease Detection Platform",
@@ -13,7 +13,10 @@
         "no_recent_projects": "No recent projects found.",
         "new_project_dialog_title": "Create New Project",
         "new_project_dialog_label": "Project Name:",
-        "open_project_dialog_title": "Open Project"
+        "open_project_dialog_title": "Open Project",
+        "new_project_desc": "Create a new analysis project.",
+        "open_project_desc": "Open an existing project file.",
+        "last_modified_label": "Last Modified: {date}"
     },
     "DATA_PACKAGE_PAGE": {
         "importer_title": "Import New Dataset",
@@ -22,7 +25,7 @@
         "dataset_name_placeholder": "e.g., 'Control Group A'",
         "drag_drop_data_prompt": "Drag & Drop Data File/Folder Here",
         "browse_data_button": "Browse Data...",
-        "drag_drop_meta_prompt": "Drag & Drop Metadata File Here (Optional)",
+        "drag_drop_meta_prompt": "Drag & Drop Metadata File Here (JSON)",
         "browse_meta_button": "Browse Metadata...",
         "preview_button": "Preview",
         "add_to_project_button": "Add to Project",
@@ -72,7 +75,10 @@
     "TABS": {
         "data": "Data",
         "preprocessing": "Preprocessing",
-        "machine_learning": "Machine Learning"
+        "machine_learning": "Machine Learning",
+        "analysis": "Analysis",
+        "visualization": "Visualization",
+        "real_time": "Real-Time"
     },
     "NOTIFICATIONS": {
         "project_loaded_success": "Project '{name}' loaded successfully.",

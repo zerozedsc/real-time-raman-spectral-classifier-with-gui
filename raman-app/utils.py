@@ -3,7 +3,9 @@ import json
 import datetime
 from typing import List, Dict, Any
 import pandas as pd
-from PySide6.QtGui import QFontDatabase
+from PySide6.QtGui import QFontDatabase, QIcon, QPixmap, QPainter 
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtCore import QSize, Qt
 
 # This import assumes your configs.py is in a 'configs' directory
 from configs.configs import *
@@ -184,9 +186,43 @@ class ProjectManager:
 
 
 CONFIGS = load_config()
-LOCALIZEMANAGER = LocalizationManager()
+LOCALIZEMANAGER = LocalizationManager(default_lang="ja")
 PROJECT_MANAGER = ProjectManager()
 
 # --- Shorthand Function ---
 def LOCALIZE(key, **kwargs):
     return LOCALIZEMANAGER.get(key, **kwargs)
+
+
+ICON_PATHS = {
+    "new_project": os.path.join(os.path.dirname(__file__), "assets/icons/new-project.svg"),
+    "open_project": os.path.join(os.path.dirname(__file__), "assets/icons/load-project.svg"),
+    "recent_projects": os.path.join(os.path.dirname(__file__), "assets/icons/recent-project.svg"),
+}
+
+# [100725] --- Utility Functions ---
+def load_svg_icon(path: str,  color: Qt.GlobalColor = None, size: QSize = QSize(48, 48)) -> QIcon:
+    """
+    Loads an SVG file from disk and returns a QIcon of the given size.
+    Optionally applies a color overlay to the SVG.
+    """
+    renderer = QSvgRenderer(path)
+    pixmap = QPixmap(size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter)
+    painter.end()
+
+    if color is not None:
+        # Apply color overlay
+        mask = pixmap.createMaskFromColor(Qt.GlobalColor.transparent)
+        colored_pixmap = QPixmap(size)
+        colored_pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(colored_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_Source)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(colored_pixmap.rect(), color)
+        painter.end()
+        return QIcon(colored_pixmap)
+    return QIcon(pixmap)
