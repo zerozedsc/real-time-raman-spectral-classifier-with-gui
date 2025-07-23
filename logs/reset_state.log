@@ -155,3 +155,13 @@
 2025-07-24 00:39:45,362 - WorkspacePage - INFO - Auto-refreshed data for page index 1
 2025-07-24 00:39:49,361 - WorkspacePage - INFO - Auto-refreshed data for page index 2
 2025-07-24 00:41:08,486 - WorkspacePage - INFO - Auto-refreshed data for page index 1
+2025-07-24 01:14:31,215 - WorkspacePage - INFO - Successfully reset workspace state
+2025-07-24 01:14:31,218 - WorkspacePage - INFO - Refreshed home page data
+2025-07-24 01:14:31,219 - WorkspacePage - INFO - Re-established home page signal connections
+2025-07-24 01:14:31,220 - WorkspacePage - INFO - Returned to home page and reset workspace state
+2025-07-24 01:14:34,131 - WorkspacePage - INFO - Auto-refreshed data for page index 1
+2025-07-24 01:14:34,131 - WorkspacePage - INFO - Successfully loaded project: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\test.json
+2025-07-24 01:14:35,778 - WorkspacePage - INFO - Auto-refreshed data for page index 2
+2025-07-24 01:14:39,703 - WorkspacePage - INFO - Auto-refreshed data for page index 1
+2025-07-24 01:14:43,331 - WorkspacePage - INFO - Auto-refreshed data for page index 2
+2025-07-24 01:14:50,793 - WorkspacePage - INFO - Auto-refreshed data for page index 1
