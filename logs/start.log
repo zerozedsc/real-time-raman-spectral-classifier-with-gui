@@ -1,0 +1,96 @@
+2025-07-23 22:18:00,607 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-23 22:18:00,612 - PreprocessingThread - INFO - Merged data shape: (858, 20)
+2025-07-23 22:18:00,613 - PreprocessingThread - INFO - Wavenumbers shape: (858,), Intensities shape: (20, 858)
+2025-07-23 22:18:00,622 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-23 22:18:00,624 - PreprocessingThread - INFO - Starting step 1/5: Cropper with params: {'region': (1100.0, 1700.0)}
+2025-07-23 22:18:00,625 - PreprocessingThread - INFO - Step 1/5 (Cropper) completed successfully. Data shape: (20, 858) -> (20, 735)
+2025-07-23 22:18:00,629 - PreprocessingThread - INFO - Starting step 2/5: WhitakerHayes with params: {'lam': '100000.0', 'p': 0.001}
+2025-07-23 22:18:00,634 - PreprocessingThread - ERROR - Step 2/5 (WhitakerHayes) failed: WhitakerHayes.__init__() got an unexpected keyword argument 'lam'. Continuing with remaining steps.
+2025-07-23 22:18:00,637 - PreprocessingThread - INFO - Starting step 3/5: IModPoly with params: {'poly_order': 5, 'rep': 100, 'grad': 0.001}
+2025-07-23 22:18:00,639 - PreprocessingThread - ERROR - Step 3/5 (IModPoly) failed: IModPoly.__init__() got an unexpected keyword argument 'rep'. Continuing with remaining steps.
+2025-07-23 22:18:00,640 - PreprocessingThread - INFO - Starting step 4/5: SavGol with params: {'window_length': 7, 'polyorder': 3, 'deriv': 0, 'mode': 'interp'}
+2025-07-23 22:18:00,669 - PreprocessingThread - INFO - Step 4/5 (SavGol) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-23 22:18:00,669 - PreprocessingThread - INFO - Starting step 5/5: SNV with params: {}
+2025-07-23 22:18:00,671 - PreprocessingThread - INFO - Step 5/5 (SNV) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-23 22:18:00,672 - PreprocessingThread - INFO - Output DataFrame created with shape: (735, 20)
+2025-07-23 22:18:00,672 - PreprocessingThread - INFO - Processing completed. Success rate: 60.0%
+2025-07-23 22:44:03,948 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-23 22:44:03,953 - PreprocessingThread - INFO - Merged data shape: (858, 20)
+2025-07-23 22:44:03,955 - PreprocessingThread - INFO - Wavenumbers shape: (858,), Intensities shape: (20, 858)
+2025-07-23 22:44:03,956 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-23 22:44:03,966 - PreprocessingThread - INFO - Starting step 1/5: Cropper with params: {'region': (1100.0, 1700.0)}
+2025-07-23 22:44:03,969 - PreprocessingThread - INFO - Step 1/5 (Cropper) completed successfully. Data shape: (20, 858) -> (20, 735)
+2025-07-23 22:44:03,969 - PreprocessingThread - INFO - Starting step 2/5: WhitakerHayes with params: {'kernel_size': 7, 'lam': 100000.0, 'p': 0.001}
+2025-07-23 22:44:03,970 - PreprocessingThread - ERROR - Step 2/5 (WhitakerHayes) failed: WhitakerHayes.__init__() got an unexpected keyword argument 'lam'. Continuing with remaining steps.
+2025-07-23 22:44:03,970 - PreprocessingThread - INFO - Starting step 3/5: SavGol with params: {'window_length': 7, 'polyorder': 3}
+2025-07-23 22:44:03,974 - PreprocessingThread - INFO - Step 3/5 (SavGol) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-23 22:44:03,974 - PreprocessingThread - INFO - Starting step 4/5: IModPoly with params: {'poly_order': 3, 'tol': 0.001, 'max_iter': 200}
+2025-07-23 22:44:03,996 - PreprocessingThread - INFO - Step 4/5 (IModPoly) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-23 22:44:03,996 - PreprocessingThread - INFO - Starting step 5/5: SNV with params: {}
+2025-07-23 22:44:03,998 - PreprocessingThread - INFO - Step 5/5 (SNV) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-23 22:44:03,999 - PreprocessingThread - INFO - Output DataFrame created with shape: (735, 20)
+2025-07-23 22:44:04,000 - PreprocessingThread - INFO - Processing completed. Success rate: 80.0%
+2025-07-23 22:55:05,704 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-23 22:55:05,704 - PreprocessingThread - INFO - Merged data shape: (858, 20)
+2025-07-23 22:55:05,708 - PreprocessingThread - INFO - Wavenumbers shape: (858,), Intensities shape: (20, 858)
+2025-07-23 22:55:05,708 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-23 22:55:05,709 - PreprocessingThread - INFO - Output DataFrame created with shape: (858, 20)
+2025-07-23 22:55:05,720 - PreprocessingThread - INFO - Processing completed. Success rate: 0.0%
+2025-07-24 00:00:36,467 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-24 00:00:36,468 - PreprocessingThread - INFO - Merged data shape: (735, 20)
+2025-07-24 00:00:36,472 - PreprocessingThread - INFO - Wavenumbers shape: (735,), Intensities shape: (20, 735)
+2025-07-24 00:00:36,473 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-24 00:00:36,474 - PreprocessingThread - INFO - Starting step 5/5: Vector with params: {'pixelwise': 'False'}
+2025-07-24 00:00:36,484 - PreprocessingThread - INFO - Step 5/5 (Vector) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:00:36,485 - PreprocessingThread - INFO - Output DataFrame created with shape: (735, 20)
+2025-07-24 00:00:36,504 - PreprocessingThread - INFO - Processing completed. Success rate: 20.0%
+2025-07-24 00:01:20,200 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-24 00:01:20,201 - PreprocessingThread - INFO - Merged data shape: (735, 20)
+2025-07-24 00:01:20,201 - PreprocessingThread - INFO - Wavenumbers shape: (735,), Intensities shape: (20, 735)
+2025-07-24 00:01:20,201 - PreprocessingThread - INFO - Processing 4 pipeline steps
+2025-07-24 00:01:20,202 - PreprocessingThread - INFO - Output DataFrame created with shape: (735, 20)
+2025-07-24 00:01:20,202 - PreprocessingThread - INFO - Processing completed. Success rate: 0.0%
+2025-07-24 00:27:45,808 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-24 00:27:45,811 - PreprocessingThread - INFO - Merged data shape: (858, 20)
+2025-07-24 00:27:45,812 - PreprocessingThread - INFO - Wavenumbers shape: (858,), Intensities shape: (20, 858)
+2025-07-24 00:27:45,812 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-24 00:27:45,813 - PreprocessingThread - INFO - Starting step 1/5: Cropper with params: {'region': (1100.0, 1700.0)}
+2025-07-24 00:27:45,813 - PreprocessingThread - INFO - Step 1/5 (Cropper) completed successfully. Data shape: (20, 858) -> (20, 735)
+2025-07-24 00:27:45,814 - PreprocessingThread - INFO - Starting step 2/5: Gaussian with params: {'sigma': 1.2000000000000002, 'order': 0}
+2025-07-24 00:27:45,817 - PreprocessingThread - INFO - Step 2/5 (Gaussian) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:27:45,827 - PreprocessingThread - INFO - Starting step 3/5: WhitakerHayes with params: {'kernel_size': 5, 'threshold': 7.0}
+2025-07-24 00:27:45,838 - PreprocessingThread - INFO - Step 3/5 (WhitakerHayes) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:27:45,839 - PreprocessingThread - INFO - Starting step 4/5: CornerCutting with params: {'max_iter': 100}
+2025-07-24 00:27:52,580 - PreprocessingThread - INFO - Step 4/5 (CornerCutting) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:27:52,580 - PreprocessingThread - INFO - Starting step 5/5: MinMax with params: {}
+2025-07-24 00:27:52,581 - PreprocessingThread - INFO - Step 5/5 (MinMax) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:27:52,582 - PreprocessingThread - INFO - Output DataFrame created with shape: (735, 20)
+2025-07-24 00:27:52,584 - PreprocessingThread - INFO - Processing completed. Success rate: 100.0%
+2025-07-24 00:29:22,705 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-24 00:29:22,707 - PreprocessingThread - INFO - Merged data shape: (858, 20)
+2025-07-24 00:29:22,707 - PreprocessingThread - INFO - Wavenumbers shape: (858,), Intensities shape: (20, 858)
+2025-07-24 00:29:22,707 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-24 00:29:22,708 - PreprocessingThread - INFO - Output DataFrame created with shape: (858, 20)
+2025-07-24 00:29:22,708 - PreprocessingThread - INFO - Processing completed. Success rate: 0.0%
+2025-07-24 00:34:33,656 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-24 00:34:33,659 - PreprocessingThread - INFO - Merged data shape: (858, 20)
+2025-07-24 00:34:33,659 - PreprocessingThread - INFO - Wavenumbers shape: (858,), Intensities shape: (20, 858)
+2025-07-24 00:34:33,660 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-24 00:34:33,663 - PreprocessingThread - INFO - Output DataFrame created with shape: (858, 20)
+2025-07-24 00:34:33,664 - PreprocessingThread - INFO - Processing completed. Success rate: 0.0%
+2025-07-24 00:40:03,471 - PreprocessingThread - INFO - Starting preprocessing with 1 datasets
+2025-07-24 00:40:03,473 - PreprocessingThread - INFO - Merged data shape: (858, 20)
+2025-07-24 00:40:03,474 - PreprocessingThread - INFO - Wavenumbers shape: (858,), Intensities shape: (20, 858)
+2025-07-24 00:40:03,479 - PreprocessingThread - INFO - Processing 5 pipeline steps
+2025-07-24 00:40:03,481 - PreprocessingThread - INFO - Starting step 1/5: Cropper with params: {'region': [1100.0, 1700.0]}
+2025-07-24 00:40:03,483 - PreprocessingThread - INFO - Step 1/5 (Cropper) completed successfully. Data shape: (20, 858) -> (20, 735)
+2025-07-24 00:40:03,483 - PreprocessingThread - INFO - Starting step 2/5: Gaussian with params: {'sigma': 1.2000000000000002, 'order': 0}
+2025-07-24 00:40:03,484 - PreprocessingThread - INFO - Step 2/5 (Gaussian) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:40:03,485 - PreprocessingThread - INFO - Starting step 3/5: WhitakerHayes with params: {'kernel_size': 5, 'threshold': 7.0}
+2025-07-24 00:40:03,491 - PreprocessingThread - INFO - Step 3/5 (WhitakerHayes) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:40:03,491 - PreprocessingThread - INFO - Starting step 4/5: CornerCutting with params: {'max_iter': 100}
+2025-07-24 00:40:03,751 - PreprocessingThread - INFO - Step 4/5 (CornerCutting) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:40:03,751 - PreprocessingThread - INFO - Starting step 5/5: MinMax with params: {}
+2025-07-24 00:40:03,752 - PreprocessingThread - INFO - Step 5/5 (MinMax) completed successfully. Data shape: (20, 735) -> (20, 735)
+2025-07-24 00:40:03,754 - PreprocessingThread - INFO - Output DataFrame created with shape: (735, 20)
+2025-07-24 00:40:03,754 - PreprocessingThread - INFO - Processing completed. Success rate: 100.0%

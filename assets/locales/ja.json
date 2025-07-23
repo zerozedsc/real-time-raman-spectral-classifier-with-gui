@@ -1,0 +1,359 @@
+{
+    "APP_CONFIG": {
+        "font_family": "'Inter', 'Noto Sans JP', 'sans-serif'"
+    },
+    "MAIN_WINDOW": {
+        "title": "リアルタイム・ラマン分類器"
+    },
+    "HOME_PAGE": {
+        "subtitle": "疾患検出プラットフォーム",
+        "new_project_button": "新規プロジェクト",
+        "open_project_button": "プロジェクトを開く",
+        "recent_projects_title": "最近使用したプロジェクト",
+        "no_recent_projects": "最近使用したプロジェクトはありません。",
+        "new_project_dialog_title": "新規プロジェクトを作成",
+        "new_project_dialog_label": "プロジェクト名:",
+        "open_project_dialog_title": "プロジェクトを開く",
+        "new_project_desc": "新しい分析プロジェクトを作成します。",
+        "open_project_desc": "既存のプロジェクトファイルを開きます。",
+        "last_modified_label": "最終更新: {date}"
+    },
+    "DATA_PACKAGE_PAGE": {
+        "importer_title": "新規データセットのインポート",
+        "loaded_datasets_title": "プロジェクトデータセット",
+        "dataset_name_label": "データセット名",
+        "dataset_name_placeholder": "例: 「対照群A」",
+        "drag_drop_data_prompt": "ここにデータファイル/フォルダをドラッグ＆ドロップ",
+        "browse_data_button": "データを参照...",
+        "drag_drop_meta_prompt": "ここにメタデータファイルをドラッグ＆ドロップ (JSON形式)",
+        "browse_meta_button": "メタデータを参照...",
+        "preview_button": "プレビュー",
+        "add_to_project_button": "プロジェクトに追加",
+        "preview_title": "データプレビュー",
+        "no_data_preview": "リストからデータセットを選択するか、新しいデータをインポートしてプレビューを表示します。",
+        "metadata_editor_title": "メタデータ",
+        "save_meta_button": "メタデータをファイルに保存...",
+        "no_datasets_loaded": "まだデータセットが読み込まれていません。",
+        "info_num_spectra": "スペクトル数",
+        "info_wavenumber_range": "波数範囲",
+        "info_data_points": "データ点数",
+        "browse_data_dialog_title": "データファイルまたはフォルダを選択",
+        "browse_meta_dialog_title": "メタデータJSONを選択",
+        "save_meta_dialog_title": "名前を付けてメタデータを保存",
+        "remove_dataset_confirm_title": "削除の確認",
+        "remove_dataset_confirm_text": "データセット「{name}」を完全に削除してもよろしいですか？\nこの操作は元に戻せません。",
+        "metadata_tab_sample": "サンプル",
+        "metadata_tab_instrument": "装置",
+        "metadata_tab_measurement": "測定",
+        "metadata_tab_notes": "ノート",
+        "metadata_field_patient_id": "患者ID (匿名化)",
+        "metadata_field_sample_id": "サンプルID",
+        "metadata_field_sample_source": "サンプル由来 (例: 組織, 血液)",
+        "metadata_field_sample_prep": "サンプル調製",
+        "metadata_field_instrument_model": "装置モデル",
+        "metadata_field_laser_wavelength": "レーザー波長 (nm)",
+        "metadata_field_laser_power": "サンプル上のレーザー出力 (%)",
+        "metadata_field_objective": "対物レンズ倍率",
+        "metadata_field_grating": "回折格子 (溝数/mm)",
+        "metadata_field_integration_time": "積算時間 (s)",
+        "metadata_field_accumulations": "積算回数",
+        "metadata_field_map_area": "マップ領域 (μm x μm)",
+        "metadata_field_step_size": "ステップサイズ (μm)",
+        "metadata_field_calibration": "校正詳細",
+        "metadata_field_operator": "測定者名",
+        "metadata_field_acquisition_date": "測定日",
+        "metadata_field_notes": "補足事項"
+    },
+    "COMMON": {
+        "not_available": "N/A",
+        "remove": "削除",
+        "clear_all": "すべてクリア",
+        "confirm": "確認",
+        "ok": "OK",
+        "warning": "警告",
+        "info": "情報",
+        "success": "成功",
+        "cancel": "キャンセル",
+        "close": "閉じる",
+        "unknown": "不明"
+    },
+    "PREPROCESS": {
+        "raw_spectra_title": "生スペクトルプレビュー",
+        "output_name_required": "出力データセット名を入力してください",
+        "pipeline_empty": "パイプラインに少なくとも1つのステップを追加してください",
+        "start_error": "前処理開始時にエラーが発生しました：{error}",
+        "processing_success": "「{name}」としてデータを正常に処理しました",
+        "no_datasets_available": "利用可能なデータセットがありません",
+        "no_data_warning": "データが読み込まれていません",
+        "datasets_loaded": "{count}個のデータセットが読み込まれました",
+        "preprocessed_data_tooltip": "前処理済みデータ（{steps}ステップ）",
+        "raw_data_tooltip": "生データ",
+        "tuple_format_hint": "例: 1000, 2000",
+        "list_int_format_hint": "例: 1, 2, 3",
+        "list_float_format_hint": "例: 1.0, 2.5, 3.7",
+        "select_category_method": "カテゴリと手法を選択してください",
+        "step_added": "ステップ '{step}' が追加されました",
+        "step_removed": "ステップが削除されました",
+        "pipeline_cleared": "パイプラインがクリアされました",
+        "no_datasets_selected": "データセットが選択されていません",
+        "no_pipeline_steps": "パイプラインステップが設定されていません",
+        "no_output_name": "出力データセット名が入力されていません",
+        "no_valid_datasets": "有効なデータセットがありません",
+        "processing_started": "前処理を開始しました",
+        "processing_cancelled": "前処理がキャンセルされました",
+        "save_error": "データの保存に失敗しました",
+        "result_error": "結果処理中にエラーが発生しました：{error}",
+        "overwrite_title": "上書き確認",
+        "overwrite_message": "データセット '{name}' は既に存在します。上書きしますか？",
+        "processing_success_with_failures": "'{name}' として前処理が完了しました（成功: {successful}/{total}、失敗: {failed}）",
+        "processing_success_complete": "'{name}' として{steps}ステップの前処理が正常に完了しました",
+        "history_info": "前処理日時: {date}\n合計ステップ: {total_steps}個\n成功: {successful_steps}個\n失敗: {failed_steps}個",
+        "toggle_existing_step_tooltip": "既存ステップを再実行するかどうかを選択",
+        "existing_step_indicator": "既存の前処理ステップ",
+        "new_step_indicator": "新しい前処理ステップ",
+        "existing_step_enabled_tooltip": "既存ステップ - 再実行が有効",
+        "existing_step_disabled_tooltip": "既存ステップ - 再実行無効（デフォルト）",
+        "new_step_tooltip": "新しいステップ - 常に実行されます",
+        "no_enabled_steps": "有効化された前処理ステップがありません",
+        "existing_step_tooltip": "既存の前処理ステップ - チェックボックスで再実行を制御できます",
+        "input_datasets_title": "入力データセット",
+        "pipeline_building_title": "パイプライン構築",
+        "output_config_title": "出力設定",
+        "parameters_title": "パラメータ",
+        "visualization_title": "可視化",
+        "category": "カテゴリ",
+        "method": "手法",
+        "refresh_datasets": "データセットを更新",
+        "add_step_button": "ステップを追加",
+        "remove_step": "選択したステップを削除",
+        "clear_pipeline": "パイプラインをクリア",
+        "toggle_all_existing": "既存ステップを一括切替",
+        "enable_all_existing": "既存ステップを全て有効化",
+        "disable_all_existing": "既存ステップを全て無効化",
+        "output_name_label": "出力データセット名",
+        "output_name_placeholder": "処理済みデータの名前を入力",
+        "run_button": "前処理を実行",
+        "cancel_button": "キャンセル",
+        "processing": "処理中",
+        "refresh_datasets_tooltip": "プロジェクトデータセットを再読み込みします",
+        "add_step_tooltip": "選択したカテゴリと手法でステップをパイプラインに追加",
+        "remove_step_tooltip": "選択したステップをパイプラインから削除",
+        "clear_pipeline_tooltip": "パイプライン内の全てのステップを削除",
+        "toggle_existing_tooltip": "既存の前処理ステップの有効/無効を一括切替",
+        "run_button_tooltip": "構築したパイプラインで前処理を実行",
+        "cancel_button_tooltip": "現在の前処理を中止",
+        "set_step_params": "ステップパラメータを設定",
+        "no_parameters": "このステップにはパラメータがありません",
+        "parameters_for_step": "{step}のパラメータ",
+        "preprocessing_history_title": "前処理履歴",
+        "spectra_preview_title": "スペクトルプレビュー",
+        "processed_spectra_title": "{name} - 処理済みスペクトル",
+        "CONFIRM_DIALOG": {
+            "summary_text": "入力データセット: {datasets}個 | パイプラインステップ: {steps}個 | 推定処理時間: 約{time}秒 | 出力データセット名: {output_name}",
+            "benefits_tab": "期待効果",
+            "selected_datasets_header": "選択された入力データセット:",
+            "datasets_info": "合計 {count} 個のデータセットが処理されます",
+            "pipeline_steps_header": "パイプラインステップ（順番に実行されます）:",
+            "expected_benefits_header": "期待される効果:",
+            "quality_metrics_header": "予想される品質向上:",
+            "output_config_header": "出力設定:",
+            "purpose": "目的",
+            "default_params": "デフォルト",
+            "output_char_baseline": "ベースライン補正済みスペクトル",
+            "output_char_noise": "ノイズ除去済み",
+            "output_char_normalized": "正規化済み強度値",
+            "output_char_ml_ready": "機械学習に最適化されたフォーマット",
+            "storage_location": "保存場所: プロジェクト内データセット",
+            "title": "前処理パイプラインの確認",
+            "header": "前処理設定を開始前にご確認ください：",
+            "selected_datasets": "選択された入力データセット：",
+            "pipeline_steps": "パイプラインステップ（順番に実行されます）：",
+            "output_name": "出力データセット名：",
+            "input_tab": "入力データ",
+            "pipeline_tab": "パイプライン",
+            "output_tab": "出力",
+            "step": "ステップ",
+            "method": "手法",
+            "parameters": "パラメータ",
+            "no_params": "デフォルトパラメータ",
+            "start_processing": "前処理を開始"
+        },
+        "FAILED_STEPS_DIALOG": {
+            "title": "前処理エラー詳細",
+            "header": "前処理中にエラーが発生しました",
+            "summary": "失敗したステップ: {failed}個、成功したステップ: {successful}個、合計: {total}個",
+            "failed_steps_title": "失敗したステップ",
+            "successful_steps_title": "成功したステップ",
+            "step": "ステップ",
+            "category": "カテゴリ",
+            "error_type": "エラータイプ",
+            "error_message": "エラーメッセージ"
+        },
+        "PURPOSE": {
+            "SPIKE_REMOVAL": "コズミックレイスパイクの除去",
+            "WAVENUMBER_CALIBRATION": "波数範囲の調整・切り出し",
+            "INTENSITY_CALIBRATION": "強度値の校正",
+            "SMOOTHING": "ノイズの除去・平滑化",
+            "NORMALIZATION": "強度値の正規化",
+            "COSMIC_RAY_REMOVAL": "コズミックレイスパイクの除去",
+            "MISCELLANEOUS": "波数範囲の調整・その他",
+            "DENOISING": "ノイズの除去・平滑化",
+            "BASELINE_CORRECTION": "ベースライン信号の除去",
+            "NORMALISATION": "強度値の正規化"
+        },
+        "BENEFITS": {
+            "SPIKE_REMOVAL": {
+                "title": "🔧 スパイク除去",
+                "benefits": [
+                    "コズミックレイによる異常ピークを除去",
+                    "測定アーティファクトの削減",
+                    "データの信頼性向上"
+                ]
+            },
+            "WAVENUMBER_CALIBRATION": {
+                "title": "📏 波数キャリブレーション",
+                "benefits": [
+                    "関心領域のスペクトル範囲に限定",
+                    "データサイズの最適化",
+                    "処理速度の向上"
+                ]
+            },
+            "BASELINE_CORRECTION": {
+                "title": "📈 ベースライン補正",
+                "benefits": [
+                    "蛍光バックグラウンドの除去",
+                    "真のラマンピークの強調",
+                    "定量分析精度の向上"
+                ]
+            },
+            "SMOOTHING": {
+                "title": "🔄 平滑化・ノイズ除去",
+                "benefits": [
+                    "測定ノイズの低減",
+                    "S/N比の改善",
+                    "ピーク形状の最適化"
+                ]
+            },
+            "NORMALIZATION": {
+                "title": "⚖️ 正規化",
+                "benefits": [
+                    "サンプル間の強度差を補正",
+                    "機械学習アルゴリズムに最適化",
+                    "分類精度の向上"
+                ]
+            },
+            "COSMIC_RAY_REMOVAL": {
+                "title": "🔧 コズミックレイ除去",
+                "benefits": [
+                    "コズミックレイによる異常ピークを除去",
+                    "測定アーティファクトの削減",
+                    "データの信頼性向上"
+                ]
+            },
+            "MISCELLANEOUS": {
+                "title": "📏 その他前処理",
+                "benefits": [
+                    "関心領域のスペクトル範囲に限定",
+                    "バックグラウンド信号の除去",
+                    "データサイズの最適化",
+                    "処理速度の向上"
+                ]
+            },
+            "DENOISING": {
+                "title": "🔄 ノイズ除去・平滑化",
+                "benefits": [
+                    "測定ノイズの低減",
+                    "S/N比の改善",
+                    "ピーク形状の最適化",
+                    "スペクトル品質の向上"
+                ]
+            },
+            "NORMALISATION": {
+                "title": "⚖️ 正規化",
+                "benefits": [
+                    "サンプル間の強度差を補正",
+                    "機械学習アルゴリズムに最適化",
+                    "分類精度の向上",
+                    "データの統計的一貫性確保"
+                ]
+            },
+            "overall_title": "全体的な効果",
+            "overall": [
+                "🎯 分類・解析精度の大幅向上",
+                "🚀 機械学習モデルの性能最適化",
+                "📊 再現性のある結果の獲得",
+                "⚡ 高速で信頼性の高いデータ処理"
+            ]
+        },
+        "METRICS": {
+            "SPIKE_REMOVAL": "アーティファクト除去: 95%以上",
+            "SMOOTHING": "ノイズ低減: S/N比 2-5倍向上",
+            "NORMALIZATION": "サンプル間変動: 80%削減",
+            "COSMIC_RAY_REMOVAL": "アーティファクト除去: 95%以上",
+            "DENOISING": "ノイズ低減: S/N比 2-5倍向上",
+            "BASELINE_CORRECTION": "ベースライン平坦化: 90%以上",
+            "NORMALISATION": "サンプル間変動: 80%削減",
+            "total_steps": "処理ステップ数: {steps}個",
+            "data_integrity": "データ整合性: 100%保持",
+            "reproducibility": "処理の再現性: 完全"
+        },
+        "STATUS": {
+            "building_pipeline": "パイプラインを構築中...",
+            "creating_step": "ステップ作成中：{step}",
+            "executing_pipeline": "パイプラインを実行中...",
+            "processing_results": "結果を処理中...",
+            "preparing_data": "データを準備中...",
+            "merging_data": "データを結合中...",
+            "processing_step": "ステップを処理中: {step} ({number}/{total})",
+            "skipping_existing_step": "既存ステップをスキップ中: {step} ({number}/{total})",
+            "finalizing_results": "結果を最終化中...",
+            "completed": "完了",
+            "error": "エラー",
+            "step_completed": "ステップ完了: {step} ({number}/{total})"
+        },
+        "CATEGORY": {
+            "SPIKE_REMOVAL": "スパイク除去",
+            "WAVENUMBER_CALIBRATION": "波数キャリブレーション",
+            "INTENSITY_CALIBRATION": "強度キャリブレーション",
+            "SMOOTHING": "平滑化",
+            "NORMALIZATION": "正規化",
+            "COSMIC_RAY_REMOVAL": "コズミックレイ除去",
+            "MISCELLANEOUS": "その他前処理",
+            "DENOISING": "ノイズ除去",
+            "BASELINE_CORRECTION": "ベースライン補正",
+            "NORMALISATION": "正規化"
+        }
+    },
+    "TABS": {
+        "data": "データ",
+        "preprocessing": "前処理",
+        "machine_learning": "機械学習",
+        "analysis": "分析",
+        "visualization": "可視化",
+        "real_time": "リアルタイム",
+        "home": "ホーム"
+    },
+    "NOTIFICATIONS": {
+        "project_loaded_success": "プロジェクト「{name}」が正常に読み込まれました。",
+        "project_loaded_error": "選択したプロジェクトの読み込みに失敗しました。",
+        "data_source_missing": "最初にデータソースファイルまたはフォルダを選択してください。",
+        "data_load_error": "データの読み込みに失敗しました: {error}",
+        "data_load_success": "データのプレビューが正常に読み込まれました。",
+        "meta_load_error": "メタデータの読み込みに失敗しました: {error}",
+        "dataset_name_missing": "データセットの名前を入力してください。",
+        "dataset_name_exists": "名前が「{name}」のデータセットは、このプロジェクトに既に存在します。",
+        "no_data_to_add": "プロジェクトに追加できるプレビューデータがありません。",
+        "dataset_add_success": "データセット「{name}」がプロジェクトに正常に追加されました。",
+        "dataset_add_error": "データセットのプロジェクトへの追加に失敗しました。",
+        "no_project_loaded_for_save": "保存できません。現在プロジェクトが読み込まれていません。",
+        "meta_save_success": "メタデータが正常にファイルに保存されました。",
+        "meta_save_error": "メタデータの保存に失敗しました: {error}",
+        "dataset_remove_success": "データセット「{name}」を削除しました。",
+        "dataset_remove_error": "データセット「{name}」の削除に失敗しました。",
+        "no_input_data_selected": "入力データセットが選択されていません。",
+        "output_name_missing": "出力データセット名を入力してください。",
+        "pipeline_is_empty": "パイプラインが空です。処理ステップを追加してください。",
+        "preprocess_success": "前処理が正常に完了しました。データセット「{name}」を作成しました。",
+        "preprocess_error": "前処理中にエラーが発生しました: {error}"
+    }
+}

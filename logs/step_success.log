@@ -1,0 +1,2 @@
+2025-07-23 19:42:28,171 - PreprocessingThread - INFO - Step 1/2 (Cropper) completed successfully. Data shape: (20, 858) -> (20, 735)
+2025-07-23 19:42:28,173 - PreprocessingThread - ERROR - Step 2/2 (WhitakerHayes) failed: WhitakerHayes.__init__() got an unexpected keyword argument 'filter_win_size'. Continuing with remaining steps.

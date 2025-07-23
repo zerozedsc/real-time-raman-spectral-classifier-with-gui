@@ -1,0 +1,45 @@
+2025-07-23 18:53:56,954 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 19:03:10,780 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 19:11:47,979 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 19:21:53,976 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 19:39:59,668 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 20:12:54,468 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 20:12:57,439 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 20:26:22,729 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 20:27:46,197 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 20:53:10,431 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 20:53:33,435 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\test.pkl
+2025-07-23 20:53:33,437 - ProjectManager - INFO - Successfully removed dataset 'test' from project.
+2025-07-23 21:07:50,449 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 21:17:51,087 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 21:39:03,955 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 21:39:37,712 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 21:48:18,583 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 21:53:15,199 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:03:35,230 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:04:07,726 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:06:45,907 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:09:39,366 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:16:11,528 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:28:49,273 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:29:24,556 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\test1.pkl
+2025-07-23 22:29:24,559 - ProjectManager - INFO - Successfully removed dataset 'test1' from project.
+2025-07-23 22:38:08,196 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:51:32,797 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-23 22:55:35,362 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\test2.pkl
+2025-07-23 22:55:35,364 - ProjectManager - INFO - Successfully removed dataset 'test2' from project.
+2025-07-23 23:57:14,086 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-24 00:01:41,671 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\test1.pkl
+2025-07-24 00:01:41,675 - ProjectManager - INFO - Successfully removed dataset 'test1' from project.
+2025-07-24 00:01:43,543 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\test11.pkl
+2025-07-24 00:01:43,546 - ProjectManager - INFO - Successfully removed dataset 'test11' from project.
+2025-07-24 00:01:45,357 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\test111.pkl
+2025-07-24 00:01:45,363 - ProjectManager - INFO - Successfully removed dataset 'test111' from project.
+2025-07-24 00:08:35,487 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-24 00:17:43,665 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-24 00:24:03,741 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-24 00:29:57,252 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\preproxess2.pkl
+2025-07-24 00:29:57,255 - ProjectManager - INFO - Successfully removed dataset 'preproxess2' from project.
+2025-07-24 00:39:38,754 - ProjectManager - INFO - Successfully loaded project: test
+2025-07-24 00:39:47,708 - ProjectManager - INFO - Successfully deleted data file: J:\Coding\研究\real-time-raman-spectral-classifier-with-gui\raman-app\projects\test\data\p2.pkl
+2025-07-24 00:39:47,711 - ProjectManager - INFO - Successfully removed dataset 'p2' from project.

@@ -1,0 +1,77 @@
+2025-07-23 18:52:18,529 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 18:52:20,026 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 18:52:25,789 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 18:52:31,130 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 18:53:30,964 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 18:53:40,316 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 19:03:02,793 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 19:11:31,144 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 19:21:46,964 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 19:23:31,534 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.processing_started'
+2025-07-23 19:23:31,541 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.STATUS.step_completed'
+2025-07-23 19:24:56,936 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.processing_started'
+2025-07-23 19:24:56,943 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.STATUS.step_completed'
+2025-07-23 19:39:39,291 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 19:40:36,125 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.CONFIRM_DIALOG.purpose'
+2025-07-23 19:40:36,144 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.CONFIRM_DIALOG.benefits_tab'
+2025-07-23 19:42:28,163 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.STATUS.merging_data'
+2025-07-23 19:42:28,170 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.STATUS.processing_step'
+2025-07-23 19:42:28,172 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.STATUS.processing_step'
+2025-07-23 19:42:28,173 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.STATUS.finalizing_results'
+2025-07-23 19:42:28,179 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.step_failed'
+2025-07-23 19:42:28,188 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.processing_success_with_failures'
+2025-07-23 20:10:49,863 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 20:12:16,975 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 20:26:10,488 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 20:27:38,088 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 20:47:50,687 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 20:49:10,820 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 20:52:09,710 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 20:53:05,364 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 21:07:44,729 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 21:17:45,537 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 21:38:56,841 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 21:39:26,154 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 21:48:11,381 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 21:53:06,195 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:01:08,583 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:02:55,656 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:03:35,443 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.select_step_for_params'
+2025-07-23 22:03:36,819 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.select_step_for_params'
+2025-07-23 22:03:36,823 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.select_step_for_params'
+2025-07-23 22:03:54,121 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:04:07,932 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.select_step_for_params'
+2025-07-23 22:04:09,039 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.select_step_for_params'
+2025-07-23 22:04:09,042 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.select_step_for_params'
+2025-07-23 22:04:31,062 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:08:32,061 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:12:32,258 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:12:33,392 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:14:43,029 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:15:57,399 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:16:01,566 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:17:21,373 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.BASELINE_CORRECTION.benefits'
+2025-07-23 22:17:21,373 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.WAVENUMBER_CALIBRATION.benefits'
+2025-07-23 22:17:21,374 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.NORMALIZATION.benefits'
+2025-07-23 22:17:21,374 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.SPIKE_REMOVAL.benefits'
+2025-07-23 22:17:21,374 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.SMOOTHING.benefits'
+2025-07-23 22:17:21,374 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.overall'
+2025-07-23 22:17:21,378 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.METRICS.WAVENUMBER_CALIBRATION'
+2025-07-23 22:19:05,476 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:28:40,695 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:36:33,151 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:36:42,277 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 22:43:41,095 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.BASELINE_CORRECTION.benefits'
+2025-07-23 22:43:41,095 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.MISCELLANEOUS.benefits'
+2025-07-23 22:43:41,096 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.COSMIC_RAY_REMOVAL.benefits'
+2025-07-23 22:43:41,096 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.NORMALISATION.benefits'
+2025-07-23 22:43:41,097 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.DENOISING.benefits'
+2025-07-23 22:43:41,097 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.BENEFITS.overall'
+2025-07-23 22:43:41,100 - LocalizationManager - WARNING - Translation key not found: 'PREPROCESS.METRICS.MISCELLANEOUS'
+2025-07-23 22:51:26,416 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-23 23:57:08,251 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-24 00:07:42,040 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-24 00:08:30,504 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-24 00:17:35,436 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-24 00:23:53,011 - LocalizationManager - INFO - Successfully loaded language: ja
+2025-07-24 00:39:33,318 - LocalizationManager - INFO - Successfully loaded language: ja
