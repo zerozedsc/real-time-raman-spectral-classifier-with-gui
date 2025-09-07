@@ -205,4 +205,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-raman-app/projects/
+projects/*
+logs/*

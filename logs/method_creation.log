@@ -1,6 +1,0 @@
-2025-07-23 19:23:31,537 - PreprocessingStepRegistry - ERROR - Error creating WhitakerHayes: WhitakerHayes.__init__() got an unexpected keyword argument 'filter_win_size'
-2025-07-23 19:24:56,942 - PreprocessingStepRegistry - ERROR - Error creating WhitakerHayes: WhitakerHayes.__init__() got an unexpected keyword argument 'filter_win_size'
-2025-07-23 19:42:28,173 - PreprocessingStepRegistry - ERROR - Error creating WhitakerHayes: WhitakerHayes.__init__() got an unexpected keyword argument 'filter_win_size'
-2025-07-23 22:18:00,632 - PreprocessingStepRegistry - ERROR - Error creating WhitakerHayes: WhitakerHayes.__init__() got an unexpected keyword argument 'lam'
-2025-07-23 22:18:00,638 - PreprocessingStepRegistry - ERROR - Error creating IModPoly: IModPoly.__init__() got an unexpected keyword argument 'rep'
-2025-07-23 22:44:03,969 - PreprocessingStepRegistry - ERROR - Error creating WhitakerHayes: WhitakerHayes.__init__() got an unexpected keyword argument 'lam'
