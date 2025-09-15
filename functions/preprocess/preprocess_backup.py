@@ -1516,6 +1516,345 @@ class IntensityCalibration:
         
         return SpectralContainer(calibrated_data, spectra.spectral_axis)
 
+# WAVENUMBER CALIBRATION
+class WavenumberCalibration:
+    """
+    Wavenumber axis calibration using reference peaks (e.g., Silicon at 520 cm⁻¹).
+    
+    This method corrects for systematic wavenumber shifts by comparing measured
+    peak positions with known reference values and applying polynomial correction.
+    
+    Attributes:
+        reference_peaks (dict): Dictionary of reference peak positions {name: wavenumber}
+        poly_order (int): Order of polynomial for wavenumber correction
+    """
+    
+    def __init__(self, reference_peaks: Dict[str, float] = None, poly_order: int = 3):
+        """
+        Initialize wavenumber calibration.
+        
+        Args:
+            reference_peaks: Known peak positions for calibration standards
+            poly_order: Order of polynomial correction (default: 3)
+        """
+        if reference_peaks is None:
+            # Default to Silicon reference peak
+            self.reference_peaks = {'Si': 520.5}
+        else:
+            self.reference_peaks = reference_peaks
+        self.poly_order = poly_order
+        self.correction_coeffs = None
+        
+        create_logs("wavenumber_calibration", "WavenumberCalibration",
+                    f"Initialized with reference peaks: {self.reference_peaks}",
+                    status='info')
+    
+    def calibrate(self, measured_peaks: Dict[str, float], wavenumbers: np.ndarray) -> np.ndarray:
+        """
+        Calibrate wavenumber axis based on measured vs reference peak positions.
+        
+        Args:
+            measured_peaks: Dictionary of measured peak positions {name: wavenumber}
+            wavenumbers: Original wavenumber axis to be corrected
+            
+        Returns:
+            Corrected wavenumber axis
+        """
+        if not measured_peaks:
+            create_logs("wavenumber_calibration", "WavenumberCalibration",
+                        "No measured peaks provided, returning original wavenumbers",
+                        status='warning')
+            return wavenumbers
+        
+        # Extract matching peaks
+        common_peaks = set(measured_peaks.keys()).intersection(set(self.reference_peaks.keys()))
+        if not common_peaks:
+            create_logs("wavenumber_calibration", "WavenumberCalibration",
+                        "No common peaks found between measured and reference",
+                        status='error')
+            return wavenumbers
+        
+        measured_vals = [measured_peaks[peak] for peak in common_peaks]
+        reference_vals = [self.reference_peaks[peak] for peak in common_peaks]
+        
+        # Fit polynomial correction
+        self.correction_coeffs = np.polyfit(measured_vals, reference_vals, self.poly_order)
+        
+        # Apply correction to full wavenumber axis
+        corrected_wavenumbers = np.polyval(self.correction_coeffs, wavenumbers)
+        
+        create_logs("wavenumber_calibration", "WavenumberCalibration",
+                    f"Applied correction using {len(common_peaks)} peaks: {list(common_peaks)}",
+                    status='info')
+        
+        return corrected_wavenumbers
+    
+    def __call__(self, wavenumbers: np.ndarray, measured_peaks: Dict[str, float]) -> np.ndarray:
+        """Make the class callable for pipeline integration."""
+        return self.calibrate(measured_peaks, wavenumbers)
+
+
+# MSC NORMALIZATION
+class MSC:
+    """
+    Multiplicative Scatter Correction (MSC) for Raman spectra.
+    
+    MSC corrects for multiplicative scattering effects by fitting each spectrum
+    to a reference spectrum (usually the mean) using linear regression, then
+    correcting for the slope and offset.
+    
+    This is particularly useful for biological samples where scattering effects
+    can vary significantly between measurements.
+    """
+    
+    def __init__(self):
+        """Initialize MSC normalization."""
+        self.mean_spectrum = None
+        self.is_fitted = False
+        
+        create_logs("msc_init", "MSC",
+                    "Initialized MSC normalization",
+                    status='info')
+    
+    def fit(self, spectra: np.ndarray) -> 'MSC':
+        """
+        Fit MSC to training spectra by calculating mean reference spectrum.
+        
+        Args:
+            spectra: 2D array of spectra (n_samples, n_wavenumbers)
+            
+        Returns:
+            Self for method chaining
+        """
+        if spectra.ndim == 1:
+            spectra = spectra.reshape(1, -1)
+        
+        self.mean_spectrum = np.mean(spectra, axis=0)
+        self.is_fitted = True
+        
+        create_logs("msc_fit", "MSC",
+                    f"Fitted MSC with {spectra.shape[0]} spectra",
+                    status='info')
+        
+        return self
+    
+    def transform(self, spectra: np.ndarray) -> np.ndarray:
+        """
+        Apply MSC correction to spectra.
+        
+        Args:
+            spectra: 2D array of spectra to correct
+            
+        Returns:
+            MSC-corrected spectra
+        """
+        if not self.is_fitted:
+            raise ValueError("MSC must be fitted before transform. Call fit() first.")
+        
+        if spectra.ndim == 1:
+            spectra = spectra.reshape(1, -1)
+            single_spectrum = True
+        else:
+            single_spectrum = False
+        
+        corrected = []
+        for spectrum in spectra:
+            # Linear regression: spectrum = a + b * mean_spectrum
+            coeffs = np.polyfit(self.mean_spectrum, spectrum, 1)
+            slope, intercept = coeffs[0], coeffs[1]
+            
+            # MSC correction: (spectrum - intercept) / slope
+            corrected_spectrum = (spectrum - intercept) / slope
+            corrected.append(corrected_spectrum)
+        
+        result = np.array(corrected)
+        
+        if single_spectrum:
+            result = result.squeeze()
+        
+        create_logs("msc_transform", "MSC",
+                    f"Applied MSC correction to {spectra.shape[0]} spectra",
+                    status='info')
+        
+        return result
+    
+    def fit_transform(self, spectra: np.ndarray) -> np.ndarray:
+        """Fit and transform in one step."""
+        return self.fit(spectra).transform(spectra)
+    
+    def __call__(self, spectra: np.ndarray) -> np.ndarray:
+        """Make the class callable for pipeline integration."""
+        if not self.is_fitted:
+            return self.fit_transform(spectra)
+        else:
+            return self.transform(spectra)
+    
+    def apply(self, spectra: rp.SpectralContainer) -> rp.SpectralContainer:
+        """Apply MSC to ramanspy SpectralContainer."""
+        corrected_data = self(spectra.spectral_data)
+        return rp.SpectralContainer(corrected_data, spectra.spectral_axis)
+
+
+# DERIVATIVE PREPROCESSING
+class Derivative:
+    """
+    Spectral derivative calculation using Savitzky-Golay method.
+    
+    Derivatives are useful for:
+    - Peak resolution enhancement
+    - Baseline removal (1st derivative)
+    - Peak detection and analysis
+    - Removing overlapping backgrounds
+    
+    Attributes:
+        order (int): Derivative order (1 for first derivative, 2 for second)
+        window_length (int): Length of the filter window (must be odd)
+        polyorder (int): Order of polynomial for fitting
+    """
+    
+    def __init__(self, order: int = 1, window_length: int = 5, polyorder: int = 2):
+        """
+        Initialize derivative processor.
+        
+        Args:
+            order: Derivative order (1 or 2)
+            window_length: Length of filter window (must be odd and >= polyorder + 1)
+            polyorder: Order of polynomial for Savitzky-Golay filter
+        """
+        if order not in [1, 2]:
+            raise ValueError("Derivative order must be 1 or 2")
+        
+        if window_length % 2 == 0:
+            window_length += 1  # Ensure odd window length
+        
+        if window_length <= polyorder:
+            polyorder = window_length - 1
+        
+        self.order = order
+        self.window_length = window_length
+        self.polyorder = polyorder
+        
+        create_logs("derivative_init", "Derivative",
+                    f"Initialized {order}-order derivative with window={window_length}, poly={polyorder}",
+                    status='info')
+    
+    def __call__(self, spectra: np.ndarray) -> np.ndarray:
+        """
+        Calculate derivatives of spectra.
+        
+        Args:
+            spectra: 1D or 2D array of spectra
+            
+        Returns:
+            Derivative spectra
+        """
+        try:
+            from scipy.signal import savgol_filter
+        except ImportError:
+            raise ImportError("scipy is required for derivative calculation")
+        
+        if spectra.ndim == 1:
+            result = savgol_filter(spectra, self.window_length, self.polyorder, deriv=self.order)
+        else:
+            result = savgol_filter(spectra, self.window_length, self.polyorder, 
+                                 deriv=self.order, axis=-1)
+        
+        create_logs("derivative_calc", "Derivative",
+                    f"Calculated {self.order}-order derivative for {spectra.shape} data",
+                    status='info')
+        
+        return result
+    
+    def apply(self, spectra: rp.SpectralContainer) -> rp.SpectralContainer:
+        """Apply derivative to ramanspy SpectralContainer."""
+        derivative_data = self(spectra.spectral_data)
+        return rp.SpectralContainer(derivative_data, spectra.spectral_axis)
+
+
+# ADVANCED COSMIC RAY REMOVAL
+class MedianDespike:
+    """
+    Median filter-based cosmic ray removal for Raman spectra.
+    
+    This method uses median filtering to identify and remove cosmic ray spikes.
+    It's particularly effective for narrow, high-intensity spikes that are
+    characteristic of cosmic ray events.
+    
+    Attributes:
+        kernel_size (int): Size of median filter kernel
+        threshold (float): Threshold for spike detection (in MAD units)
+    """
+    
+    def __init__(self, kernel_size: int = 5, threshold: float = 3.0):
+        """
+        Initialize median-based despiker.
+        
+        Args:
+            kernel_size: Size of median filter kernel (should be odd)
+            threshold: Detection threshold in MAD (Median Absolute Deviation) units
+        """
+        if kernel_size % 2 == 0:
+            kernel_size += 1  # Ensure odd kernel size
+        
+        self.kernel_size = kernel_size
+        self.threshold = threshold
+        
+        create_logs("median_despike_init", "MedianDespike",
+                    f"Initialized with kernel_size={kernel_size}, threshold={threshold}",
+                    status='info')
+    
+    def __call__(self, spectra: np.ndarray) -> np.ndarray:
+        """
+        Remove cosmic ray spikes from spectra.
+        
+        Args:
+            spectra: 1D or 2D array of spectra
+            
+        Returns:
+            Despiked spectra
+        """
+        if spectra.ndim == 1:
+            return self._despike_spectrum(spectra)
+        else:
+            return np.array([self._despike_spectrum(spectrum) for spectrum in spectra])
+    
+    def _despike_spectrum(self, spectrum: np.ndarray) -> np.ndarray:
+        """Remove spikes from a single spectrum."""
+        try:
+            from scipy.signal import medfilt
+        except ImportError:
+            raise ImportError("scipy is required for median filtering")
+        
+        # Apply median filter
+        filtered = medfilt(spectrum, kernel_size=self.kernel_size)
+        
+        # Calculate residuals
+        residual = spectrum - filtered
+        
+        # Calculate MAD (Median Absolute Deviation)
+        mad = np.median(np.abs(residual - np.median(residual)))
+        
+        # Identify spikes using MAD-based threshold
+        # Factor 1.4826 relates MAD to standard deviation for normal distribution
+        threshold_value = self.threshold * 1.4826 * mad
+        spike_mask = np.abs(residual) > threshold_value
+        
+        # Replace spikes with median-filtered values
+        corrected = spectrum.copy()
+        corrected[spike_mask] = filtered[spike_mask]
+        
+        n_spikes = np.sum(spike_mask)
+        create_logs("median_despike", "MedianDespike",
+                    f"Removed {n_spikes} spikes from spectrum",
+                    status='info')
+        
+        return corrected
+    
+    def apply(self, spectra: rp.SpectralContainer) -> rp.SpectralContainer:
+        """Apply median despiking to ramanspy SpectralContainer."""
+        despiked_data = self(spectra.spectral_data)
+        return rp.SpectralContainer(despiked_data, spectra.spectral_axis)
+
 # RamanPipeline class for preprocessing Raman spectral data
 class RamanPipeline:
     """
@@ -2663,6 +3002,14 @@ class PreprocessingStepRegistry:
                         "order": {"type": "int", "range": [0, 3], "description": "Order of the filter (0 = Gaussian, 1 = first derivative, etc.)"}
                     },
                     "description": "Denoising based on a Gaussian filter"
+                },
+                "MovingAverage": {
+                    "class": MovingAverage,
+                    "default_params": {"window_length": 15},
+                    "param_info": {
+                        "window_length": {"type": "int", "range": [3, 51], "step": 2, "description": "Window length for moving average"}
+                    },
+                    "description": "Simple moving average smoothing"
                 }
             },
 
@@ -2676,6 +3023,24 @@ class PreprocessingStepRegistry:
 
                     },
                     "description": "Cosmic rays removal based on modified z-scores filtering"
+                },
+                "Gaussian": {
+                    "class": Gaussian,
+                    "default_params": {"kernel": 5, "threshold": 3.0},
+                    "param_info": {
+                        "kernel": {"type": "int", "range": [3, 15], "step": 2, "description": "Gaussian kernel size (standard deviation)"},
+                        "threshold": {"type": "float", "range": [1.0, 10.0], "step": 0.1, "description": "MAD-based threshold for spike detection"}
+                    },
+                    "description": "Cosmic ray removal using Gaussian filter and MAD-based detection"
+                },
+                "MedianDespike": {
+                    "class": MedianDespike,
+                    "default_params": {"kernel_size": 5, "threshold": 3.0},
+                    "param_info": {
+                        "kernel_size": {"type": "int", "range": [3, 15], "step": 2, "description": "Median filter kernel size"},
+                        "threshold": {"type": "float", "range": [1.0, 10.0], "step": 0.1, "description": "MAD-based threshold for spike detection"}
+                    },
+                    "description": "Cosmic ray removal using median filtering"
                 }
             },
 
@@ -2842,6 +3207,52 @@ class PreprocessingStepRegistry:
                         "max_iter": {"type": "int", "range": [1, 500], "description": "Maximum iterations"}
                     },
                     "description": "Baseline correction based on Fully automatic baseline correction (FABC)"
+                },
+                
+                # Custom advanced methods
+                "MultiScaleConv1D": {
+                    "class": MultiScaleConv1D,
+                    "default_params": {"kernel_sizes": [5, 11, 21, 41], "weights": None, "mode": "reflect", "iterations": 1},
+                    "param_info": {
+                        "kernel_sizes": {"type": "list", "description": "List of kernel sizes for multi-scale convolution"},
+                        "weights": {"type": "optional", "description": "Weights for combining different scales (optional)"},
+                        "mode": {"type": "choice", "choices": ["reflect", "constant", "nearest", "mirror", "wrap"], "description": "Boundary condition for convolution"},
+                        "iterations": {"type": "int", "range": [1, 10], "description": "Number of correction iterations"}
+                    },
+                    "description": "Multi-scale convolutional baseline correction"
+                }
+            },
+            
+            "calibration": {
+                "WavenumberCalibration": {
+                    "class": WavenumberCalibration,
+                    "default_params": {"reference_peaks": {"Si": 520.5}, "poly_order": 3},
+                    "param_info": {
+                        "reference_peaks": {"type": "dict", "description": "Reference peak positions {name: wavenumber}"},
+                        "poly_order": {"type": "int", "range": [1, 5], "description": "Polynomial order for wavenumber correction"}
+                    },
+                    "description": "Wavenumber axis calibration using reference peaks"
+                },
+                "IntensityCalibration": {
+                    "class": IntensityCalibration,
+                    "default_params": {"reference": None},
+                    "param_info": {
+                        "reference": {"type": "optional", "description": "Reference standard spectrum for calibration"}
+                    },
+                    "description": "Intensity calibration using reference standards"
+                }
+            },
+            
+            "derivatives": {
+                "Derivative": {
+                    "class": Derivative,
+                    "default_params": {"order": 1, "window_length": 5, "polyorder": 2},
+                    "param_info": {
+                        "order": {"type": "choice", "choices": [1, 2], "description": "Derivative order (1st or 2nd)"},
+                        "window_length": {"type": "int", "range": [3, 21], "step": 2, "description": "Savitzky-Golay window length"},
+                        "polyorder": {"type": "int", "range": [1, 6], "description": "Polynomial order for fitting"}
+                    },
+                    "description": "Spectral derivatives using Savitzky-Golay method"
                 }
             },
             
@@ -2885,6 +3296,12 @@ class PreprocessingStepRegistry:
                     "default_params": {},
                     "param_info": {},
                     "description": "Standard Normal Variate normalisation"
+                },
+                "MSC": {
+                    "class": MSC,
+                    "default_params": {},
+                    "param_info": {},
+                    "description": "Multiplicative Scatter Correction for scattering effects"
                 }
             }
         }

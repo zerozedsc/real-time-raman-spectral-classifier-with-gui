@@ -185,7 +185,6 @@ def create_logs(log_name, filename, log_message, status='info'):
     """
     
     if status == "console":
-        print(log_message)
         return  # Exit if only console output is needed
     
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -205,12 +204,10 @@ def create_logs(log_name, filename, log_message, status='info'):
     try:
         if not os.path.exists(foldername):
             os.makedirs(foldername)
-            print(f"Created logs directory: {foldername}")
         elif not os.path.isdir(foldername):
             # If 'logs' exists but is not a directory (e.g., it's a file)
             raise OSError(f"'{foldername}' exists but is not a directory")
     except OSError as e:
-        print(f"Error creating logs directory: {e}")
         return  # Exit function if we can't create the directory
 
     # Create a logger
@@ -257,7 +254,6 @@ def create_logs(log_name, filename, log_message, status='info'):
             logger.addHandler(file_handler)
             logger.addHandler(stream_handler)
         except Exception as e:
-            print(f"Error setting up logger handlers: {e}")
             return
 
     # Log the message
@@ -271,7 +267,7 @@ def create_logs(log_name, filename, log_message, status='info'):
         elif status == 'debug':
             logger.debug(log_message)
     except Exception as e:
-        print(f"Error logging message: {e}")
+        pass  # Silently ignore logging errors
 
 def load_application_fonts():
     """
@@ -285,7 +281,6 @@ def load_application_fonts():
         # Fallback: try relative to this file (legacy location)
         fonts_dir = os.path.join(os.path.dirname(__file__), 'assets', 'fonts')
     if not os.path.exists(fonts_dir):
-        print(f"Warning: Fonts directory not found at '{fonts_dir}'")
         return
 
     for font_file in os.listdir(fonts_dir):
@@ -293,7 +288,7 @@ def load_application_fonts():
             font_path = os.path.join(fonts_dir, font_file)
             font_id = QFontDatabase.addApplicationFont(font_path)
             if font_id == -1:
-                print(f"Warning: Failed to load font: {font_file}")
+                pass  # Font loading failed
             else:
                 # You can optionally print the loaded font families
                 families = QFontDatabase.applicationFontFamilies(font_id)

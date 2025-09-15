@@ -162,8 +162,6 @@ class WorkspacePage(QWidget):
     def load_project(self, project_path: str):
         """Load project and refresh all pages."""
         try:
-            print(f"Workspace is loading project: {project_path}")
-            
             # Update project manager state if available
             if hasattr(PROJECT_MANAGER, 'set_current_project'):
                 PROJECT_MANAGER.set_current_project(project_path)

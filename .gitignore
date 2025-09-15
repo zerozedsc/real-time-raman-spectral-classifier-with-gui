@@ -207,3 +207,8 @@ dist-ssr
 *.sw?
 projects/*
 logs/*
+*.pyc
+*.cpython-312.pyc
+__pycache__/
+.AI-AGENT/
+.github/

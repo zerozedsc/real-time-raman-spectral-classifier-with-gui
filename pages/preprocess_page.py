@@ -1,1087 +1,9 @@
 import sys
-import pandas as pd
-import ramanspy as rp
-import traceback
-from typing import Dict, List, Any, Optional, Tuple
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton,
-    QLabel, QLineEdit, QGroupBox, QListWidget, QListWidgetItem,
-    QStackedWidget, QComboBox, QDoubleSpinBox, QSpinBox, QMessageBox,
-    QCheckBox, QSlider, QTextEdit, QScrollArea, QFrame, QSplitter,
-    QProgressBar, QApplication, QDialog, QDialogButtonBox, QTreeWidget,
-    QTreeWidgetItem, QFormLayout, QTabWidget
-)
-from PySide6.QtCore import Qt, Signal, QThread, QTimer
-from PySide6.QtGui import QFont, QIcon
-
-from utils import *
-from components.matplotlib_widget import MatplotlibWidget, plot_spectra
-from functions.preprocess import PREPROCESSING_REGISTRY, EnhancedRamanPipeline
-from functions.data_loader import plot_spectra
-
-class DynamicParameterWidget(QWidget):
-    """Dynamic parameter widget that creates UI controls based on parameter info."""
-    
-    def __init__(self, method_info: Dict[str, Any], saved_params: Dict[str, Any] = None, parent=None):
-        super().__init__(parent)
-        self.method_info = method_info
-        self.saved_params = saved_params or {}
-        self.param_widgets = {}
-        self.setObjectName("dynamicParameterWidget")
-        self._setup_ui()
-    
-    def _setup_ui(self):
-        # Clear any existing layout
-        if self.layout():
-            while self.layout().count():
-                child = self.layout().takeAt(0)
-                if child.widget():
-                    child.widget().deleteLater()
-            self.layout().deleteLater()
-        
-        layout = QFormLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-        
-        param_info = self.method_info.get("param_info", {})
-        default_params = self.method_info.get("default_params", {})
-        
-        if not param_info:
-            # No parameters
-            label = QLabel(LOCALIZE("PREPROCESS.no_parameters"))
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet("color: #666; font-style: italic;")
-            layout.addRow(label)
-            return
-        
-        # Add parameters with saved values taking precedence
-        for param_name, info in param_info.items():
-            # Use saved parameter value if available, otherwise use default
-            param_value = self.saved_params.get(param_name, default_params.get(param_name))
-            widget = self._create_parameter_widget(param_name, info, param_value)
-            if widget:
-                label = QLabel(f"{param_name}:")
-                label.setToolTip(info.get("description", ""))
-                layout.addRow(label, widget)
-                self.param_widgets[param_name] = widget
-        
-        # Force layout update
-        self.updateGeometry()
-        self.update()
-    
-    def _create_parameter_widget(self, param_name: str, info: Dict[str, Any], default_value: Any) -> QWidget:
-        """Create appropriate widget based on parameter type."""
-        param_type = info.get("type", "float")
-        
-        if param_type == "int":
-            widget = QSpinBox()
-            range_info = info.get("range", [0, 100])
-            widget.setRange(range_info[0], range_info[1])
-            if "step" in info:
-                widget.setSingleStep(info["step"])
-            if default_value is not None:
-                widget.setValue(int(default_value))
-            return widget
-            
-        elif param_type == "float":
-            widget = QDoubleSpinBox()
-            range_info = info.get("range", [0.0, 1.0])
-            widget.setRange(range_info[0], range_info[1])
-            widget.setDecimals(3)
-            if "step" in info:
-                widget.setSingleStep(info["step"])
-            if default_value is not None:
-                widget.setValue(float(default_value))
-            return widget
-            
-        elif param_type == "scientific":
-            widget = QDoubleSpinBox()
-            range_info = info.get("range", [1e-9, 1e12])
-            widget.setRange(range_info[0], range_info[1])
-            widget.setDecimals(0)
-            widget.setButtonSymbols(QDoubleSpinBox.ButtonSymbols.UpDownArrows)
-            if default_value is not None:
-                widget.setValue(float(default_value))
-            return widget
-            
-        elif param_type == "choice":
-            widget = QComboBox()
-            choices = info.get("choices", [])
-            widget.addItems(choices)
-            if default_value is not None and default_value in choices:
-                widget.setCurrentText(str(default_value))
-            return widget
-            
-        elif param_type == "tuple":
-            # For tuples like regions
-            widget = QLineEdit()
-            if default_value is not None:
-                if isinstance(default_value, (tuple, list)) and len(default_value) == 2:
-                    widget.setText(f"{default_value[0]}, {default_value[1]}")
-                else:
-                    widget.setText(str(default_value))
-            widget.setPlaceholderText(LOCALIZE("PREPROCESS.tuple_format_hint"))
-            return widget
-            
-        elif param_type == "list_int":
-            widget = QLineEdit()
-            if default_value is not None:
-                if isinstance(default_value, list):
-                    widget.setText(", ".join(map(str, default_value)))
-                else:
-                    widget.setText(str(default_value))
-            widget.setPlaceholderText(LOCALIZE("PREPROCESS.list_int_format_hint"))
-            return widget
-            
-        elif param_type == "list_float":
-            widget = QLineEdit()
-            if default_value is not None:
-                if isinstance(default_value, list):
-                    widget.setText(", ".join(map(str, default_value)))
-                else:
-                    widget.setText(str(default_value))
-            widget.setPlaceholderText(LOCALIZE("PREPROCESS.list_float_format_hint"))
-            return widget
-            
-        else:
-            # Default to text input
-            widget = QLineEdit()
-            if default_value is not None:
-                widget.setText(str(default_value))
-            return widget
-    
-    def get_parameters(self) -> Dict[str, Any]:
-        """Extract parameters from widgets."""
-        params = {}
-        param_info = self.method_info.get("param_info", {})
-        
-        for param_name, widget in self.param_widgets.items():
-            info = param_info.get(param_name, {})
-            param_type = info.get("type", "float")
-            
-            try:
-                if param_type == "int":
-                    params[param_name] = widget.value()
-                elif param_type in ["float", "scientific"]:
-                    params[param_name] = widget.value()
-                elif param_type == "choice":
-                    params[param_name] = widget.currentText()
-                elif param_type == "tuple":
-                    text = widget.text().strip()
-                    if text:
-                        values = [float(x.strip()) for x in text.split(",")]
-                        if len(values) == 2:
-                            params[param_name] = tuple(values)
-                elif param_type == "list_int":
-                    text = widget.text().strip()
-                    if text:
-                        params[param_name] = [int(x.strip()) for x in text.split(",")]
-                elif param_type == "list_float":
-                    text = widget.text().strip()
-                    if text:
-                        values = [float(x.strip()) for x in text.split(",")]
-                        params[param_name] = values if values else None
-                else:
-                    text = widget.text().strip()
-                    if text:
-                        params[param_name] = text
-            except Exception as e:
-                create_logs("DynamicParameterWidget", "parameter_extraction",
-                           f"Error extracting parameter {param_name}: {e}", status='warning')
-                
-        return params
-
-
-class PipelineStep:
-    """Represents a step in the preprocessing pipeline."""
-    
-    def __init__(self, category: str, method: str, params: Dict[str, Any] = None):
-        self.category = category
-        self.method = method
-        self.params = params or {}
-        self.enabled = True
-    
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "category": self.category,
-            "method": self.method,
-            "params": self.params,
-            "enabled": self.enabled
-        }
-    
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PipelineStep':
-        step = cls(data["category"], data["method"], data.get("params", {}))
-        step.enabled = data.get("enabled", True)
-        return step
-    
-    def create_instance(self) -> Any:
-        """Create the actual preprocessing instance."""
-        return PREPROCESSING_REGISTRY.create_method_instance(self.category, self.method, self.params)
-    
-    def get_display_name(self) -> str:
-        """Get display name for the step."""
-        category_name = LOCALIZE(f"PREPROCESS.CATEGORY.{self.category.upper()}")
-        return f"{category_name} - {self.method}"
-
-
-class PipelineConfirmationDialog(QDialog):
-    """Enhanced dialog to confirm pipeline with detailed information."""
-    
-    def __init__(self, pipeline_steps: List[PipelineStep], output_name: str, selected_datasets: List[str], parent=None):
-        super().__init__(parent)
-        self.pipeline_steps = pipeline_steps
-        self.output_name = output_name
-        self.selected_datasets = selected_datasets
-        self.setModal(True)
-        self._setup_ui()
-        self._apply_styles()
-    
-    def _setup_ui(self):
-        self.setWindowTitle(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.title"))
-        self.setMinimumSize(900, 750)
-        self.resize(900, 750)
-        
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
-
-        # Header with summary
-        header_frame = QFrame()
-        header_frame.setObjectName("confirmDialogHeader")
-        header_layout = QVBoxLayout(header_frame)
-        header_layout.setContentsMargins(20, 20, 20, 20)
-        header_layout.setSpacing(12)
-        
-        title_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.header"))
-        title_label.setObjectName("confirmDialogTitle")
-        header_layout.addWidget(title_label)
-        
-        # Summary statistics
-        summary_text = self._create_summary_text()
-        summary_label = QLabel(summary_text)
-        summary_label.setObjectName("confirmDialogSummary")
-        summary_label.setWordWrap(True)
-        header_layout.addWidget(summary_label)
-        
-        layout.addWidget(header_frame)
-        
-        # Tabs for different sections
-        tabs = QTabWidget()
-        tabs.setObjectName("confirmDialogTabs")
-        
-        # Input datasets tab
-        input_tab = self._create_input_tab()
-        tabs.addTab(input_tab, LOCALIZE("PREPROCESS.CONFIRM_DIALOG.input_tab"))
-        
-        # Pipeline tab
-        pipeline_tab = self._create_pipeline_tab()
-        tabs.addTab(pipeline_tab, LOCALIZE("PREPROCESS.CONFIRM_DIALOG.pipeline_tab"))
-        
-        layout.addWidget(tabs)
-        
-        # Buttons
-        button_frame = QFrame()
-        button_layout = QHBoxLayout(button_frame)
-        button_layout.setContentsMargins(0, 10, 0, 0)
-        
-        button_layout.addStretch()
-        
-        cancel_btn = QPushButton(LOCALIZE("COMMON.cancel"))
-        cancel_btn.setObjectName("cancelButton")
-        cancel_btn.clicked.connect(self.reject)
-        
-        start_btn = QPushButton(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.start_processing"))
-        start_btn.setObjectName("startButton")
-        start_btn.clicked.connect(self.accept)
-        
-        button_layout.addWidget(cancel_btn)
-        button_layout.addWidget(start_btn)
-        
-        layout.addWidget(button_frame)
-    
-    def _apply_styles(self):
-        """Apply comprehensive styling to the dialog."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #f8f9fa;
-            }
-            
-            #confirmDialogHeader {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #e3f2fd, stop:1 #bbdefb);
-                border: 1px solid #90caf9;
-                border-radius: 12px;
-            }
-            
-            #confirmDialogTitle {
-                font-size: 18px;
-                font-weight: 700;
-                color: #1565c0;
-                margin: 0px;
-            }
-            
-            #confirmDialogSummary {
-                font-size: 14px;
-                color: #424242;
-                line-height: 1.5;
-            }
-            
-            #confirmDialogTabs {
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-            }
-            
-            #confirmDialogTabs::pane {
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                background-color: white;
-                margin-top: -1px;
-            }
-            
-            #confirmDialogTabs::tab-bar {
-                alignment: left;
-            }
-            
-            #confirmDialogTabs QTabBar::tab {
-                background: #f5f5f5;
-                border: 1px solid #e0e0e0;
-                padding: 12px 20px;
-                margin-right: 2px;
-                font-weight: 500;
-                min-width: 120px;
-            }
-            
-            #confirmDialogTabs QTabBar::tab:selected {
-                background: white;
-                border-bottom-color: white;
-                color: #1976d2;
-                font-weight: 600;
-            }
-            
-            #confirmDialogTabs QTabBar::tab:hover:!selected {
-                background: #eeeeee;
-            }
-            
-            QListWidget {
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                background-color: #fafafa;
-                padding: 8px;
-            }
-            
-            QListWidget::item {
-                padding: 10px;
-                border-bottom: 1px solid #f0f0f0;
-                background-color: white;
-                margin-bottom: 4px;
-                border-radius: 4px;
-            }
-            
-            QTreeWidget {
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                background-color: white;
-                alternate-background-color: #f9f9f9;
-            }
-            
-            QTreeWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #f0f0f0;
-            }
-            
-            QTreeWidget::item:selected {
-                background-color: #e3f2fd;
-                color: #1976d2;
-            }
-            
-            QTextEdit {
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                background-color: white;
-                padding: 12px;
-            }
-            
-            #startButton {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #4caf50, stop:1 #388e3c);
-                color: white;
-                border: none;
-                padding: 12px 24px;
-                border-radius: 6px;
-                font-weight: 600;
-                font-size: 14px;
-                min-width: 120px;
-            }
-            
-            #startButton:hover {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #66bb6a, stop:1 #4caf50);
-            }
-            
-            #startButton:pressed {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #388e3c, stop:1 #2e7d32);
-            }
-            
-            #cancelButton {
-                background-color: #f5f5f5;
-                color: #424242;
-                border: 1px solid #e0e0e0;
-                padding: 12px 24px;
-                border-radius: 6px;
-                font-weight: 500;
-                font-size: 14px;
-                min-width: 120px;
-                margin-right: 12px;
-            }
-            
-            #cancelButton:hover {
-                background-color: #eeeeee;
-                border-color: #bdbdbd;
-            }
-            
-            QFrame {
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                padding: 16px;
-            }
-        """)
-    
-    def _create_summary_text(self) -> str:
-        """Create localized summary text for the header."""
-        total_datasets = len(self.selected_datasets)
-        total_steps = len(self.pipeline_steps)
-        
-        # Estimate processing time (rough calculation)
-        estimated_time = total_steps * 2  # 2 seconds per step average
-        
-        return LOCALIZE("PREPROCESS.CONFIRM_DIALOG.summary_text", 
-                       datasets=total_datasets,
-                       steps=total_steps, 
-                       time=estimated_time,
-                       output_name=self.output_name)
-    
-    def _create_input_tab(self) -> QWidget:
-        """Create input datasets tab."""
-        input_tab = QWidget()
-        input_layout = QVBoxLayout(input_tab)
-        input_layout.setContentsMargins(20, 20, 20, 20)
-        input_layout.setSpacing(16)
-        
-        # Header
-        header_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.selected_datasets_header"))
-        header_label.setStyleSheet("font-size: 16px; font-weight: 600; color: #424242; margin-bottom: 8px;")
-        input_layout.addWidget(header_label)
-        
-        # Dataset list
-        datasets_list = QListWidget()
-        datasets_list.setMaximumHeight(200)
-        for dataset in self.selected_datasets:
-            item = QListWidgetItem(f"📊 {dataset}")
-            datasets_list.addItem(item)
-        input_layout.addWidget(datasets_list)
-        
-        # Info
-        info_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.datasets_info", count=len(self.selected_datasets)))
-        info_label.setStyleSheet("font-style: italic; color: #666; font-size: 13px;")
-        input_layout.addWidget(info_label)
-        
-        input_layout.addStretch()
-        return input_tab
-    
-    def _create_pipeline_tab(self) -> QWidget:
-        """Create pipeline tab with detailed step information."""
-        pipeline_tab = QWidget()
-        pipeline_layout = QVBoxLayout(pipeline_tab)
-        pipeline_layout.setContentsMargins(20, 20, 20, 20)
-        pipeline_layout.setSpacing(16)
-        
-        # Header
-        header_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.pipeline_steps_header"))
-        header_label.setStyleSheet("font-size: 16px; font-weight: 600; color: #424242; margin-bottom: 8px;")
-        pipeline_layout.addWidget(header_label)
-        
-        # Pipeline tree
-        pipeline_tree = QTreeWidget()
-        pipeline_tree.setHeaderLabels([
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.step"), 
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.method"),
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.purpose"),
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.parameters")
-        ])
-        
-        for i, step in enumerate(self.pipeline_steps):
-            category_display = LOCALIZE(f"PREPROCESS.CATEGORY.{step.category.upper()}")
-            purpose = self._get_step_purpose(step.category, step.method)
-            params_text = self._format_parameters(step.params) if step.params else LOCALIZE("PREPROCESS.CONFIRM_DIALOG.no_params")
-            
-            item = QTreeWidgetItem([
-                f"{i + 1}. {category_display}",
-                step.method,
-                purpose,
-                params_text
-            ])
-            pipeline_tree.addTopLevelItem(item)
-        
-        pipeline_tree.expandAll()
-        for i in range(4):
-            pipeline_tree.resizeColumnToContents(i)
-        pipeline_layout.addWidget(pipeline_tree)
-        
-        return pipeline_tab
-    
-    def _get_step_purpose(self, category: str, method: str) -> str:
-        """Get localized purpose/benefit of each preprocessing step."""
-        return LOCALIZE(f"PREPROCESS.PURPOSE.{category.upper()}")
-    
-    def _format_parameters(self, params: Dict[str, Any]) -> str:
-        """Format parameters for display."""
-        if not params:
-            return LOCALIZE("PREPROCESS.CONFIRM_DIALOG.default_params")
-        
-        formatted = []
-        for key, value in params.items():
-            if isinstance(value, (int, float)):
-                formatted.append(f"{key}={value}")
-            elif isinstance(value, (tuple, list)):
-                formatted.append(f"{key}={value}")
-            else:
-                formatted.append(f"{key}={str(value)[:20]}")
-        
-        return ", ".join(formatted[:3])  # Limit to 3 parameters for readability
-    
-    def _generate_benefits_content(self) -> str:
-        """Generate HTML content describing expected benefits."""
-        categories_used = set(step.category for step in self.pipeline_steps)
-        
-        html_content = "<ul style='margin-left: 20px;'>"
-        for category in categories_used:
-            title = LOCALIZE(f"PREPROCESS.BENEFITS.{category.upper()}.title")
-            benefits = LOCALIZE(f"PREPROCESS.BENEFITS.{category.upper()}.benefits")
-            
-            html_content += f"<li><b>{title}</b><ul>"
-            for benefit in benefits:
-                html_content += f"<li>{benefit}</li>"
-            html_content += "</ul></li>"
-        
-        html_content += "</ul>"
-        
-        # Add overall benefits
-        overall_benefits = LOCALIZE("PREPROCESS.BENEFITS.overall")
-        html_content += f"<br><b>{LOCALIZE('PREPROCESS.BENEFITS.overall_title')}:</b><ul style='margin-left: 20px;'>"
-        for benefit in overall_benefits:
-            html_content += f"<li>{benefit}</li>"
-        html_content += "</ul>"
-        
-        return html_content
-    
-    def _calculate_quality_metrics(self) -> List[str]:
-        """Calculate expected quality improvements."""
-        metrics = []
-        categories_used = set(step.category for step in self.pipeline_steps)
-        
-        for category in categories_used:
-            metric = LOCALIZE(f"PREPROCESS.METRICS.{category.upper()}")
-            if metric:
-                metrics.append(metric)
-        
-        # Overall metrics
-        metrics.extend([
-            LOCALIZE("PREPROCESS.METRICS.total_steps", steps=len(self.pipeline_steps)),
-            LOCALIZE("PREPROCESS.METRICS.data_integrity"),
-            LOCALIZE("PREPROCESS.METRICS.reproducibility")
-        ])
-        
-        return metrics
-
-
-class PreprocessingThread(QThread):
-    """Background thread for preprocessing operations with detailed progress updates."""
-    progress_updated = Signal(int)
-    status_updated = Signal(str)
-    step_completed = Signal(str, int)  # step_name, step_number
-    processing_completed = Signal(dict)
-    processing_error = Signal(str)
-    step_failed = Signal(str, str)  # step_name, error_message
-    
-    def __init__(self, pipeline_steps: List[PipelineStep], input_dfs: List[pd.DataFrame], 
-                 output_name: str, parent=None):
-        super().__init__(parent)
-        self.pipeline_steps = pipeline_steps
-        self.input_dfs = input_dfs
-        self.output_name = output_name
-        self.is_cancelled = False
-        self.failed_steps = []
-        
-    def run(self):
-        """Execute the preprocessing pipeline sequentially with error handling."""
-        try:
-            create_logs("PreprocessingThread", "start", 
-                       f"Starting preprocessing with {len(self.input_dfs)} datasets", status='info')
-            
-            self.status_updated.emit(LOCALIZE("PREPROCESS.STATUS.preparing_data"))
-            self.progress_updated.emit(5)
-            
-            if self.is_cancelled:
-                return
-            
-            # Merge input data first
-            self.status_updated.emit(LOCALIZE("PREPROCESS.STATUS.merging_data"))
-            self.progress_updated.emit(10)
-            
-            # Combine all DataFrames
-            try:
-                merged_df = pd.concat(self.input_dfs, axis=1)
-                create_logs("PreprocessingThread", "data_merge", 
-                           f"Merged data shape: {merged_df.shape}", status='info')
-            except Exception as e:
-                error_msg = f"Error merging input data: {str(e)}"
-                create_logs("PreprocessingThread", "merge_error", error_msg, status='error')
-                self.processing_error.emit(error_msg)
-                return
-            
-            # Initialize SpectralContainer with better error handling
-            try:
-                if merged_df.index.name == 'wavenumber':
-                    wavenumbers = merged_df.index.values
-                    intensities = merged_df.values.T
-                else:
-                    if 'wavenumber' in merged_df.columns:
-                        wavenumbers = merged_df['wavenumber'].values
-                        intensities = merged_df.drop('wavenumber', axis=1).values.T
-                    else:
-                        wavenumbers = merged_df.iloc[:, 0].values
-                        intensities = merged_df.iloc[:, 1:].values.T
-                
-                create_logs("PreprocessingThread", "data_structure", 
-                           f"Wavenumbers shape: {wavenumbers.shape}, Intensities shape: {intensities.shape}", 
-                           status='info')
-                
-                spectra = rp.SpectralContainer(intensities, wavenumbers)
-                
-            except Exception as e:
-                error_msg = f"Error creating SpectralContainer: {str(e)}"
-                create_logs("PreprocessingThread", "container_error", error_msg, status='error')
-                self.processing_error.emit(error_msg)
-                return
-            
-            self.progress_updated.emit(20)
-            
-            # Process each step sequentially
-            total_steps = len(self.pipeline_steps)
-            successful_steps = []
-            skipped_steps = []
-            
-            create_logs("PreprocessingThread", "pipeline_start", 
-                       f"Processing {total_steps} pipeline steps", status='info')
-            
-            for i, step in enumerate(self.pipeline_steps):
-                if self.is_cancelled:
-                    create_logs("PreprocessingThread", "cancelled", "Processing cancelled by user", status='info')
-                    return
-                
-                step_name = step.method
-                step_progress_start = 20 + int((i / total_steps) * 60)
-                step_progress_end = 20 + int(((i + 1) / total_steps) * 60)
-                
-                # Check if this step should be skipped (only skip if it's existing AND not enabled)
-                if hasattr(step, 'is_existing') and step.is_existing and not step.enabled:
-                    self.status_updated.emit(LOCALIZE("PREPROCESS.STATUS.skipping_existing_step", 
-                                                    step=step_name, 
-                                                    number=i+1, 
-                                                    total=total_steps))
-                    
-                    skipped_steps.append({
-                        'step_name': step_name,
-                        'step_index': i + 1,
-                        'category': step.category,
-                        'reason': 'existing_step_disabled'
-                    })
-                    
-                    self.progress_updated.emit(step_progress_end)
-                    continue
-                
-                # Process the step (both new steps and enabled existing steps)
-                self.status_updated.emit(LOCALIZE("PREPROCESS.STATUS.processing_step", 
-                                                step=step_name, 
-                                                number=i+1, 
-                                                total=total_steps))
-                self.progress_updated.emit(step_progress_start)
-                
-                try:
-                    create_logs("PreprocessingThread", "step_start", 
-                               f"Starting step {i+1}/{total_steps}: {step_name} with params: {step.params}", 
-                               status='info')
-                    
-                    # Create preprocessing instance
-                    instance = step.create_instance()
-                    
-                    # Apply preprocessing step
-                    pre_shape = spectra.spectral_data.shape
-                    pre_axis_shape = spectra.spectral_axis.shape
-                    
-                    spectra = instance.apply(spectra)
-                    
-                    post_shape = spectra.spectral_data.shape
-                    post_axis_shape = spectra.spectral_axis.shape
-                    
-                    # Log successful step
-                    successful_steps.append({
-                        'step_name': step_name,
-                        'step_index': i + 1,
-                        'category': step.category,
-                        'parameters': step.params,
-                        'data_change': {
-                            'input_shape': pre_shape,
-                            'output_shape': post_shape,
-                            'axis_input_shape': pre_axis_shape,
-                            'axis_output_shape': post_axis_shape
-                        }
-                    })
-                    
-                    self.step_completed.emit(step_name, i + 1)
-                    self.progress_updated.emit(step_progress_end)
-                    
-                    create_logs("PreprocessingThread", "step_success",
-                            f"Step {i+1}/{total_steps} ({step_name}) completed successfully. "
-                            f"Data shape: {pre_shape} -> {post_shape}", 
-                            status='info')
-                    
-                except Exception as e:
-                    # Log failed step but continue processing
-                    error_msg = f"Step {i+1} ({step_name}) failed: {str(e)}"
-                    self.failed_steps.append({
-                        'step_name': step_name,
-                        'step_index': i + 1,
-                        'category': step.category,
-                        'error': str(e),
-                        'error_type': type(e).__name__
-                    })
-                    
-                    self.step_failed.emit(step_name, str(e))
-                    
-                    create_logs("PreprocessingThread", "step_error",
-                            f"Step {i+1}/{total_steps} ({step_name}) failed: {e}. Continuing with remaining steps.", 
-                            status='error')
-                    
-                    # Continue to next step
-                    continue
-            
-            if self.is_cancelled:
-                return
-            
-            # Finalize results
-            self.progress_updated.emit(85)
-            self.status_updated.emit(LOCALIZE("PREPROCESS.STATUS.finalizing_results"))
-            
-            # Create output DataFrame
-            try:
-                processed_df = pd.DataFrame(
-                    spectra.spectral_data.T,
-                    index=spectra.spectral_axis,
-                    columns=[f"{self.output_name}_{i}" for i in range(spectra.spectral_data.shape[0])]
-                )
-                processed_df.index.name = 'wavenumber'
-                
-                create_logs("PreprocessingThread", "output_created", 
-                           f"Output DataFrame created with shape: {processed_df.shape}", status='info')
-                
-            except Exception as e:
-                error_msg = f"Error creating output DataFrame: {str(e)}"
-                create_logs("PreprocessingThread", "output_error", error_msg, status='error')
-                self.processing_error.emit(error_msg)
-                return
-            
-            self.progress_updated.emit(100)
-            self.status_updated.emit(LOCALIZE("PREPROCESS.STATUS.completed"))
-            
-            # Return comprehensive results
-            result_data = {
-                'processed_df': processed_df,
-                'successful_steps': successful_steps,
-                'failed_steps': self.failed_steps,
-                'skipped_steps': skipped_steps,
-                'total_steps': total_steps,
-                'success_rate': len(successful_steps) / total_steps if total_steps > 0 else 0,
-                'spectra': spectra,
-                'original_data': merged_df
-            }
-            
-            create_logs("PreprocessingThread", "completed", 
-                       f"Processing completed. Success rate: {result_data['success_rate']:.1%}", 
-                       status='info')
-            
-            self.processing_completed.emit(result_data)
-            
-        except Exception as e:
-            error_msg = f"{LOCALIZE('PREPROCESS.STATUS.error')}: {str(e)}"
-            create_logs("PreprocessingThread", "critical_error",
-                    f"Critical preprocessing error: {e}\n{traceback.format_exc()}", 
-                    status='error')
-            self.processing_error.emit(error_msg)
-    
-    def cancel(self):
-        """Cancel the preprocessing operation."""
-        self.is_cancelled = True
-        create_logs("PreprocessingThread", "cancel_requested", "Cancellation requested", status='info')
-        self.quit()
-        self.wait()
-
-
-class FailedStepsDialog(QDialog):
-    """Dialog to show detailed information about failed preprocessing steps."""
-    
-    def __init__(self, failed_steps: List[Dict], successful_steps: List[Dict], parent=None):
-        super().__init__(parent)
-        self.failed_steps = failed_steps
-        self.successful_steps = successful_steps
-        self.setModal(True)
-        self._setup_ui()
-        self._apply_styles()
-    
-    def _setup_ui(self):
-        self.setWindowTitle(LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.title"))
-        self.setMinimumSize(700, 500)
-        
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(16)
-        
-        # Header
-        header_label = QLabel(LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.header"))
-        header_label.setObjectName("failedDialogHeader")
-        layout.addWidget(header_label)
-        
-        # Summary
-        summary_text = LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.summary",
-                               failed=len(self.failed_steps),
-                               successful=len(self.successful_steps),
-                               total=len(self.failed_steps) + len(self.successful_steps))
-        summary_label = QLabel(summary_text)
-        summary_label.setObjectName("failedDialogSummary")
-        summary_label.setWordWrap(True)
-        layout.addWidget(summary_label)
-        
-        # Failed steps details
-        if self.failed_steps:
-            failed_group = QGroupBox(LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.failed_steps_title"))
-            failed_layout = QVBoxLayout(failed_group)
-            
-            failed_tree = QTreeWidget()
-            failed_tree.setHeaderLabels([
-                LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.step"),
-                LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.category"),
-                LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.error_type"),
-                LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.error_message")
-            ])
-            
-            for step in self.failed_steps:
-                item = QTreeWidgetItem([
-                    f"{step['step_index']}. {step['step_name']}",
-                    LOCALIZE(f"PREPROCESS.CATEGORY.{step['category'].upper()}"),
-                    step['error_type'],
-                    step['error'][:100] + "..." if len(step['error']) > 100 else step['error']
-                ])
-                item.setToolTip(3, step['error'])  # Full error message in tooltip
-                failed_tree.addTopLevelItem(item)
-            
-            failed_tree.expandAll()
-            for i in range(4):
-                failed_tree.resizeColumnToContents(i)
-            
-            failed_layout.addWidget(failed_tree)
-            layout.addWidget(failed_group)
-        
-        # Successful steps summary
-        if self.successful_steps:
-            success_group = QGroupBox(LOCALIZE("PREPROCESS.FAILED_STEPS_DIALOG.successful_steps_title"))
-            success_layout = QVBoxLayout(success_group)
-            
-            success_list = QListWidget()
-            success_list.setMaximumHeight(150)
-            
-            for step in self.successful_steps:
-                category_key = f"PREPROCESS.CATEGORY.{step['category'].upper()}"
-                category_display = LOCALIZE(category_key)
-                item_text = f"✓ {step['step_index']}. {step['step_name']} ({category_display})"
-                item = QListWidgetItem(item_text)
-                success_list.addItem(item)
-            
-            success_layout.addWidget(success_list)
-            layout.addWidget(success_group)
-        
-        # Buttons
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
-        
-        close_btn = QPushButton(LOCALIZE("COMMON.close"))
-        close_btn.setObjectName("closeButton")
-        close_btn.clicked.connect(self.accept)
-        button_layout.addWidget(close_btn)
-        
-        layout.addWidget(QWidget())  # Spacer
-        layout.addLayout(button_layout)
-    
-    def _apply_styles(self):
-        """Apply styling to the failed steps dialog."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #f8f9fa;
-            }
-            
-            #failedDialogHeader {
-                font-size: 18px;
-                font-weight: 700;
-                color: #d32f2f;
-                margin-bottom: 8px;
-            }
-            
-            #failedDialogSummary {
-                font-size: 14px;
-                color: #424242;
-                background-color: #fff3e0;
-                border: 1px solid #ffcc02;
-                border-radius: 6px;
-                padding: 12px;
-                margin-bottom: 16px;
-            }
-            
-            QGroupBox {
-                font-size: 14px;
-                font-weight: 600;
-                color: #424242;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                margin-top: 12px;
-                background-color: white;
-            }
-            
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 8px;
-                background-color: white;
-            }
-            
-            QTreeWidget, QListWidget {
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                background-color: white;
-            }
-            
-            QTreeWidget::item, QListWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #f0f0f0;
-            }
-            
-            #closeButton {
-                background-color: #1976d2;
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
-                font-weight: 600;
-                min-width: 100px;
-            }
-            
-            #closeButton:hover {
-                background-color: #1565c0;
-            }
-        """)
-
-
-class PipelineStepWidget(QWidget):
-    """Custom widget for displaying pipeline steps with toggle functionality."""
-    
-    toggled = Signal(int, bool)  # step_index, enabled
-    
-    def __init__(self, step: 'PipelineStep', step_index: int, parent=None):
-        super().__init__(parent)
-        self.step = step
-        self.step_index = step_index
-        self._setup_ui()
-        
-    def _setup_ui(self):
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(8)
-        
-        # Toggle checkbox for existing steps
-        if hasattr(self.step, 'is_existing') and self.step.is_existing:
-            self.toggle_checkbox = QCheckBox()
-            self.toggle_checkbox.setChecked(False)  # Default: don't reuse existing steps
-            self.toggle_checkbox.setToolTip(LOCALIZE("PREPROCESS.toggle_existing_step_tooltip"))
-            self.toggle_checkbox.toggled.connect(self._on_toggled)
-            layout.addWidget(self.toggle_checkbox)
-            
-            # Visual indicator for existing steps
-            status_label = QLabel("⚙️")
-            status_label.setToolTip(LOCALIZE("PREPROCESS.existing_step_indicator"))
-            layout.addWidget(status_label)
-        else:
-            # Visual indicator for new steps
-            status_label = QLabel("➕")
-            status_label.setToolTip(LOCALIZE("PREPROCESS.new_step_indicator"))
-            layout.addWidget(status_label)
-        
-        # Step name label
-        display_name = self.step.get_display_name()
-        self.name_label = QLabel(display_name)
-        self.name_label.setWordWrap(True)
-        layout.addWidget(self.name_label, 1)
-        
-        # Update appearance based on step status
-        self._update_appearance()
-    
-    def _on_toggled(self, checked: bool):
-        """Handle toggle state change."""
-        self.toggled.emit(self.step_index, checked)
-        self._update_appearance()
-    
-    def _update_appearance(self):
-        """Update visual appearance based on step state."""
-        if hasattr(self.step, 'is_existing') and self.step.is_existing:
-            if hasattr(self, 'toggle_checkbox') and self.toggle_checkbox.isChecked():
-                # Existing step enabled for reuse
-                self.name_label.setStyleSheet("""
-                    QLabel {
-                        color: #2e7d32;
-                        font-weight: 500;
-                    }
-                """)
-                self.setToolTip(LOCALIZE("PREPROCESS.existing_step_enabled_tooltip"))
-            else:
-                # Existing step disabled (default)
-                self.name_label.setStyleSheet("""
-                    QLabel {
-                        color: #757575;
-                        font-style: italic;
-                    }
-                """)
-                self.setToolTip(LOCALIZE("PREPROCESS.existing_step_disabled_tooltip"))
-        else:
-            # New step
-            self.name_label.setStyleSheet("""
-                QLabel {
-                    color: #1976d2;
-                    font-weight: 500;
-                }
-            """)
-            self.setToolTip(LOCALIZE("PREPROCESS.new_step_tooltip"))
-    
-    def is_enabled(self) -> bool:
-        """Check if step is enabled for processing."""
-        if hasattr(self.step, 'is_existing') and self.step.is_existing:
-            return hasattr(self, 'toggle_checkbox') and self.toggle_checkbox.isChecked()
-        return True  # New steps are always enabled
-    
-    def set_enabled(self, enabled: bool):
-        """Set the enabled state of the step."""
-        if hasattr(self, 'toggle_checkbox'):
-            self.toggle_checkbox.setChecked(enabled)
+import os
+# Add components to path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from components.widgets import *
+from .preprocess_page_utils import *
 
 
 class PreprocessPage(QWidget):
@@ -1094,6 +16,17 @@ class PreprocessPage(QWidget):
         self.processing_thread = None
         self.pipeline_steps: List[PipelineStep] = []
         self.current_step_widget = None
+        
+        # Real-time preview attributes
+        self.preview_data = None  # Current dataset for preview
+        self.original_data = None  # Original unprocessed data
+        self.processed_data = None  # Current processed data
+        self.preview_cache = {}  # Cache for processed steps
+        self.preview_timer = QTimer()  # Debounce timer for parameter changes
+        self.preview_timer.setSingleShot(True)
+        self.preview_timer.timeout.connect(self._update_preview)
+        self.preview_enabled = True  # Toggle for preview functionality
+        
         self._setup_ui()
         self._connect_signals()
         
@@ -1336,6 +269,106 @@ class PreprocessPage(QWidget):
         plot_group = QGroupBox(LOCALIZE("PREPROCESS.visualization_title"))
         plot_layout = QVBoxLayout(plot_group)
         
+        # Preview controls - Enhanced UI
+        preview_controls = QHBoxLayout()
+        preview_controls.setSpacing(15)
+        
+        # Preview mode toggle with enhanced styling
+        preview_toggle_container = QHBoxLayout()
+        preview_toggle_container.setSpacing(8)
+        
+        # Create toggle button with eye icons
+        self.preview_toggle_btn = QPushButton()
+        self.preview_toggle_btn.setCheckable(True)
+        self.preview_toggle_btn.setChecked(True)
+        self.preview_toggle_btn.setFixedSize(120, 32)
+        self.preview_toggle_btn.setToolTip(LOCALIZE("PREPROCESS.real_time_preview_tooltip"))
+        
+        # Load eye icons
+        self.eye_open_icon = load_svg_icon("assets/icons/eye-open.svg", "#2c3e50", QSize(16, 16))
+        self.eye_close_icon = load_svg_icon("assets/icons/eye-close.svg", "#7f8c8d", QSize(16, 16))
+        
+        # Set initial state
+        self._update_preview_button_state(True)
+        
+        self.preview_toggle_btn.toggled.connect(self._toggle_preview_mode)
+        preview_toggle_container.addWidget(self.preview_toggle_btn)
+        
+        preview_controls.addLayout(preview_toggle_container)
+        
+        # Manual refresh button with SVG icon
+        self.manual_refresh_btn = QPushButton()
+        reload_icon = load_svg_icon(ICON_PATHS["reload"], "#7f8c8d", QSize(16, 16))
+        self.manual_refresh_btn.setIcon(reload_icon)
+        self.manual_refresh_btn.setIconSize(QSize(16, 16))
+        self.manual_refresh_btn.setFixedSize(32, 32)
+        self.manual_refresh_btn.setToolTip(LOCALIZE("PREPROCESS.manual_refresh_tooltip"))
+        self.manual_refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #ecf0f1;
+                border: 2px solid #bdc3c7;
+                border-radius: 16px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #d5dbdb;
+                border-color: #85929e;
+            }
+            QPushButton:pressed {
+                background-color: #aeb6bf;
+            }
+        """)
+        self.manual_refresh_btn.clicked.connect(self._manual_refresh_preview)
+        preview_controls.addWidget(self.manual_refresh_btn)
+        
+        # Manual focus button with SVG icon
+        self.manual_focus_btn = QPushButton()
+        focus_icon = load_svg_icon("assets/icons/focus-horizontal-round.svg", "#7f8c8d", QSize(16, 16))
+        self.manual_focus_btn.setIcon(focus_icon)
+        self.manual_focus_btn.setIconSize(QSize(16, 16))
+        self.manual_focus_btn.setFixedSize(32, 32)
+        self.manual_focus_btn.setToolTip("Manual Focus - Focus on signal regions")
+        self.manual_focus_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #ecf0f1;
+                border: 2px solid #bdc3c7;
+                border-radius: 16px;
+                padding: 0px;
+            }
+            QPushButton:hover {
+                background-color: #d5dbdb;
+                border-color: #85929e;
+            }
+            QPushButton:pressed {
+                background-color: #aeb6bf;
+            }
+        """)
+        self.manual_focus_btn.clicked.connect(self._manual_focus)
+        preview_controls.addWidget(self.manual_focus_btn)
+        
+        preview_controls.addStretch()
+        
+        # Enhanced status indicator with label
+        status_container = QHBoxLayout()
+        status_container.setSpacing(5)
+        
+        status_label = QLabel(LOCALIZE("PREPROCESS.preview_status"))
+        status_label.setStyleSheet("font-size: 11px; color: #7f8c8d; font-weight: bold;")
+        status_container.addWidget(status_label)
+        
+        self.preview_status = QLabel("●")
+        self.preview_status.setStyleSheet("color: #27ae60; font-size: 14px;")
+        self.preview_status.setToolTip(LOCALIZE("PREPROCESS.preview_status_ready"))
+        status_container.addWidget(self.preview_status)
+        
+        self.preview_status_text = QLabel("Ready")
+        self.preview_status_text.setStyleSheet("font-size: 11px; color: #27ae60; font-weight: bold;")
+        status_container.addWidget(self.preview_status_text)
+        
+        preview_controls.addLayout(status_container)
+        
+        plot_layout.addLayout(preview_controls)
+        
         self.plot_widget = MatplotlibWidget()
         self.plot_widget.setMinimumHeight(400)
         plot_layout.addWidget(self.plot_widget)
@@ -1354,6 +387,9 @@ class PreprocessPage(QWidget):
         self.pipeline_list.currentItemChanged.connect(self.on_pipeline_step_selected)
         self.run_button.clicked.connect(self.run_preprocessing)
         self.cancel_button.clicked.connect(self.cancel_preprocessing)
+        
+        # Connect drag and drop reordering to automatic preview update
+        self.pipeline_list.model().rowsMoved.connect(self._on_pipeline_reordered)
         
         # Initialize method combo
         self.update_method_combo()
@@ -1445,7 +481,15 @@ class PreprocessPage(QWidget):
         if not selected_items:
             self.plot_widget.clear_plot()
             self._clear_preprocessing_history()
+            self._clear_default_output_name()
+            # Clear preview data
+            self.original_data = None
+            self.processed_data = None
             return
+        
+        # Set default output name based on first selected dataset
+        first_dataset_name = selected_items[0].text().replace('🔬 ', '').replace('📊 ', '')
+        self._set_default_output_name(first_dataset_name)
         
         # Handle single selection for preprocessing history
         if len(selected_items) == 1:
@@ -1466,7 +510,7 @@ class PreprocessPage(QWidget):
         else:
             self._clear_preprocessing_history()
     
-        # Show spectral data
+        # Show spectral data and store for preview
         all_dfs = []
         for item in selected_items:
             dataset_name = item.text().replace('🔬 ', '').replace('📊 ', '')
@@ -1477,8 +521,19 @@ class PreprocessPage(QWidget):
         if all_dfs:
             try:
                 combined_df = pd.concat(all_dfs, axis=1)
-                fig = plot_spectra(combined_df, title=LOCALIZE("PREPROCESS.spectra_preview_title"))
-                self.plot_widget.update_plot(fig)
+                
+                # Store original data for preview system as DataFrame to preserve index/wavenumbers
+                self.original_data = combined_df
+                
+                # Show data with current preview mode
+                if self.preview_enabled and self.pipeline_steps:
+                    # Trigger preview update
+                    self._schedule_preview_update()
+                else:
+                    # Show original data without auto-focus (no pipeline steps yet)
+                    fig = plot_spectra(combined_df, title=LOCALIZE("PREPROCESS.spectra_preview_title"), auto_focus=False)
+                    self.plot_widget.update_plot(fig)
+                    
             except Exception as e:
                 create_logs("PreprocessPage", "preview_error", 
                         f"Error previewing data: {e}", status='error')
@@ -1523,6 +578,9 @@ class PreprocessPage(QWidget):
         self.pipeline_list.setCurrentItem(item)
         QTimer.singleShot(100, lambda: self._show_parameter_widget(step))
         
+        # Trigger automatic preview update
+        self._schedule_preview_update()
+        
         self.showNotification.emit(
             LOCALIZE("PREPROCESS.step_added", step=current_method), 
             "info"
@@ -1557,6 +615,9 @@ class PreprocessPage(QWidget):
                 new_row = min(current_row, self.pipeline_list.count() - 1)
                 self.pipeline_list.setCurrentRow(new_row)
             
+            # Trigger automatic preview update
+            self._schedule_preview_update()
+            
             self.showNotification.emit(LOCALIZE("PREPROCESS.step_removed"), "info")
 
     def clear_pipeline(self):
@@ -1565,6 +626,11 @@ class PreprocessPage(QWidget):
         self.pipeline_list.clear()
         self._clear_parameter_widget()
         self.toggle_all_btn.setVisible(False)
+        
+        # Trigger automatic preview update to show original data
+        if self.preview_enabled:
+            self._schedule_preview_update()
+        
         self.showNotification.emit(LOCALIZE("PREPROCESS.pipeline_cleared"), "info")
 
     def on_step_toggled(self, step_index: int, enabled: bool):
@@ -1572,6 +638,9 @@ class PreprocessPage(QWidget):
         if 0 <= step_index < len(self.pipeline_steps):
             step = self.pipeline_steps[step_index]
             step.enabled = enabled
+            
+            # Trigger automatic preview update
+            self._schedule_preview_update()
             
             create_logs("PreprocessPage", "step_toggled", 
                        f"Step {step_index} ({step.method}) {'enabled' if enabled else 'disabled'}", 
@@ -1612,8 +681,6 @@ class PreprocessPage(QWidget):
         else:
             self.toggle_all_btn.setText(LOCALIZE("PREPROCESS.enable_all_existing"))
     
-     
-    
     def on_pipeline_step_selected(self, current, previous):
         """Handle pipeline step selection to show appropriate parameters."""
         # Save parameters from the previously selected step
@@ -1634,6 +701,17 @@ class PreprocessPage(QWidget):
             # Show parameter widget with saved parameters
             QTimer.singleShot(50, lambda: self._show_parameter_widget(step))
 
+    def _get_data_wavenumber_range(self) -> tuple:
+        """Get the wavenumber range from the currently loaded data."""
+        if self.original_data is not None and not self.original_data.empty:
+            wavenumbers = self.original_data.index.values
+            min_wn = float(wavenumbers.min())
+            max_wn = float(wavenumbers.max())
+            return (min_wn, max_wn)
+        else:
+            # Fallback to default range if no data is loaded
+            return (400.0, 4000.0)
+    
     def _show_parameter_widget(self, step: PipelineStep):
         """Show parameter widget for the selected step."""
         # Clear existing widget completely
@@ -1644,9 +722,15 @@ class PreprocessPage(QWidget):
         if not method_info:
             return
         
-        # Create parameter widget with saved parameters
-        self.current_step_widget = DynamicParameterWidget(method_info, step.params)
+        # Get actual data range for tuple parameters
+        data_range = self._get_data_wavenumber_range()
+        
+        # Create parameter widget with saved parameters and data range
+        self.current_step_widget = DynamicParameterWidget(method_info, step.params, data_range)
         self.params_layout.addWidget(self.current_step_widget)
+        
+        # Connect parameter signals for automatic preview updates
+        self._connect_parameter_signals(self.current_step_widget)
         
         # Update group title
         self.params_group.setTitle(
@@ -2072,6 +1156,763 @@ class PreprocessPage(QWidget):
         if has_existing_steps:
             self.toggle_all_btn.setVisible(True)
             self.toggle_all_btn.setText(LOCALIZE("PREPROCESS.enable_all_existing"))
+
+    def _set_default_output_name(self, dataset_name: str):
+        """Set default output name based on selected dataset name with '-pp' suffix."""
+        # Only set default if the output name field is empty or contains a previous default
+        current_text = self.output_name_edit.text().strip()
+        
+        # Check if current text is empty or appears to be a previous default (ends with -pp)
+        if not current_text or current_text.endswith('-pp'):
+            default_name = f"{dataset_name}-pp"
+            self.output_name_edit.setText(default_name)
+            # Set placeholder to show the default behavior
+            self.output_name_edit.setPlaceholderText(LOCALIZE("PREPROCESS.output_name_placeholder"))
+    
+    def _clear_default_output_name(self):
+        """Clear the default output name when no datasets are selected."""
+        current_text = self.output_name_edit.text().strip()
+        
+        # Only clear if it appears to be a default name (ends with -pp)
+        if current_text.endswith('-pp'):
+            self.output_name_edit.clear()
+
+    # ============== AUTOMATIC PREVIEW SYSTEM ==============
+    
+    def _update_preview_button_state(self, enabled: bool):
+        """Update preview button appearance based on state."""
+        if enabled:
+            self.preview_toggle_btn.setIcon(self.eye_open_icon)
+            self.preview_toggle_btn.setText("プレビュー")
+            self.preview_toggle_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #3498db;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    padding: 6px;
+                }
+                QPushButton:hover {
+                    background-color: #2980b9;
+                }
+                QPushButton:pressed {
+                    background-color: #21618c;
+                }
+            """)
+        else:
+            self.preview_toggle_btn.setIcon(self.eye_close_icon)
+            self.preview_toggle_btn.setText("オフ")
+            self.preview_toggle_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #95a5a6;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    font-weight: bold;
+                    padding: 6px;
+                }
+                QPushButton:hover {
+                    background-color: #7f8c8d;
+                }
+                QPushButton:pressed {
+                    background-color: #6c7b7d;
+                }
+            """)
+
+    def _toggle_preview_mode(self, enabled: bool):
+        """Toggle real-time preview mode."""
+        self.preview_enabled = enabled
+        self._update_preview_button_state(enabled)
+        
+        if enabled:
+            self._update_preview_status("ready", "green")
+            # Trigger preview update if data is available
+            if self.original_data is not None:
+                self._schedule_preview_update()
+        else:
+            self._update_preview_status("disabled", "gray")
+            # Show original data only
+            self._show_original_data()
+    
+    def _update_preview_status(self, status: str, color: str):
+        """Update the preview status indicator."""
+        color_map = {
+            "green": "#27ae60",
+            "orange": "#f39c12", 
+            "red": "#e74c3c",
+            "gray": "#95a5a6"
+        }
+        
+        status_text_map = {
+            "ready": "Ready",
+            "processing": "Processing...", 
+            "error": "Error",
+            "disabled": "Disabled"
+        }
+        
+        mapped_color = color_map.get(color, color)
+        status_text = status_text_map.get(status, status.title())
+        
+        self.preview_status.setStyleSheet(f"color: {mapped_color}; font-size: 14px;")
+        self.preview_status_text.setStyleSheet(f"font-size: 11px; color: {mapped_color}; font-weight: bold;")
+        self.preview_status_text.setText(status_text)
+        
+        status_messages = {
+            "ready": LOCALIZE("PREPROCESS.preview_status_ready"),
+            "processing": LOCALIZE("PREPROCESS.preview_status_processing"), 
+            "error": LOCALIZE("PREPROCESS.preview_status_error"),
+            "disabled": LOCALIZE("PREPROCESS.preview_status_disabled")
+        }
+        tooltip = status_messages.get(status, status)
+        self.preview_status.setToolTip(tooltip)
+        self.preview_status_text.setToolTip(tooltip)
+    
+    def _manual_refresh_preview(self):
+        """Manually trigger a preview refresh."""
+        if self.original_data is not None:
+            self._update_preview_status("processing", "orange")
+            # Use immediate update instead of scheduled
+            QTimer.singleShot(100, self._update_preview)  # Small delay for UI responsiveness
+        else:
+            self.showNotification.emit(LOCALIZE("PREPROCESS.no_data_for_preview"), "warning")
+    
+    def _schedule_preview_update(self, delay_ms: int = 300):
+        """Schedule a preview update with debouncing."""
+        if not self.preview_enabled:
+            return
+            
+        # Stop any existing timer
+        self.preview_timer.stop()
+        self._update_preview_status("processing", "orange")
+        
+        # Start new timer with delay for debouncing
+        self.preview_timer.start(delay_ms)
+    
+    def _apply_preview_pipeline(self, data, steps):
+        """Apply preprocessing steps to data for preview - DataFrame-first approach."""
+        try:
+            create_logs("preview_pipeline_debug", "PreprocessPage", 
+                       f"_apply_preview_pipeline called with {len(steps)} steps", status='debug')
+            
+            # Return original data if no steps
+            if not steps:
+                create_logs("preview_pipeline_debug", "PreprocessPage", "No steps to apply, returning original data", status='debug')
+                return data
+            
+            # Work directly with DataFrame (original approach)
+            processed_data = data.copy()
+            
+            create_logs("preview_pipeline_debug", "PreprocessPage", 
+                       f"Starting with DataFrame shape: {processed_data.shape}", status='debug')
+            
+            # Update current step parameters from widget before applying pipeline
+            current_row = self.pipeline_list.currentRow()
+            if current_row >= 0 and self.current_step_widget:
+                current_step = steps[current_row]
+                current_params = self.current_step_widget.get_parameters()
+                current_step.params = current_params
+            
+            # Apply each enabled step
+            for step in steps:
+                # Skip disabled steps
+                if not step.enabled:
+                    create_logs("preview_step_debug", "PreprocessPage", 
+                               f"Skipping disabled step: {step.method}", status='debug')
+                    continue
+                    
+                try:
+                    create_logs("preview_step_debug", "PreprocessPage", 
+                               f"Applying step: {step.method} with params: {step.params}", status='debug')
+                    
+                    # Get preprocessing method instance
+                    method_info = PREPROCESSING_REGISTRY.get_method_info(step.category, step.method)
+                    
+                    if not method_info:
+                        create_logs("preview_method_error", "PreprocessPage", 
+                                   f"Method {step.category}.{step.method} not found in registry", status='warning')
+                        continue
+                    
+                    method_instance = PREPROCESSING_REGISTRY.create_method_instance(
+                        step.category, step.method, step.params
+                    )
+                    
+                    create_logs("preview_step_debug", "PreprocessPage", 
+                               f"Created method instance: {type(method_instance)}", status='debug')
+                    
+                    # Handle different method types
+                    if step.method in ['WavenumberCalibration', 'IntensityCalibration']:
+                        # Skip calibration methods in preview
+                        create_logs("preview_skip", "PreprocessPage", 
+                                   f"Skipping {step.method} in preview (requires special parameters)", status='info')
+                        continue
+                    
+                    elif hasattr(method_instance, 'apply'):
+                        # Convert DataFrame to SpectralContainer for this step only
+                        wavenumbers = processed_data.index.values
+                        intensities = processed_data.values.T  # Shape: (n_spectra, n_wavenumbers)
+                        
+                        create_logs("preview_conversion_debug", "PreprocessPage", 
+                                   f"Converting to SpectralContainer: intensities {intensities.shape}, wavenumbers {wavenumbers.shape}", 
+                                   status='debug')
+                        
+                        # Use sample for faster preview
+                        if intensities.shape[0] > 10:
+                            sample_indices = list(range(0, intensities.shape[0], max(1, intensities.shape[0] // 5)))
+                            intensities = intensities[sample_indices]
+                            create_logs("preview_sampling_debug", "PreprocessPage", 
+                                       f"Sampled to {intensities.shape[0]} spectra", status='debug')
+                        
+                        # Create SpectralContainer for this step only
+                        import ramanspy as rp
+                        temp_spectral = rp.SpectralContainer(intensities, wavenumbers)
+                        
+                        # Apply processing
+                        result = method_instance.apply(temp_spectral)
+                        
+                        create_logs("preview_processing_debug", "PreprocessPage", 
+                                   f"Applied {step.method}, result type: {type(result)}", status='debug')
+                        
+                        # Convert result back to DataFrame immediately
+                        if hasattr(result, 'spectral_data') and hasattr(result, 'spectral_axis'):
+                            import pandas as pd
+                            processed_data = pd.DataFrame(
+                                result.spectral_data.T,  # Transpose back to (wavenumbers, spectra)
+                                index=result.spectral_axis,
+                                columns=[f"preview_{i}" for i in range(result.spectral_data.shape[0])]
+                            )
+                            processed_data.index.name = 'wavenumber'
+                            
+                            create_logs("preview_conversion_debug", "PreprocessPage", 
+                                       f"Converted back to DataFrame: {processed_data.shape}", status='debug')
+                        
+                    else:
+                        create_logs("preview_skip", "PreprocessPage", 
+                                   f"Method {step.method} does not have apply method", status='warning')
+                        
+                except Exception as e:
+                    # Log the error but continue with next step
+                    create_logs("preview_method_error", "PreprocessPage", 
+                               f"Error applying {step.method}: {str(e)}", status='error')
+                    continue
+            
+            create_logs("preview_final_debug", "PreprocessPage", 
+                       f"Final processed data shape: {processed_data.shape}", status='debug')
+            
+            return processed_data
+            
+        except Exception as e:
+            # Log the error and return original data if pipeline fails
+            create_logs("preview_pipeline_error", "PreprocessPage", 
+                       f"Pipeline failed: {str(e)}", status='error')
+            return data
+
+    def _should_auto_focus(self) -> bool:
+        """
+        Check if auto-focus should be enabled based on pipeline contents.
+        Auto-focus is only enabled when there are range-limiting preprocessing steps.
+        """
+        if not self.pipeline_steps:
+            return False
+        
+        # Check for range-limiting steps that benefit from auto-focus
+        range_limiting_steps = {
+            'Cropper',  # Primary range-limiting step
+            'Range Selector', 
+            'Spectral Cropper',
+            'Wavenumber Filter',
+        }
+        
+        enabled_steps = [step for step in self.pipeline_steps if step.enabled]
+        
+        for step in enabled_steps:
+            step_name = getattr(step, 'method_name', '')
+            if any(range_step.lower() in step_name.lower() for range_step in range_limiting_steps):
+                return True
+        
+        return False
+
+    def _show_original_data(self):
+        """Show original unprocessed data."""
+        if self.original_data is not None:
+            # For original data, only auto-focus if there are range-limiting steps
+            auto_focus = self._should_auto_focus()
+            self.plot_widget.plot_spectra(self.original_data, title="Original Data", auto_focus=auto_focus)
+    
+    def _show_preview_data(self, processed_data):
+        """Show processed data with original data overlay."""
+        if self.original_data is not None and processed_data is not None:
+            try:
+                # Convert processed_data from SpectralContainer if needed
+                if hasattr(processed_data, 'spectral_data'):
+                    # SpectralContainer format - extract data
+                    processed_array = processed_data.spectral_data
+                    wavenumbers = processed_data.spectral_axis
+                else:
+                    # Already numpy array
+                    processed_array = processed_data
+                    wavenumbers = None
+                
+                # Get original data for comparison
+                if hasattr(self.original_data, 'values'):
+                    # DataFrame format
+                    original_array = self.original_data.values.T  # Transpose to match format
+                    original_wavenumbers = self.original_data.index.values
+                else:
+                    original_array = self.original_data
+                    original_wavenumbers = None
+                
+                # Sample data for visualization if too large
+                if original_array.shape[0] > 10:
+                    sample_indices = np.arange(0, original_array.shape[0], max(1, original_array.shape[0] // 10))
+                    sample_original = original_array[sample_indices]
+                else:
+                    sample_original = original_array
+                
+                # Plot both original and processed data with conditional auto-focus
+                auto_focus = self._should_auto_focus()
+                
+                if wavenumbers is not None and original_wavenumbers is not None:
+                    # Both have wavenumber info
+                    self.plot_widget.plot_comparison_spectra_with_wavenumbers(
+                        sample_original, processed_array,
+                        original_wavenumbers, wavenumbers,
+                        titles=["Original", "Processed"],
+                        colors=["lightblue", "darkblue"],
+                        auto_focus=auto_focus
+                    )
+                else:
+                    # Fallback to original method
+                    self.plot_widget.plot_comparison_spectra(
+                        sample_original, processed_array,
+                        titles=["Original", "Processed"],
+                        colors=["lightblue", "darkblue"]
+                    )
+                
+            except Exception as e:
+                create_logs("preview_display_error", "PreprocessPage", 
+                           f"Error displaying preview data: {str(e)}", status='error')
+                # Fallback to showing original data
+                self._show_original_data()
+    
+    def _on_pipeline_reordered(self):
+        """Handle pipeline reordering via drag and drop."""
+        # Update pipeline_steps order to match UI order
+        new_order = []
+        for i in range(self.pipeline_list.count()):
+            item = self.pipeline_list.item(i)
+            old_index = item.data(Qt.ItemDataRole.UserRole)
+            if old_index is not None and old_index < len(self.pipeline_steps):
+                new_order.append(self.pipeline_steps[old_index])
+        
+        self.pipeline_steps = new_order
+        
+        # Update item data to reflect new order
+        for i in range(self.pipeline_list.count()):
+            item = self.pipeline_list.item(i)
+            item.setData(Qt.ItemDataRole.UserRole, i)
+        
+        # Trigger preview update
+        self._schedule_preview_update()
+    
+    def _get_data_wavenumber_range(self):
+        """Get the wavenumber range from the currently loaded data."""
+        if self.original_data is not None and not self.original_data.empty:
+            wavenumbers = self.original_data.index.values
+            min_wn = float(wavenumbers.min())
+            max_wn = float(wavenumbers.max())
+            return (min_wn, max_wn)
+        else:
+            # Fallback to default range if no data is loaded
+            return (400.0, 4000.0)
+    
+    def _should_auto_focus(self) -> bool:
+        """Check if auto-focus should be enabled based on pipeline contents."""
+        range_limiting_steps = ['Cropper', 'Range Selector', 'Spectral Window', 'Baseline Range']
+        enabled_steps = [step for step in self.pipeline_steps if step.enabled]
+        return any(step.method in range_limiting_steps for step in enabled_steps)
+    
+    def _schedule_preview_update(self, delay_ms: int = 500):
+        """Schedule a preview update with debouncing."""
+        if not self.preview_enabled:
+            return
+        
+        # Stop any pending timer
+        self.preview_timer.stop()
+        
+        # Start new timer with specified delay
+        self.preview_timer.setInterval(delay_ms)
+        self.preview_timer.start()
+    
+    def _update_preview(self):
+        """Update the preview plot with current pipeline."""
+        try:
+            if not self.preview_enabled:
+                return
+            
+            # Get current selected datasets
+            selected_items = self.dataset_list.selectedItems()
+            if not selected_items:
+                self.plot_widget.clear_plot()
+                return
+            
+            # Use first selected dataset for preview
+            first_item = selected_items[0]
+            dataset_name = first_item.text().replace("📊 ", "").replace("🔄 ", "")
+            
+            if dataset_name not in RAMAN_DATA:
+                self.plot_widget.clear_plot()
+                return
+            
+            original_data = RAMAN_DATA[dataset_name]
+            self.original_data = original_data  # Ensure original_data is set
+            
+            # Apply current pipeline to get processed data
+            enabled_steps = [step for step in self.pipeline_steps if step.enabled]
+            processed_data = self._apply_preview_pipeline(original_data, enabled_steps)
+            
+            # Determine if auto-focus should be used
+            auto_focus = self._should_auto_focus()
+            
+            # Plot comparison with conditional auto-focus
+            if processed_data is not None:
+                # Check if data has been modified by comparing shapes and values
+                data_modified = False
+                try:
+                    create_logs("preview_comparison_debug", "PreprocessPage", 
+                               f"Comparing data - original: {original_data.shape}, processed: {processed_data.shape}", 
+                               status='debug')
+                    
+                    # Compare processed DataFrame with original DataFrame
+                    if hasattr(processed_data, 'shape') and hasattr(original_data, 'shape'):
+                        # Both are DataFrames - do shape and content comparison
+                        if processed_data.shape != original_data.shape:
+                            data_modified = True
+                            create_logs("preview_comparison_debug", "PreprocessPage", 
+                                       "Shape comparison: data_modified = True", status='debug')
+                        elif hasattr(processed_data, 'equals') and hasattr(original_data, 'equals'):
+                            # DataFrame comparison
+                            if not processed_data.equals(original_data):
+                                data_modified = True
+                                create_logs("preview_comparison_debug", "PreprocessPage", 
+                                           "Content comparison: data_modified = True", status='debug')
+                            else:
+                                create_logs("preview_comparison_debug", "PreprocessPage", 
+                                           "Content comparison: data unchanged", status='debug')
+                        else:
+                            # Fallback to numpy array comparison
+                            import numpy as np
+                            if not np.array_equal(processed_data.values, original_data.values):
+                                data_modified = True
+                                create_logs("preview_comparison_debug", "PreprocessPage", 
+                                           "Array comparison: data_modified = True", status='debug')
+                    else:
+                        # Fallback - assume modified if we can't compare properly
+                        data_modified = True
+                        create_logs("preview_comparison_debug", "PreprocessPage", 
+                                   "Fallback: data_modified = True", status='debug')
+                except Exception as e:
+                    # If comparison fails, assume data is modified
+                    data_modified = True
+                    create_logs("preview_comparison_debug", "PreprocessPage", 
+                               f"Exception in comparison: {e}, data_modified = True", status='debug')
+                
+                create_logs("preview_display_debug", "PreprocessPage", 
+                           f"Final data_modified: {data_modified}", status='debug')
+                
+                if data_modified:
+                    # Both original_data and processed_data are now DataFrames
+                    # Use plot_spectra for both as it handles DataFrames correctly
+                    # instead of trying to extract arrays manually
+                    
+                    # Create a simple comparison by showing both datasets  
+                    self.plot_widget.plot_spectra(
+                        processed_data,
+                        title="Preprocessed Data (Preview)",
+                        auto_focus=auto_focus
+                    )
+                else:
+                    # Show original data only
+                    self.plot_widget.plot_spectra(
+                        original_data,
+                        title="Original Data",
+                        auto_focus=False  # No auto-focus for original data view
+                    )
+            else:
+                # Show original data only
+                self.plot_widget.plot_spectra(
+                    original_data,
+                    title="Original Data",
+                    auto_focus=False  # No auto-focus for original data view
+                )
+            
+            # Update status
+            self.preview_status.setStyleSheet("color: #27ae60; font-size: 14px;")
+            self.preview_status_text.setText("Ready")
+            self.preview_status_text.setStyleSheet("font-size: 11px; color: #27ae60; font-weight: bold;")
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "_update_preview", f"Error updating preview: {e}", status='error')
+            self.preview_status.setStyleSheet("color: #e74c3c; font-size: 14px;")
+            self.preview_status_text.setText("Error")
+            self.preview_status_text.setStyleSheet("font-size: 11px; color: #e74c3c; font-weight: bold;")
+    
+    def _manual_refresh_preview(self):
+        """Manually refresh the preview."""
+        self._update_preview()
+    
+    def _manual_focus(self):
+        """Manually apply focus to the current plot."""
+        try:
+            import numpy as np
+            # Get current selected datasets
+            selected_items = self.dataset_list.selectedItems()
+            if not selected_items:
+                return
+            
+            # Use first selected dataset
+            first_item = selected_items[0]
+            dataset_name = first_item.text().replace("📊 ", "").replace("🔄 ", "")
+            
+            if dataset_name not in RAMAN_DATA:
+                return
+            
+            original_data = RAMAN_DATA[dataset_name]
+            enabled_steps = [step for step in self.pipeline_steps if step.enabled]
+            processed_data = self._apply_preview_pipeline(original_data, enabled_steps)
+            
+            # Force auto-focus on
+            if processed_data is not None:
+                # Check if data has been modified
+                data_modified = False
+                try:
+                    # Compare processed DataFrame with original DataFrame
+                    if hasattr(processed_data, 'shape') and hasattr(original_data, 'shape'):
+                        # Both are DataFrames - do shape and content comparison
+                        if processed_data.shape != original_data.shape:
+                            data_modified = True
+                        elif hasattr(processed_data, 'equals') and hasattr(original_data, 'equals'):
+                            # DataFrame comparison
+                            if not processed_data.equals(original_data):
+                                data_modified = True
+                        else:
+                            # Fallback to numpy array comparison
+                            if not np.array_equal(processed_data.values, original_data.values):
+                                data_modified = True
+                    else:
+                        # Fallback - assume modified if we can't compare properly
+                        data_modified = True
+                except Exception:
+                    # If comparison fails, assume data is modified
+                    data_modified = True
+                
+                if data_modified:
+                    # Both original_data and processed_data are now DataFrames
+                    # Extract data for comparison plot
+                    original_array = original_data.values
+                    original_wavenumbers = original_data.index.values
+                    processed_array = processed_data.values
+                    processed_wavenumbers = processed_data.index.values
+                    
+                    # Show comparison plot with forced auto-focus
+                    self.plot_widget.plot_comparison_spectra_with_wavenumbers(
+                        original_array,
+                        processed_array,
+                        original_wavenumbers,
+                        processed_wavenumbers,
+                        titles=["Original", "Processed"],
+                        auto_focus=True  # Force auto-focus
+                    )
+                else:
+                    # Show original data with forced auto-focus
+                    self.plot_widget.plot_spectra(
+                        original_data,
+                        title="Original Data (Focused)",
+                        auto_focus=True  # Force auto-focus
+                    )
+            else:
+                # Show original data with forced auto-focus
+                self.plot_widget.plot_spectra(
+                    original_data,
+                    title="Original Data (Focused)",
+                    auto_focus=True  # Force auto-focus
+                )
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "_manual_focus", f"Error in manual focus: {e}", status='error')
+    
+    def _toggle_preview_mode(self, enabled):
+        """Toggle preview mode on/off."""
+        self.preview_enabled = enabled
+        self._update_preview_button_state(enabled)
+        
+        if enabled:
+            # Ensure we have data loaded when turning preview back on
+            if self.original_data is None or self.original_data.empty:
+                self.preview_raw_data()  # This will load data and trigger preview
+            else:
+                self._update_preview()
+        else:
+            self.plot_widget.clear_plot()
+    
+    def _update_preview_button_state(self, enabled):
+        """Update preview button appearance based on state."""
+        if enabled:
+            self.preview_toggle_btn.setIcon(self.eye_open_icon)
+            self.preview_toggle_btn.setText(" Preview ON")
+            self.preview_toggle_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #e8f5e8;
+                    border: 2px solid #27ae60;
+                    border-radius: 4px;
+                    padding: 4px 8px;
+                    font-weight: bold;
+                    color: #27ae60;
+                }
+                QPushButton:hover {
+                    background-color: #d5e8d4;
+                }
+            """)
+        else:
+            self.preview_toggle_btn.setIcon(self.eye_close_icon)
+            self.preview_toggle_btn.setText(" Preview OFF")
+            self.preview_toggle_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #f8f8f8;
+                    border: 2px solid #7f8c8d;
+                    border-radius: 4px;
+                    padding: 4px 8px;
+                    font-weight: bold;
+                    color: #7f8c8d;
+                }
+                QPushButton:hover {
+                    background-color: #ecf0f1;
+                }
+            """)
+    
+    def preview_raw_data(self):
+        """Preview raw data when dataset selection changes."""
+        selected_items = self.dataset_list.selectedItems()
+        if not selected_items:
+            self.plot_widget.clear_plot()
+            return
+        
+        first_item = selected_items[0]
+        dataset_name = first_item.text().replace("📊 ", "").replace("🔄 ", "")
+        
+        if dataset_name in RAMAN_DATA:
+            self.original_data = RAMAN_DATA[dataset_name]
+            
+            # Show original data without auto-focus initially
+            self.plot_widget.plot_spectra(
+                self.original_data,
+                title=f"Dataset: {dataset_name}",
+                auto_focus=False
+            )
+            
+            # Trigger preview update if preview is enabled
+            if self.preview_enabled:
+                self._schedule_preview_update()
+    
+    def on_pipeline_step_selected(self, current, previous):
+        """Handle pipeline step selection change."""
+        if current is None:
+            self._clear_parameter_widget()
+            return
+        
+        step_index = current.data(Qt.ItemDataRole.UserRole)
+        if step_index is not None and 0 <= step_index < len(self.pipeline_steps):
+            step = self.pipeline_steps[step_index]
+            self._show_parameter_widget(step)
+            
+            # Trigger preview update when step is selected
+            self._schedule_preview_update()
+    
+    def _clear_parameter_widget(self):
+        """Clear the parameter widget area."""
+        for i in reversed(range(self.params_layout.count())):
+            child = self.params_layout.itemAt(i).widget()
+            if child:
+                child.setParent(None)
+        
+        # Show default message
+        default_label = QLabel(LOCALIZE("PREPROCESS.set_step_params"))
+        default_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        default_label.setFixedHeight(30)
+        self.params_layout.addWidget(default_label)
+        
+        self.current_step_widget = None
+    
+    def _show_parameter_widget(self, step: PipelineStep):
+        """Show parameter widget for the given step."""
+        # Clear existing widget
+        self._clear_parameter_widget()
+        
+        # Get method info
+        method_info = PREPROCESSING_REGISTRY.get_method_info(step.category, step.method)
+        if not method_info:
+            return
+        
+        # Create parameter widget with proper data range
+        data_range = self._get_data_wavenumber_range()
+        param_widget = DynamicParameterWidget(method_info, step.params, data_range, self)
+        
+        # Remove default message and add parameter widget
+        for i in reversed(range(self.params_layout.count())):
+            child = self.params_layout.itemAt(i).widget()
+            if child:
+                child.setParent(None)
+        
+        self.params_layout.addWidget(param_widget)
+        self.current_step_widget = param_widget
+        
+        # Connect parameter changes to preview updates
+        self._connect_parameter_signals(param_widget)
+    
+    def _on_pipeline_reordered(self, parent, start, end, destination, row):
+        """Handle pipeline reordering via drag and drop."""
+        # Reconstruct pipeline_steps list in new order
+        new_order = []
+        for i in range(self.pipeline_list.count()):
+            item = self.pipeline_list.item(i)
+            old_index = item.data(Qt.ItemDataRole.UserRole)
+            if old_index is not None and old_index < len(self.pipeline_steps):
+                new_order.append(self.pipeline_steps[old_index])
+        
+        self.pipeline_steps = new_order
+        
+        # Update item data to reflect new order
+        for i in range(self.pipeline_list.count()):
+            item = self.pipeline_list.item(i)
+            item.setData(Qt.ItemDataRole.UserRole, i)
+        
+        # Trigger preview update
+        self._schedule_preview_update()
+    
+    def _connect_parameter_signals(self, param_widget):
+        """Connect parameter widget signals for automatic preview updates."""
+        if not param_widget:
+            return
+        
+        # Connect all parameter widget signals to trigger preview updates
+        for widget in param_widget.param_widgets.values():
+            # Connect custom parameter widgets with parametersChanged signal
+            if hasattr(widget, 'parametersChanged'):
+                widget.parametersChanged.connect(lambda: self._schedule_preview_update())
+                # Connect real-time updates for sliders with immediate response
+                if hasattr(widget, 'realTimeUpdate'):
+                    widget.realTimeUpdate.connect(lambda: self._schedule_preview_update(delay_ms=50))
+            # Connect standard Qt widgets
+            elif hasattr(widget, 'valueChanged'):
+                widget.valueChanged.connect(lambda: self._schedule_preview_update())
+            elif hasattr(widget, 'textChanged'):
+                widget.textChanged.connect(lambda: self._schedule_preview_update())
+            elif hasattr(widget, 'currentTextChanged'):
+                widget.currentTextChanged.connect(lambda: self._schedule_preview_update())
+            elif hasattr(widget, 'toggled'):
+                widget.toggled.connect(lambda: self._schedule_preview_update())
 
     
 

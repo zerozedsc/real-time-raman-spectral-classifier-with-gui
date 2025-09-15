@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The **Preprocessing** page is an advanced, interactive module for cleaning and preparing Raman spectral data for medical diagnosis applications. It provides a comprehensive, pipeline-based workflow with detailed parameter controls, real-time visualization, and robust error handling designed specifically for disease detection scenarios.
+The **Preprocessing** page is an advanced, interactive module for cleaning and preparing Raman spectral data for medical diagnosis applications. It provides a comprehensive, pipeline-based workflow with detailed parameter controls, **automatic real-time preview**, and robust error handling designed specifically for disease detection scenarios.
 
 This page fulfills the core requirement of **"前処理" (Preprocessing)** as outlined in the project's development plan for real-time Raman spectral classification.
 
@@ -10,7 +10,7 @@ This page fulfills the core requirement of **"前処理" (Preprocessing)** as ou
 
 ## 2. Enhanced Page Layout & Components
 
-The page features a modern, two-panel layout optimized for efficient preprocessing workflows:
+The page features a modern, two-panel layout optimized for efficient preprocessing workflows with **automatic visual feedback**:
 
 ### **Left Panel: Enhanced Control Interface**
 
@@ -19,6 +19,7 @@ The page features a modern, two-panel layout optimized for efficient preprocessi
 - **Visual Feedback**: Clear selection indicators and hover states
 - **Data Validation**: Automatic validation of selected datasets
 - **Status Display**: Shows when no datasets are available
+- **Auto-Preview**: Automatically loads data for real-time preview when selected
 
 #### **パイプライン設定 (Pipeline Configuration)**
 - **Advanced Step Selection**: Comprehensive dropdown with Japanese preprocessing method names:
@@ -28,12 +29,16 @@ The page features a modern, two-panel layout optimized for efficient preprocessi
   - マルチスケール畳み込み (Multi-scale Convolution)
   - ベクトル正規化 (Vector Normalization)
   - SNV 正規化 (SNV Normalization)
+  - コズミックレイ除去 (Cosmic Ray Removal)
+  - 微分処理 (Derivative Processing)
 
-- **Pipeline Management**:
-  - Drag-and-drop reordering of processing steps
+- **Real-time Pipeline Management**:
+  - **Automatic Preview**: Visual updates immediately when steps are added/removed
+  - Drag-and-drop reordering of processing steps with instant preview update
+  - **Dynamic Parameter Preview**: Changes to parameters trigger automatic graph updates
   - Visual step indicators with medical-themed styling
   - One-click step removal and pipeline clearing
-  - Real-time parameter validation
+  - Real-time parameter validation with visual feedback
 
 #### **出力設定 (Output Configuration)**
 - **Smart Naming**: Intelligent output dataset naming with validation
@@ -82,32 +87,60 @@ The page features a modern, two-panel layout optimized for efficient preprocessi
 - **Scrollable Interface**: Accommodates detailed parameter sets
 
 #### **可視化 (Visualization)**
-- **Interactive Matplotlib Integration**: High-quality spectral plots
-- **Real-time Updates**: Immediate visualization of raw data selection
-- **Before/After Comparison**: Clear visualization of preprocessing effects
-- **Medical-grade Plotting**: Optimized for diagnostic applications
-- **Responsive Design**: Adaptive plot sizing and formatting
+- **Real-time Automatic Preview**: Instant visual feedback during pipeline building
+  - **Automatic Updates**: Graph updates immediately when steps are added/removed/reordered
+  - **Parameter Live Preview**: Real-time visualization as parameters are adjusted
+  - **Debounced Updates**: Smooth performance with 300ms delay for parameter changes
+  - **Preview Status Indicator**: Visual status showing preview state (ready/processing/error)
+
+- **Smart Comparison View**: 
+  - **Original vs Processed**: Side-by-side comparison with color-coded visualization
+  - **Sample Data Preview**: Uses subset of data for fast preview performance
+  - **Toggle Control**: Enable/disable automatic preview with manual fallback
+
+- **Interactive Matplotlib Integration**: 
+  - High-quality spectral plots optimized for medical applications
+  - **Performance Optimized**: Uses sampled data (every 10th spectrum) for preview
+  - Medical-grade plotting with professional styling
+  - Responsive design with adaptive plot sizing
 
 ---
 
-## 3. Enhanced Workflow
+## 3. Enhanced Real-time Preview Workflow
+
+### **Automatic Preview System**
+1. **Data Loading**: Original data automatically stored when datasets are selected
+2. **Pipeline Building**: 
+   - Each step addition triggers automatic preview update
+   - Parameter changes update preview with 300ms debouncing
+   - Step toggling (enable/disable) updates preview instantly
+   - Pipeline reordering via drag-drop updates preview automatically
+
+3. **Visual Feedback**:
+   - **Green Status**: Preview ready and current
+   - **Orange Status**: Processing preview update
+   - **Red Status**: Preview error (falls back to original data)
+   - **Gray Status**: Preview disabled (manual mode)
 
 ### **Data Preparation Phase**
 1. **Dataset Selection**: Choose single or multiple datasets for processing
-2. **Data Validation**: Automatic validation of spectral data format and quality
-3. **Preview Generation**: Immediate visualization of selected raw data
+2. **Data Validation**: Automatic validation of spectral data format and quality  
+3. **Preview Generation**: Immediate visualization with automatic preview system
 
 ### **Pipeline Configuration Phase**
 1. **Method Selection**: Choose from medical-optimized preprocessing methods
-2. **Step Organization**: Drag-and-drop reordering for optimal processing sequence
-3. **Parameter Optimization**: Detailed parameter adjustment with medical context
-4. **Validation**: Real-time parameter validation and feedback
+2. **Real-time Building**: 
+   - Add steps and see immediate visual impact
+   - Adjust parameters with live preview updates
+   - Reorder steps with instant visual feedback
+3. **Parameter Optimization**: Detailed parameter adjustment with automatic visual validation
+4. **Live Validation**: Real-time parameter validation with preview confirmation
 
 ### **Execution Phase**
-1. **Output Naming**: Intelligent naming with conflict resolution
-2. **Processing**: Robust execution with comprehensive error handling
-3. **Result Visualization**: Immediate visualization of processed spectra
-4. **Project Integration**: Automatic integration into project workflow
+1. **Preview Verification**: Final review of preprocessing effects before execution
+2. **Output Naming**: Intelligent naming with conflict resolution
+3. **Processing**: Robust execution with comprehensive error handling  
+4. **Result Visualization**: Immediate visualization of processed spectra
 
 ---
 
@@ -136,10 +169,18 @@ The page features a modern, two-panel layout optimized for efficient preprocessi
 ## 5. Technical Implementation
 
 ### **Architecture**
-- **Modular Design**: Separate parameter widgets for each processing method
+- **Modular Design**: Uses reusable widgets from `components/widgets/` package
+- **Professional SVG Icons**: Custom spinboxes with decrease-circle.svg and increase-circle.svg
 - **Extensible Framework**: Easy addition of new preprocessing methods
 - **Robust Error Handling**: Comprehensive exception handling and user feedback
 - **Performance Optimization**: Efficient processing for large spectral datasets
+
+### **Widget Integration**
+- **Custom Parameter Widgets**: Professional CustomSpinBox and CustomDoubleSpinBox with SVG icons
+- **Range Parameter Widget**: Sophisticated dual-input with synchronized sliders
+- **Dynamic Parameter System**: Automatic widget creation based on method metadata
+- **Real-time Validation**: Immediate parameter constraint enforcement
+- **Medical-grade Styling**: Professional appearance optimized for scientific applications
 
 ### **Integration**
 - **Project Management**: Seamless integration with project workflow
@@ -148,4 +189,12 @@ The page features a modern, two-panel layout optimized for efficient preprocessi
 - **Visualization Pipeline**: Real-time plotting and display updates
 
 This enhanced preprocessing page provides a professional, medical-grade interface for preparing Raman spectral data for disease detection applications, combining advanced technical capabilities with user-friendly design principles.
+
+---
+
+## 6. Related Documentation
+
+- **[Widgets Component Package](../docs/widgets-component-package.md)**: Comprehensive documentation for the reusable parameter widgets used throughout the preprocessing interface
+- **[Enhanced Parameter Widgets](../docs/enhanced-parameter-widgets.md)**: Technical details on widget implementation and customization
+- **[Parameter Widgets Fixes](../docs/parameter-widgets-fixes.md)**: Historical documentation of widget improvements and bug fixes
 

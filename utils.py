@@ -9,7 +9,6 @@ from PySide6.QtCore import QSize, Qt
 
 # This import assumes your configs.py is in a 'configs' directory
 from configs.configs import *
-from configs.style.stylesheets import get_main_stylesheet
 
 # --- Global In-Memory Data Store ---
 # This dictionary will hold the currently loaded DataFrames for the active project.
@@ -228,6 +227,7 @@ ICON_PATHS = {
     "new_project": os.path.join(os.path.dirname(__file__), "assets/icons/new-project.svg"),
     "open_project": os.path.join(os.path.dirname(__file__), "assets/icons/load-project.svg"),
     "recent_projects": os.path.join(os.path.dirname(__file__), "assets/icons/recent-project.svg"),
+    "reload": os.path.join(os.path.dirname(__file__), "assets/icons/reload.svg"),
 }
 
 # [100725] --- Utility Functions ---
@@ -256,41 +256,3 @@ def load_svg_icon(path: str,  color: Qt.GlobalColor = None, size: QSize = QSize(
         painter.end()
         return QIcon(colored_pixmap)
     return QIcon(pixmap)
-
-# [230725] --- RAMAN_DATA Integrity Check ---
-# This function checks the integrity of the global RAMAN_DATA dictionary.
-# It logs the total number of datasets and spectra, and checks for empty datasets.
-def validate_raman_data_integrity():
-    """Validate RAMAN_DATA integrity and log status."""
-    try:
-        total_datasets = len(RAMAN_DATA)
-        total_spectra = sum(df.shape[1] if df.ndim > 1 else 1 for df in RAMAN_DATA.values())
-        
-        create_logs("RAMAN_DATA", "integrity_check", 
-                   f"RAMAN_DATA contains {total_datasets} datasets with {total_spectra} total spectra", 
-                   status='info')
-        
-        # Check for empty datasets
-        empty_datasets = [name for name, df in RAMAN_DATA.items() if df.empty]
-        if empty_datasets:
-            create_logs("RAMAN_DATA", "empty_datasets", 
-                       f"Found empty datasets: {empty_datasets}", status='warning')
-        
-        return True
-    except Exception as e:
-        create_logs("RAMAN_DATA", "integrity_error", 
-                   f"Error validating RAMAN_DATA: {e}", status='error')
-        return False
-
-# [240725] --- RAMAN_DATA Summary Function ---
-# This function provides a summary of the currently loaded RAMAN_DATA contents.
-def get_raman_data_summary():
-    """Get summary of current RAMAN_DATA contents."""
-    if not RAMAN_DATA:
-        return "No datasets loaded"
-    
-    summary = f"Loaded datasets: {len(RAMAN_DATA)}\n"
-    for name, df in RAMAN_DATA.items():
-        summary += f"  • {name}: {df.shape} ({df.index.min():.1f}-{df.index.max():.1f} cm⁻¹)\n"
-    
-    return summary

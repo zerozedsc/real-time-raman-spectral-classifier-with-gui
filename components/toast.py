@@ -38,7 +38,6 @@ class Toast(QWidget):
             duration (int): How long the message stays visible in milliseconds.
         """
         if not self.parent():
-            print("Toast Error: No parent widget set.")
             return
 
         self.label.setText(message)

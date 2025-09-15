@@ -91,6 +91,7 @@
         "tuple_format_hint": "例: 1000, 2000",
         "list_int_format_hint": "例: 1, 2, 3",
         "list_float_format_hint": "例: 1.0, 2.5, 3.7",
+        "dict_format_hint": "例: Si:520.5, Diamond:1332",
         "select_category_method": "カテゴリと手法を選択してください",
         "step_added": "ステップ '{step}' が追加されました",
         "step_removed": "ステップが削除されました",
@@ -148,6 +149,15 @@
         "preprocessing_history_title": "前処理履歴",
         "spectra_preview_title": "スペクトルプレビュー",
         "processed_spectra_title": "{name} - 処理済みスペクトル",
+        "real_time_preview": "リアルタイムプレビュー",
+        "real_time_preview_tooltip": "パイプライン変更時に自動的にプレビューを更新",
+        "manual_refresh_tooltip": "手動でプレビューを更新",
+        "no_data_for_preview": "プレビュー用のデータが選択されていません",
+        "preview_status": "プレビュー:",
+        "preview_status_ready": "プレビュー準備完了",
+        "preview_status_processing": "プレビュー処理中...",
+        "preview_status_error": "プレビューエラー",
+        "preview_status_disabled": "プレビュー無効",
         "CONFIRM_DIALOG": {
             "summary_text": "入力データセット: {datasets}個 | パイプラインステップ: {steps}個 | 推定処理時間: 約{time}秒 | 出力データセット名: {output_name}",
             "benefits_tab": "期待効果",
@@ -199,7 +209,9 @@
             "MISCELLANEOUS": "波数範囲の調整・その他",
             "DENOISING": "ノイズの除去・平滑化",
             "BASELINE_CORRECTION": "ベースライン信号の除去",
-            "NORMALISATION": "強度値の正規化"
+            "NORMALISATION": "強度値の正規化",
+            "CALIBRATION": "波数・強度軸の校正",
+            "DERIVATIVES": "スペクトル微分によるピーク強調"
         },
         "BENEFITS": {
             "SPIKE_REMOVAL": {
@@ -277,6 +289,24 @@
                     "データの統計的一貫性確保"
                 ]
             },
+            "CALIBRATION": {
+                "title": "🎯 キャリブレーション",
+                "benefits": [
+                    "波数軸の系統的誤差を補正",
+                    "機器間のデータ互換性向上",
+                    "定量分析の精度向上",
+                    "再現性のある測定結果"
+                ]
+            },
+            "DERIVATIVES": {
+                "title": "📊 微分処理",
+                "benefits": [
+                    "重複ピークの分離・強調",
+                    "ベースライン変動の除去",
+                    "ピーク検出精度の向上",
+                    "スペクトル特徴の強調"
+                ]
+            },
             "overall_title": "全体的な効果",
             "overall": [
                 "🎯 分類・解析精度の大幅向上",
@@ -293,6 +323,8 @@
             "DENOISING": "ノイズ低減: S/N比 2-5倍向上",
             "BASELINE_CORRECTION": "ベースライン平坦化: 90%以上",
             "NORMALISATION": "サンプル間変動: 80%削減",
+            "CALIBRATION": "軸精度向上: ±0.5 cm⁻¹以内",
+            "DERIVATIVES": "ピーク分離能: 2-3倍向上",
             "total_steps": "処理ステップ数: {steps}個",
             "data_integrity": "データ整合性: 100%保持",
             "reproducibility": "処理の再現性: 完全"
@@ -321,7 +353,9 @@
             "MISCELLANEOUS": "その他前処理",
             "DENOISING": "ノイズ除去",
             "BASELINE_CORRECTION": "ベースライン補正",
-            "NORMALISATION": "正規化"
+            "NORMALISATION": "正規化",
+            "CALIBRATION": "キャリブレーション",
+            "DERIVATIVES": "微分処理"
         }
     },
     "TABS": {

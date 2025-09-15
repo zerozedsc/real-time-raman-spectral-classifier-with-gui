@@ -97,5 +97,205 @@
         "meta_save_error": "Failed to save metadata: {error}",
         "dataset_remove_success": "Dataset '{name}' was removed.",
         "dataset_remove_error": "Failed to remove dataset '{name}'."
+    },
+    "PREPROCESS": {
+        "raw_spectra_title": "Raw Spectra Preview",
+        "output_name_required": "Please enter an output dataset name",
+        "pipeline_empty": "Please add at least one step to the pipeline",
+        "start_error": "Error starting preprocessing: {error}",
+        "processing_success": "Successfully processed data as '{name}'",
+        "no_datasets_available": "No datasets available",
+        "no_data_warning": "No data loaded",
+        "datasets_loaded": "{count} datasets loaded",
+        "preprocessed_data_tooltip": "Preprocessed data ({steps} steps)",
+        "raw_data_tooltip": "Raw data",
+        "tuple_format_hint": "e.g.: 1000, 2000",
+        "list_int_format_hint": "e.g.: 1, 2, 3",
+        "list_float_format_hint": "e.g.: 1.0, 2.5, 3.7",
+        "dict_format_hint": "e.g.: Si:520.5, Diamond:1332",
+        "select_category_method": "Please select category and method",
+        "step_added": "Step '{step}' added",
+        "step_removed": "Step removed",
+        "pipeline_cleared": "Pipeline cleared",
+        "no_datasets_selected": "No datasets selected",
+        "no_pipeline_steps": "No pipeline steps configured",
+        "no_output_name": "No output dataset name provided",
+        "no_valid_datasets": "No valid datasets found",
+        "processing_started": "Preprocessing started",
+        "processing_cancelled": "Preprocessing cancelled",
+        "save_error": "Failed to save data",
+        "result_error": "Error processing results: {error}",
+        "overwrite_title": "Overwrite Confirmation",
+        "overwrite_message": "Dataset '{name}' already exists. Overwrite?",
+        "processing_success_with_failures": "Preprocessing completed as '{name}' (Success: {successful}/{total}, Failed: {failed})",
+        "processing_success_complete": "Preprocessing completed successfully as '{name}' with {steps} steps",
+        "history_info": "Processing Date: {date}\nTotal Steps: {total_steps}\nSuccessful: {successful_steps}\nFailed: {failed_steps}",
+        "toggle_existing_step_tooltip": "Toggle whether to re-execute existing steps",
+        "existing_step_indicator": "Existing preprocessing step",
+        "new_step_indicator": "New preprocessing step",
+        "existing_step_enabled_tooltip": "Existing step - re-execution enabled",
+        "existing_step_disabled_tooltip": "Existing step - re-execution disabled (default)",
+        "new_step_tooltip": "New step - will always be executed",
+        "no_enabled_steps": "No enabled preprocessing steps",
+        "existing_step_tooltip": "Existing preprocessing step - use checkbox to control re-execution",
+        "input_datasets_title": "Input Datasets",
+        "pipeline_building_title": "Pipeline Building",
+        "output_config_title": "Output Configuration",
+        "parameters_title": "Parameters",
+        "visualization_title": "Visualization",
+        "category": "Category",
+        "method": "Method",
+        "refresh_datasets": "Refresh Datasets",
+        "add_step_button": "Add Step",
+        "remove_step": "Remove Selected Step",
+        "clear_pipeline": "Clear Pipeline",
+        "toggle_all_existing": "Toggle All Existing Steps",
+        "enable_all_existing": "Enable All Existing Steps",
+        "disable_all_existing": "Disable All Existing Steps",
+        "output_name_label": "Output Dataset Name",
+        "output_name_placeholder": "Enter name for processed data",
+        "run_button": "Run Preprocessing",
+        "cancel_button": "Cancel",
+        "processing": "Processing",
+        "refresh_datasets_tooltip": "Reload project datasets",
+        "add_step_tooltip": "Add step to pipeline with selected category and method",
+        "remove_step_tooltip": "Remove selected step from pipeline",
+        "clear_pipeline_tooltip": "Remove all steps from pipeline",
+        "toggle_existing_tooltip": "Toggle enable/disable for all existing preprocessing steps",
+        "run_button_tooltip": "Execute preprocessing with built pipeline",
+        "cancel_button_tooltip": "Cancel current preprocessing",
+        "set_step_params": "Set step parameters",
+        "no_parameters": "This step has no parameters",
+        "parameters_for_step": "Parameters for {step}",
+        "preprocessing_history_title": "Preprocessing History",
+        "spectra_preview_title": "Spectra Preview",
+        "processed_spectra_title": "{name} - Processed Spectra",
+        "real_time_preview": "Real-time Preview",
+        "real_time_preview_tooltip": "Automatically update preview when pipeline changes",
+        "manual_refresh_tooltip": "Manually refresh the preview",
+        "no_data_for_preview": "No data selected for preview",
+        "preview_status": "Preview:",
+        "preview_status_ready": "Preview ready",
+        "preview_status_processing": "Processing preview...",
+        "preview_status_error": "Preview error",
+        "preview_status_disabled": "Preview disabled",
+        "PURPOSE": {
+            "SPIKE_REMOVAL": "Cosmic ray spike removal",
+            "WAVENUMBER_CALIBRATION": "Wavenumber range adjustment and cropping",
+            "INTENSITY_CALIBRATION": "Intensity value calibration",
+            "SMOOTHING": "Noise removal and smoothing",
+            "NORMALIZATION": "Intensity value normalization",
+            "COSMIC_RAY_REMOVAL": "Cosmic ray spike removal",
+            "MISCELLANEOUS": "Wavenumber range adjustment and other preprocessing",
+            "DENOISING": "Noise removal and smoothing",
+            "BASELINE_CORRECTION": "Baseline signal removal",
+            "NORMALISATION": "Intensity value normalization",
+            "CALIBRATION": "Wavenumber and intensity axis calibration",
+            "DERIVATIVES": "Spectral derivative peak enhancement"
+        },
+        "BENEFITS": {
+            "COSMIC_RAY_REMOVAL": {
+                "title": "🔧 Cosmic Ray Removal",
+                "benefits": [
+                    "Remove abnormal peaks from cosmic rays",
+                    "Reduce measurement artifacts",
+                    "Improve data reliability"
+                ]
+            },
+            "MISCELLANEOUS": {
+                "title": "📏 Other Preprocessing",
+                "benefits": [
+                    "Focus on spectral regions of interest",
+                    "Remove background signals",
+                    "Optimize data size",
+                    "Improve processing speed"
+                ]
+            },
+            "DENOISING": {
+                "title": "🔄 Noise Removal & Smoothing",
+                "benefits": [
+                    "Reduce measurement noise",
+                    "Improve S/N ratio",
+                    "Optimize peak shapes",
+                    "Enhance spectral quality"
+                ]
+            },
+            "BASELINE_CORRECTION": {
+                "title": "📈 Baseline Correction",
+                "benefits": [
+                    "Remove fluorescence background",
+                    "Enhance true Raman peaks",
+                    "Improve quantitative analysis accuracy"
+                ]
+            },
+            "NORMALISATION": {
+                "title": "⚖️ Normalization",
+                "benefits": [
+                    "Correct intensity differences between samples",
+                    "Optimize for machine learning algorithms",
+                    "Improve classification accuracy",
+                    "Ensure statistical data consistency"
+                ]
+            },
+            "CALIBRATION": {
+                "title": "🎯 Calibration",
+                "benefits": [
+                    "Correct systematic wavenumber errors",
+                    "Improve inter-instrument data compatibility",
+                    "Enhance quantitative analysis precision",
+                    "Ensure reproducible measurement results"
+                ]
+            },
+            "DERIVATIVES": {
+                "title": "📊 Derivative Processing",
+                "benefits": [
+                    "Separate and enhance overlapping peaks",
+                    "Remove baseline variations",
+                    "Improve peak detection accuracy",
+                    "Enhance spectral features"
+                ]
+            },
+            "overall_title": "Overall Effects",
+            "overall": [
+                "🎯 Significantly improve classification and analysis accuracy",
+                "🚀 Optimize machine learning model performance",
+                "📊 Achieve reproducible results",
+                "⚡ Fast and reliable data processing"
+            ]
+        },
+        "METRICS": {
+            "COSMIC_RAY_REMOVAL": "Artifact removal: >95%",
+            "DENOISING": "Noise reduction: 2-5x S/N improvement",
+            "BASELINE_CORRECTION": "Baseline flattening: >90%",
+            "NORMALISATION": "Inter-sample variation: 80% reduction",
+            "CALIBRATION": "Axis accuracy improvement: ±0.5 cm⁻¹",
+            "DERIVATIVES": "Peak separation capability: 2-3x improvement",
+            "total_steps": "Processing steps: {steps}",
+            "data_integrity": "Data integrity: 100% preserved",
+            "reproducibility": "Processing reproducibility: Complete"
+        },
+        "STATUS": {
+            "building_pipeline": "Building pipeline...",
+            "creating_step": "Creating step: {step}",
+            "executing_pipeline": "Executing pipeline...",
+            "processing_results": "Processing results...",
+            "preparing_data": "Preparing data...",
+            "merging_data": "Merging data...",
+            "processing_step": "Processing step: {step} ({number}/{total})",
+            "skipping_existing_step": "Skipping existing step: {step} ({number}/{total})",
+            "finalizing_results": "Finalizing results...",
+            "completed": "Completed",
+            "error": "Error",
+            "step_completed": "Step completed: {step} ({number}/{total})"
+        },
+        "CATEGORY": {
+            "COSMIC_RAY_REMOVAL": "Cosmic Ray Removal",
+            "MISCELLANEOUS": "Other Preprocessing",
+            "DENOISING": "Noise Removal",
+            "BASELINE_CORRECTION": "Baseline Correction",
+            "NORMALISATION": "Normalization",
+            "CALIBRATION": "Calibration",
+            "DERIVATIVES": "Derivative Processing"
+        }
     }
 }

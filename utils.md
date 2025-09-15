@@ -4,6 +4,8 @@
 
 This module serves as a central hub for application-wide utilities, global instances, and helper functions. It is intended to be imported by various parts of the application to access shared resources and logic.
 
+**Recent Updates**: Module has been cleaned and optimized - removed unused functions (`validate_raman_data_integrity`, `get_raman_data_summary`) and unused imports to maintain clean architecture.
+
 ## Key Components
 
 ### Global Instances
@@ -47,6 +49,14 @@ This is the most critical class in this module. It abstracts all file system int
 
 - **Recent Projects:**  
     Scans the `projects/` directory to provide a list of recently modified projects for the HomePage.
+
+## Code Quality Notes
+
+This module follows strict code quality standards:
+- **No Debug Prints**: All debug statements have been removed in favor of proper logging
+- **Clean Imports**: Only necessary imports are retained
+- **Optimized Functions**: Unused utility functions have been removed to maintain lean architecture
+- **Global State Management**: Centralized management of application-wide instances for consistent state
 
 ## Helper Functions
 

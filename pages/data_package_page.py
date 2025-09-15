@@ -10,9 +10,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QUrl, QSize
 from PySide6.QtGui import QIcon
 
-from functions.data_loader import plot_spectra, load_data_from_path, load_metadata_from_json
+from functions.data_loader import load_data_from_path, load_metadata_from_json
 from utils import LOCALIZE, PROJECT_MANAGER, CONFIGS, RAMAN_DATA
-from components.matplotlib_widget import MatplotlibWidget, plot_spectra
+from components.widgets.matplotlib_widget import MatplotlibWidget, plot_spectra
 
 class DragDropLabel(QLabel):
     pathDropped = Signal(str)
@@ -37,7 +37,15 @@ class DatasetItemWidget(QWidget):
         self.setObjectName("datasetItemWidget")
         layout = QHBoxLayout(self); layout.setContentsMargins(0, 5, 5, 5); layout.setSpacing(10)
         name_label = QLabel(dataset_name); name_label.setObjectName("datasetItemLabel")
-        remove_button = QPushButton("V"); remove_button.setObjectName("removeListItemButton"); remove_button.setFixedSize(26, 26); remove_button.setToolTip(f"Remove '{dataset_name}'"); remove_button.clicked.connect(lambda: self.removeRequested.emit(self.dataset_name))
+        
+        # Modify remove button to use SVG icon
+        remove_button = QPushButton(); remove_button.setObjectName("removeListItemButton"); remove_button.setFixedSize(26, 26); remove_button.setToolTip(f"Remove '{dataset_name}'")
+        icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "icons", "trash-xmark.svg")  # Adjust path if needed
+        remove_button.setIcon(QIcon(icon_path))
+        remove_button.setIconSize(QSize(16, 16))  # Adjust size as needed
+        remove_button.clicked.connect(lambda: self.removeRequested.emit(self.dataset_name))
+        
+
         layout.addWidget(name_label); layout.addStretch(); layout.addWidget(remove_button)
 
 class DataPackagePage(QWidget):

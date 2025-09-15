@@ -7,7 +7,6 @@ import pandas as pd
 from matplotlib.figure import Figure
 
 from configs.configs import create_logs
-from components.matplotlib_widget import plot_spectra
 
 SEPERATOR = [',', ' ', ';', '\t']
 

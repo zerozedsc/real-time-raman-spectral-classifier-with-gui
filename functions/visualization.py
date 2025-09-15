@@ -1172,7 +1172,6 @@ class RamanVisualizer:
 
         def _detect_model_type_enhanced(model):
             """Enhanced model type detection with better SHAP strategy."""
-            print("🔧 Enhanced model type detection...")
             model_type = type(model).__name__
             is_svc = isinstance(model, SVC)
             is_rf = isinstance(model, RandomForestClassifier)
@@ -1184,7 +1183,6 @@ class RamanVisualizer:
             shap_strategy = "auto"
 
             if is_calibrated:
-                print("📋 Detected CalibratedClassifierCV - analyzing base estimator...")
 
                 # ENHANCED: Better base estimator extraction
                 base_estimator = None
@@ -1193,19 +1191,13 @@ class RamanVisualizer:
                 if hasattr(model, 'estimators_') and len(model.estimators_) > 0:
                     try:
                         base_estimator = model.estimators_[0]
-                        print(
-                            f"✅ Extracted base estimator from estimators_[0]: {type(base_estimator).__name__}")
                     except (IndexError, AttributeError) as e:
-                        print(f"❌ Failed to extract from estimators_[0]: {e}")
 
                 # Method 2: Try base_estimator attribute (deprecated but sometimes present)
                 if base_estimator is None and hasattr(model, 'base_estimator'):
                     try:
                         base_estimator = model.base_estimator
-                        print(
-                            f"✅ Extracted base estimator from base_estimator: {type(base_estimator).__name__}")
                     except AttributeError as e:
-                        print(f"❌ Failed to extract from base_estimator: {e}")
 
                 # Method 3: Try to access calibrated_classifiers_ (newer sklearn versions)
                 if base_estimator is None and hasattr(model, 'calibrated_classifiers_'):
@@ -1213,27 +1205,19 @@ class RamanVisualizer:
                         if len(model.calibrated_classifiers_) > 0:
                             base_estimator = model.calibrated_classifiers_[
                                 0].base_estimator
-                            print(
-                                f"✅ Extracted base estimator from calibrated_classifiers_[0]: {type(base_estimator).__name__}")
                     except (IndexError, AttributeError) as e:
-                        print(
-                            f"❌ Failed to extract from calibrated_classifiers_: {e}")
 
                 # Method 4: Inspect the model's internal structure
                 if base_estimator is None:
-                    print("🔍 Attempting to inspect model internal structure...")
                     try:
                         # Print all available attributes for debugging
                         available_attrs = [attr for attr in dir(
                             model) if not attr.startswith('_')]
-                        print(f"Available attributes: {available_attrs}")
 
                         # Try common attribute names
                         for attr_name in ['base_estimator', 'estimator', 'estimators_', 'calibrated_classifiers_']:
                             if hasattr(model, attr_name):
                                 attr_value = getattr(model, attr_name)
-                                print(
-                                    f"Found attribute '{attr_name}': {type(attr_value)} with value: {attr_value}")
 
                                 if attr_name == 'estimators_' and isinstance(attr_value, list) and len(attr_value) > 0:
                                     base_estimator = attr_value[0]
@@ -1247,7 +1231,6 @@ class RamanVisualizer:
                                     break
 
                     except Exception as e:
-                        print(f"❌ Error during model inspection: {e}")
 
                 if base_estimator is not None:
                     base_is_svc = isinstance(base_estimator, SVC)
@@ -1257,39 +1240,24 @@ class RamanVisualizer:
                         base_estimator, 'kernel') and base_estimator.kernel == 'linear'
                     base_model_type = type(base_estimator).__name__
 
-                    print(f"📊 Base estimator analysis:")
-                    print(f"   - Type: {base_model_type}")
-                    print(f"   - Is SVC: {base_is_svc}")
-                    print(f"   - Is RF: {base_is_rf}")
-                    print(f"   - Is Linear SVC: {base_is_linear_svc}")
 
                     # ENHANCED: Determine optimal SHAP strategy based on output mode
                     if shap_output_mode == "full" or force_kernel_explainer:
                         shap_strategy = "kernel_for_full_values"
                         shap_model = model  # Use calibrated model for full probability explanations
-                        print(
-                            "🎯 Strategy: Using KernelExplainer on calibrated model for full SHAP values")
                     elif shap_output_mode == "sparse" or (use_base_estimator and not force_kernel_explainer):
                         shap_strategy = "base_estimator_for_speed"
                         shap_model = base_estimator
-                        print(
-                            f"⚡ Strategy: Using base estimator ({base_model_type}) for faster sparse explanations")
                     else:  # auto mode
                         if base_is_rf:
                             shap_strategy = "base_estimator_tree"
                             shap_model = base_estimator
-                            print(
-                                "🌳 Strategy: Using TreeExplainer on base RandomForest")
                         elif base_is_linear_svc:
                             shap_strategy = "base_estimator_linear"
                             shap_model = base_estimator
-                            print(
-                                "📏 Strategy: Using LinearExplainer on base Linear SVC")
                         else:
                             shap_strategy = "kernel_balanced"
                             shap_model = model
-                            print(
-                                "⚖️ Strategy: Using KernelExplainer on calibrated model (balanced)")
 
                     # Update flags to reflect the chosen strategy
                     if shap_strategy.startswith("base_estimator"):
@@ -1302,7 +1270,6 @@ class RamanVisualizer:
                         is_linear_svc = False
 
                 else:
-                    print("⚠️ Could not extract base estimator, using KernelExplainer")
                     shap_strategy = "kernel_fallback"
                     is_svc = False
                     is_rf = False
@@ -1316,27 +1283,16 @@ class RamanVisualizer:
 
                 if force_kernel_explainer:
                     shap_strategy = "kernel_forced"
-                    print("🔄 Strategy: Forced KernelExplainer for consistency")
                 elif shap_output_mode == "full":
                     shap_strategy = "kernel_for_full_values"
-                    print("🎯 Strategy: KernelExplainer for full SHAP values")
                 elif is_rf:
                     shap_strategy = "tree_native"
-                    print("🌳 Strategy: Native TreeExplainer")
                 elif is_linear_svc:
                     shap_strategy = "linear_native"
-                    print("📏 Strategy: Native LinearExplainer")
                 else:
                     shap_strategy = "kernel_auto"
-                    print("🔄 Strategy: KernelExplainer (auto)")
 
-            print(f"📊 Model Analysis:")
-            print(f"   - Original model: {model_type}")
             if is_calibrated:
-                print(f"   - Base estimator: {base_model_type}")
-            print(f"   - SHAP strategy: {shap_strategy}")
-            print(f"   - SHAP model: {type(shap_model).__name__}")
-            print(f"   - Output mode: {shap_output_mode}")
 
             return {
                 'model_type': model_type,
@@ -1352,7 +1308,6 @@ class RamanVisualizer:
 
         def _optimize_data_for_performance(X_train, y_train, X_test, y_test, model_info):
             """Enhanced data optimization with strategy-aware settings."""
-            print("⚡ Enhanced data optimization...")
 
             background_data = X_train.copy()
             test_data = X_test.copy()
@@ -1368,7 +1323,6 @@ class RamanVisualizer:
                 max_test_samples = min(max_test_samples, 10)
                 nsamples = min(nsamples, 20)
                 max_features = min(max_features, 200)
-                print("🚀 Fast mode enabled")
             elif strategy in ["kernel_for_full_values", "kernel_forced", "kernel_balanced"]:
                 # For full SHAP values, use more samples but optimize background
                 if not fast_mode:
@@ -1376,20 +1330,15 @@ class RamanVisualizer:
                     max_background_samples = min(max_background_samples, 40)
                     # Increase for better quality
                     nsamples = int(nsamples * kernel_nsamples_multiplier)
-                    print(
-                        f"🎯 Full SHAP mode: Using {nsamples} samples for better quality")
             elif strategy.startswith("base_estimator") or strategy in ["tree_native", "linear_native"]:
                 # For base estimators, we can afford more samples
                 max_background_samples = min(max_background_samples, 100)
                 max_test_samples = min(max_test_samples, 50)
-                print("⚡ Sparse mode: Using base estimator for speed")
 
             # Feature selection based on strategy
             feature_selector = None
             if strategy in ["kernel_for_full_values", "kernel_forced", "kernel_balanced"] and reduce_features and background_data.shape[1] > max_features:
                 # For kernel explainer with full values, be more conservative with feature reduction
-                print(
-                    f"🎯 Conservative feature reduction for full SHAP values: {background_data.shape[1]} → {max_features}")
 
                 from sklearn.feature_selection import SelectKBest, f_classif
                 selector = SelectKBest(f_classif, k=max_features)
@@ -1401,8 +1350,6 @@ class RamanVisualizer:
             elif ((model_info['is_svc'] or strategy.startswith("base_estimator")) and
                   reduce_features and background_data.shape[1] > max_features):
                 # Standard feature reduction for other strategies
-                print(
-                    f"🎯 Standard feature reduction: {background_data.shape[1]} → {max_features}")
 
                 from sklearn.feature_selection import SelectKBest, f_classif
                 selector = SelectKBest(f_classif, k=max_features)
@@ -1414,8 +1361,6 @@ class RamanVisualizer:
             # Background sampling optimization
             if background_data.shape[0] > max_background_samples:
                 if use_kmeans_sampling and strategy in ["kernel_for_full_values", "kernel_balanced"]:
-                    print(
-                        f"🎯 K-means background sampling for quality: {max_background_samples} samples")
                     from sklearn.cluster import KMeans
                     kmeans = KMeans(n_clusters=max_background_samples,
                                     random_state=42, n_init=10)
@@ -1430,8 +1375,6 @@ class RamanVisualizer:
             if test_data.shape[0] > max_test_samples:
                 test_data = test_data[:max_test_samples]
 
-            print(
-                f"📊 Optimized data: Background={background_data.shape[0]}, Test={test_data.shape[0]}, Features={background_data.shape[1]}")
 
             return {
                 'background_data': background_data,
@@ -1442,7 +1385,6 @@ class RamanVisualizer:
 
         def _create_enhanced_shap_explainer(model_info, data_info):
             """Enhanced SHAP explainer creation with strategy-based approach."""
-            print("🔬 Creating enhanced SHAP explainer...")
 
             model = model_info['shap_model']
             original_model = model_info.get('original_model', model)
@@ -1463,21 +1405,16 @@ class RamanVisualizer:
 
             # Strategy-based explainer creation
             if strategy == "kernel_for_full_values":
-                print(
-                    f"🎯 Creating KernelExplainer for full SHAP values (nsamples={current_nsamples})")
                 # ... [existing implementation] ...
 
             elif strategy == "base_estimator_tree":
-                print(f"🌳 Using TreeExplainer on base RandomForest")
                 # ... [existing implementation] ...
 
             elif strategy == "base_estimator_linear":
-                print(f"📏 Using LinearExplainer on base Linear SVC")
                 # ... [existing implementation] ...
 
             # 🔧 FIX: Handle native strategies for non-calibrated models
             elif strategy == "tree_native":
-                print(f"🌳 Using native TreeExplainer")
 
                 if feature_selector is not None:
                     class TreeFeatureWrapper:
@@ -1499,7 +1436,6 @@ class RamanVisualizer:
                     expected_value = explainer.expected_value
 
             elif strategy == "linear_native":
-                print(f"📏 Using native LinearExplainer on Linear SVC")
 
                 try:
                     if feature_selector is not None:
@@ -1520,19 +1456,14 @@ class RamanVisualizer:
                     expected_value = explainer.expected_value
 
                 except Exception as e:
-                    print(
-                        f"⚠️ LinearExplainer failed: {e}, falling back to KernelExplainer")
                     return _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples)
 
             # 🔧 FIX: Handle all kernel strategies (including kernel_auto for SVC)
             elif strategy in ["kernel_forced", "kernel_balanced", "kernel_auto"]:
-                print(
-                    f"🔄 Using KernelExplainer (strategy: {strategy}, nsamples={current_nsamples})")
                 return _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples)
 
             else:
                 # Default fallback
-                print(f"🔄 Using default KernelExplainer fallback")
                 return _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples)
 
             return {
@@ -1545,8 +1476,6 @@ class RamanVisualizer:
 
         def _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples):
             """Create KernelExplainer as fallback."""
-            print(
-                f"🔄 Creating KernelExplainer fallback (nsamples={current_nsamples})")
 
             # Create prediction function
             if hasattr(model, 'predict_proba'):
@@ -1606,8 +1535,6 @@ class RamanVisualizer:
             """Create KernelExplainer specifically for SVC models."""
             kernel_name = model.kernel if hasattr(
                 model, 'kernel') else 'Unknown'
-            print(
-                f"🔄 Using KernelExplainer for {kernel_name.upper()} SVC model...")
 
             # Create prediction function
             if hasattr(model, 'predict_proba') and model.probability:
@@ -1654,7 +1581,6 @@ class RamanVisualizer:
 
         def _process_shap_values(shap_result, data_info):
             """Process and normalize SHAP values from different explainer types."""
-            print("📊 Processing SHAP values...")
 
             shap_values = shap_result['shap_values']
             expected_value = shap_result['expected_value']
@@ -1677,8 +1603,6 @@ class RamanVisualizer:
             else:
                 n_classes = len(labels)
 
-            print(
-                f"📈 Determined n_classes: {n_classes} from SHAP values format")
 
             # Normalize SHAP values to consistent format
             if hasattr(shap_values, 'values'):
@@ -1738,7 +1662,6 @@ class RamanVisualizer:
 
         def _extract_top_features(processed_shap, wavenumber_axis, max_display):
             """Extract top contributing features for each class."""
-            print("🎯 Extracting top features...")
 
             shap_values = processed_shap['shap_values']
             mean_shap_values = processed_shap['mean_shap_values']
@@ -1781,8 +1704,6 @@ class RamanVisualizer:
                             "importance": importance_val
                         })
                     except (ValueError, TypeError, IndexError) as e:
-                        print(
-                            f"⚠️ Warning: Error processing feature {idx}: {e}")
                         continue
 
                 label_name = labels[class_idx] if class_idx < len(
@@ -1800,7 +1721,6 @@ class RamanVisualizer:
             if not show_plots:
                 return {}
 
-            print("📊 Generating SHAP plots...")
 
             plots_dict = {}
             test_data = data_info['test_data']
@@ -1858,7 +1778,6 @@ class RamanVisualizer:
                         plt.close()
 
                 except Exception as e:
-                    print(f"⚠️ Warning: Could not generate summary plot: {e}")
 
                 # Feature importance plot
                 try:
@@ -1903,8 +1822,6 @@ class RamanVisualizer:
                         plt.close()
 
                 except Exception as e:
-                    print(
-                        f"⚠️ Warning: Could not generate importance plot: {e}")
 
             except Exception as e:
                 create_logs("shap_plots", "ML",
@@ -1915,7 +1832,6 @@ class RamanVisualizer:
 
         def _create_final_results(processed_shap, feature_analysis, data_info, model_info, plots_dict, processing_time):
             """Create the final results dictionary."""
-            print("📋 Compiling final results...")
 
             # Prepare class-specific explanations
             class_explanations = {}
@@ -1936,8 +1852,6 @@ class RamanVisualizer:
                             "top_features": top_features.get(label, [])
                         }
                 except Exception as e:
-                    print(
-                        f"⚠️ Warning: Error creating explanation for {label}: {e}")
 
             return {
                 "success": True,

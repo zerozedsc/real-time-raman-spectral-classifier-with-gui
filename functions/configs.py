@@ -115,11 +115,8 @@ def console_log(log_message, status='info', show_status=False, show_time=False, 
     indent = kwargs.get("indent", 1)
     if indent <= 1:
         return_str = f"{time_str}{status_str}{log_message}"
-        pprint(return_str, indent=indent)
     else:
         return_str = f"{time_str}{status_str}"
-        pprint(return_str)
-        pprint(log_message)
 
 
 def generate_id(i, n, id_type="uuid") -> str:
