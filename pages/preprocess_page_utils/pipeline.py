@@ -3,23 +3,28 @@ from .__utils__ import *
 class PipelineStep:
     """Represents a step in the preprocessing pipeline."""
     
-    def __init__(self, category: str, method: str, params: Dict[str, Any] = None):
+    def __init__(self, category: str, method: str, params: Dict[str, Any] = None, source_dataset: str = None):
         self.category = category
         self.method = method
         self.params = params or {}
         self.enabled = True
+        self.source_dataset = source_dataset  # Track which dataset this step came from
     
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        result = {
             "category": self.category,
             "method": self.method,
             "params": self.params,
             "enabled": self.enabled
         }
+        if self.source_dataset:
+            result["source_dataset"] = self.source_dataset
+        return result
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'PipelineStep':
-        step = cls(data["category"], data["method"], data.get("params", {}))
+    def from_dict(cls, data: Dict[str, Any], source_dataset: str = None) -> 'PipelineStep':
+        step = cls(data["category"], data["method"], data.get("params", {}), 
+                  source_dataset or data.get("source_dataset"))
         step.enabled = data.get("enabled", True)
         return step
     
@@ -584,6 +589,15 @@ class PipelineStepWidget(QWidget):
         layout.setContentsMargins(8, 4, 8, 4)
         layout.setSpacing(8)
         
+        # Add enable/disable toggle button with eye icon
+        from components.widgets.icons import load_icon
+        self.enable_toggle_btn = QPushButton()
+        self.enable_toggle_btn.setFixedSize(24, 24)
+        self.enable_toggle_btn.setFlat(True)
+        self.enable_toggle_btn.clicked.connect(self._toggle_enabled)
+        self._update_enable_button()
+        layout.addWidget(self.enable_toggle_btn)
+        
         # Toggle checkbox for existing steps
         if hasattr(self.step, 'is_existing') and self.step.is_existing:
             self.toggle_checkbox = QCheckBox()
@@ -616,36 +630,106 @@ class PipelineStepWidget(QWidget):
         self.toggled.emit(self.step_index, checked)
         self._update_appearance()
     
+    def _toggle_enabled(self):
+        """Toggle the enabled state of the preprocessing step."""
+        self.step.enabled = not self.step.enabled
+        self._update_enable_button()
+        self._update_appearance()
+        # Emit signal to notify parent that step state changed
+        self.toggled.emit(self.step_index, self.step.enabled)
+    
+    def _update_enable_button(self):
+        """Update the enable/disable button icon and tooltip."""
+        from components.widgets.icons import load_icon
+        
+        if self.step.enabled:
+            # Step is enabled, show eye_open icon (indicating it's visible/enabled)
+            icon = load_icon("eye_open", "button")
+            tooltip = LOCALIZE("PREPROCESS.disable_step_tooltip")
+        else:
+            # Step is disabled, show eye_close icon (indicating it's hidden/disabled)
+            icon = load_icon("eye_close", "button")
+            tooltip = LOCALIZE("PREPROCESS.enable_step_tooltip")
+        
+        self.enable_toggle_btn.setIcon(icon)
+        self.enable_toggle_btn.setToolTip(tooltip)
+    
     def _update_appearance(self):
         """Update visual appearance based on step state."""
+        base_style = ""
+        
+        # Apply enabled/disabled styling first
+        if not self.step.enabled:
+            base_style = """
+                QLabel {
+                    color: #bdbdbd;
+                    font-style: italic;
+                }
+            """
+            tooltip_suffix = f" ({LOCALIZE('PREPROCESS.step_disabled')})"
+        else:
+            tooltip_suffix = f" ({LOCALIZE('PREPROCESS.step_enabled')})"
+        
+        # Add source dataset info to tooltip if available
+        if hasattr(self.step, 'source_dataset') and self.step.source_dataset:
+            tooltip_suffix += f" (From: {self.step.source_dataset})"
+        
+        # Then apply specific styling based on step type
         if hasattr(self.step, 'is_existing') and self.step.is_existing:
             if hasattr(self, 'toggle_checkbox') and self.toggle_checkbox.isChecked():
                 # Existing step enabled for reuse
+                if self.step.enabled:
+                    # Check if this step is from another dataset
+                    if hasattr(self.step, 'source_dataset') and self.step.source_dataset:
+                        # Step from another dataset - use dark blue for imported steps
+                        self.name_label.setStyleSheet("""
+                            QLabel {
+                                color: #1976d2;
+                                font-weight: 500;
+                            }
+                        """)
+                    else:
+                        # Step from current dataset - use green color
+                        self.name_label.setStyleSheet("""
+                            QLabel {
+                                color: #2e7d32;
+                                font-weight: 500;
+                            }
+                        """)
+                else:
+                    self.name_label.setStyleSheet(base_style)
+                self.setToolTip(LOCALIZE("PREPROCESS.existing_step_enabled_tooltip") + tooltip_suffix)
+            else:
+                # Existing step disabled (default)
+                if hasattr(self.step, 'source_dataset') and self.step.source_dataset:
+                    # Step from another dataset - use lighter blue for disabled imported steps
+                    self.name_label.setStyleSheet("""
+                        QLabel {
+                            color: #64b5f6;
+                            font-style: italic;
+                        }
+                    """)
+                else:
+                    # Step from current dataset - use standard gray
+                    self.name_label.setStyleSheet("""
+                        QLabel {
+                            color: #757575;
+                            font-style: italic;
+                        }
+                    """)
+                self.setToolTip(LOCALIZE("PREPROCESS.existing_step_disabled_tooltip") + tooltip_suffix)
+        else:
+            # New step
+            if self.step.enabled:
                 self.name_label.setStyleSheet("""
                     QLabel {
-                        color: #2e7d32;
+                        color: #1976d2;
                         font-weight: 500;
                     }
                 """)
-                self.setToolTip(LOCALIZE("PREPROCESS.existing_step_enabled_tooltip"))
             else:
-                # Existing step disabled (default)
-                self.name_label.setStyleSheet("""
-                    QLabel {
-                        color: #757575;
-                        font-style: italic;
-                    }
-                """)
-                self.setToolTip(LOCALIZE("PREPROCESS.existing_step_disabled_tooltip"))
-        else:
-            # New step
-            self.name_label.setStyleSheet("""
-                QLabel {
-                    color: #1976d2;
-                    font-weight: 500;
-                }
-            """)
-            self.setToolTip(LOCALIZE("PREPROCESS.new_step_tooltip"))
+                self.name_label.setStyleSheet(base_style)
+            self.setToolTip(LOCALIZE("PREPROCESS.new_step_tooltip") + tooltip_suffix)
     
     def is_enabled(self) -> bool:
         """Check if step is enabled for processing."""

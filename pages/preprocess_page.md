@@ -1,14 +1,122 @@
 # Preprocessing Page Documentation
 
+## 🎯 Recent Updates (2025)
+
+### **Latest Critical Bug Fixes and Enhancements (September 2025)**
+
+#### **Global Pipeline Memory System (NEW)**
+- **✅ Persistent Pipeline Steps**: Implemented global memory system to prevent pipeline steps from vanishing when switching between datasets
+- **✅ Cross-Dataset State Management**: Pipeline steps now persist across dataset switches using `_global_pipeline_memory`
+- **✅ Automatic Save/Restore**: Pipeline state automatically saved on modifications and restored on dataset selection
+- **✅ UI Reconstruction**: Added `_rebuild_pipeline_ui()` for seamless interface rebuilding with saved steps
+
+#### **Enhanced X-axis Padding for Cropped Regions (NEW)**
+- **✅ Crop Boundary Visualization**: When cropping regions (e.g., 600-1800 cm⁻¹), boundaries are now properly visible with padding
+- **✅ Smart Crop Detection**: Added `_extract_crop_bounds()` method to automatically detect cropping steps in pipeline
+- **✅ Matplotlib Integration**: Enhanced `matplotlib_widget.py` with `crop_bounds` parameter for proper boundary handling
+- **✅ Fixed Padding Implementation**: Default padding changed from percentage-based to fixed ±50 wavenumber units
+- **✅ Parameter Persistence**: Pipeline parameters now preserved when switching datasets (not just steps)
+- **✅ Enhanced Global Memory**: `_update_current_step_parameters()` captures widget values before saving to memory
+
+#### **Preview OFF Functionality Fix (NEW)**
+- **✅ Original Data Display**: Preview OFF now properly shows original dataset data instead of empty graphs
+- **✅ Data Loading Fix**: Enhanced `_update_preview()` method to correctly load data from `RAMAN_DATA` when preview disabled
+- **✅ State Management**: Proper handling of preview toggle between processed and original data views
+
+#### **Professional UI Color Scheme (NEW)**
+- **✅ Removed Orange Elements**: Replaced all orange UI elements with professional gray/blue color scheme
+- **✅ Processing Status**: Changed processing indicators from orange `#f39c12` to dark gray `#666666`
+- **✅ Pipeline Widget Colors**: Updated imported step colors to blue scheme (Dark blue `#1976d2` enabled, Light blue `#64b5f6` disabled)
+- **✅ Better Accessibility**: Improved color contrast and visual distinction for enabled/disabled states
+
+#### **Previous Enhancements**
+
+#### **Real-time UI State Management**
+- **✅ Fixed Enable/Disable Button States**: Pipeline step eye buttons now update in real-time when toggled
+- **✅ Enhanced Toggle All Operations**: Toggle all existing steps now properly updates both step state and visual indicators
+- **✅ Improved State Synchronization**: UI elements maintain consistency with underlying data model
+
+#### **Enhanced Dataset Switching Logic**
+- **✅ Intelligent Step Persistence**: When switching between raw datasets, only enabled steps are maintained
+- **✅ Prevented Unwanted Step Propagation**: Preprocessed dataset steps no longer automatically follow to raw datasets
+- **✅ Smart State Management**: Raw dataset switches preserve user-enabled pipeline configuration
+
+#### **Advanced Graph Visualization**
+- **✅ Improved Auto-focus Padding**: Both auto-focus and manual focus now properly show 50-100 units of X-axis padding
+- **✅ Enhanced Preview OFF Behavior**: Preview OFF correctly shows original unprocessed data without pipeline effects
+- **✅ Optimized Signal Range Detection**: Better automatic range detection for meaningful Raman signals
+
+#### **Robust Warning System**
+- **✅ Enhanced Preview Warnings**: Comprehensive dialog system warns users about:
+  - Double preprocessing risks when enabling preview on preprocessed data
+  - Hidden processing effects when disabling preview on raw data with active pipeline
+- **✅ Intelligent Context Detection**: System automatically detects dataset types and potential user errors
+
+#### **Complete Localization Support**
+- **✅ Verified UI Text**: All interface elements properly use localization keys from assets/locales/en.json
+- **✅ Internationalization Ready**: Full support for English/Japanese text switching
+
+---
+
 ## 1. Overview
 
 The **Preprocessing** page is an advanced, interactive module for cleaning and preparing Raman spectral data for medical diagnosis applications. It provides a comprehensive, pipeline-based workflow with detailed parameter controls, **automatic real-time preview**, and robust error handling designed specifically for disease detection scenarios.
 
-This page fulfills the core requirement of **"前処理" (Preprocessing)** as outlined in the project's development plan for real-time Raman spectral classification.
+This page has been **completely refactored** using a **composition-based architecture** that separates concerns into specialized handler classes, dramatically improving maintainability while preserving all functionality.
 
 ---
 
-## 2. Enhanced Page Layout & Components
+## 2. Architecture Overview
+
+### **New Composition-Based Architecture (2025)**
+
+The preprocessing page now uses a modern **handler composition pattern** that separates the monolithic 1800+ line class into focused, specialized components:
+
+#### **Core Handler Classes**
+
+1. **`DataManagerHandler`** (`pages/preprocess_page_utils/data_manager.py`)
+   - **Responsibility**: Data loading, previewing, and management operations
+   - **Key Methods**: `load_project_data()`, `preview_raw_data()`, `get_data_wavenumber_range()`
+   - **Features**: Preprocessing history management, multi-dataset handling
+
+2. **`PipelineManagerHandler`** (`pages/preprocess_page_utils/pipeline_manager.py`)  
+   - **Responsibility**: Pipeline creation, modification, and step management
+   - **Key Methods**: `add_pipeline_step()`, `remove_pipeline_step()`, `toggle_operations()`
+   - **Features**: Drag-and-drop reordering, step enabling/disabling, pipeline persistence
+
+3. **`ParameterManagerHandler`** (`pages/preprocess_page_utils/parameter_manager.py`)
+   - **Responsibility**: Parameter widget display and real-time parameter management
+   - **Key Methods**: `show_parameter_widget()`, `update_step_parameters()`, `clear_parameter_widget()`
+   - **Features**: Dynamic parameter widgets, real-time validation, parameter persistence
+
+4. **`PreviewManagerHandler`** (`pages/preprocess_page_utils/preview_manager.py`)
+   - **Responsibility**: Real-time preview system with automatic updates
+   - **Key Methods**: `toggle_preview()`, `schedule_preview_update()`, `force_preview_update()`
+   - **Features**: Debounced updates, error handling, preview status indicators
+
+5. **`ProcessingManagerHandler`** (`pages/preprocess_page_utils/processing_manager.py`)
+   - **Responsibility**: Pipeline execution and result export
+   - **Key Methods**: `start_processing()`, `export_results()`, worker thread management
+   - **Features**: Background processing, progress tracking, CSV/Excel export
+
+#### **Main Page Class** (`pages/preprocess_page.py`)
+- **Size**: Reduced from 1839 → 346 lines (**81% reduction**)
+- **Role**: UI coordination, handler initialization, signal delegation
+- **Pattern**: Delegation methods maintain backward compatibility
+- **Fallback**: Graceful degradation if handlers fail to load
+
+### **Technical Benefits Achieved**
+
+- **🎯 Single Responsibility**: Each handler focuses on one specific domain
+- **🔧 Maintainability**: Clear separation makes debugging and modification easier
+- **🧪 Testability**: Handler classes can be unit tested independently
+- **🔄 Reusability**: Handlers can be reused in other preprocessing interfaces
+- **📈 Scalability**: Easy to add new features to specific responsibility areas
+- **⚡ Performance**: Background processing with worker threads prevents UI blocking
+
+---
+
+## 3. Enhanced Page Layout & Components
 
 The page features a modern, two-panel layout optimized for efficient preprocessing workflows with **automatic visual feedback**:
 
@@ -168,6 +276,74 @@ The page features a modern, two-panel layout optimized for efficient preprocessi
 
 ## 5. Technical Implementation
 
+### **Handler Composition Architecture**
+
+#### **Initialization Pattern**
+```python
+def _initialize_handlers(self):
+    """Initialize all handler classes for composition architecture."""
+    try:
+        # Import and instantiate handlers
+        self.data_manager = DataManagerHandler(self)
+        self.pipeline_manager = PipelineManagerHandler(self)
+        self.parameter_manager = ParameterManagerHandler(self)
+        self.preview_manager = PreviewManagerHandler(self)
+        self.processing_manager = ProcessingManagerHandler(self)
+        
+        # Setup handler-specific controls
+        self.preview_manager.setup_preview_controls()
+        self.processing_manager.setup_processing_controls()
+        
+    except ImportError as e:
+        # Graceful fallback to legacy methods
+        self._setup_legacy_fallbacks()
+```
+
+#### **Delegation Pattern**
+```python
+def load_project_data(self):
+    """Public API method with handler delegation."""
+    if hasattr(self, 'data_manager'):
+        return self.data_manager.load_project_data()
+    else:
+        return self._legacy_load_project_data()  # Fallback
+```
+
+#### **Inter-Handler Communication**
+```python
+class ParameterManagerHandler:
+    def _on_parameter_changed(self):
+        """Handle parameter changes with cross-handler communication."""
+        # Update step parameters
+        self.update_step_parameters()
+        
+        # Trigger preview update through parent reference
+        if hasattr(self.parent, 'preview_manager'):
+            self.parent.preview_manager.schedule_preview_update()
+```
+
+### **Background Processing**
+- **Worker Threads**: Processing operations run in separate QThread instances
+- **Progress Tracking**: Real-time progress updates without UI blocking
+- **Error Handling**: Comprehensive error capture and user feedback
+- **Export Integration**: Seamless CSV/Excel export functionality
+
+### **Real-Time Preview System**
+- **Debounced Updates**: 500ms delay prevents excessive updates during parameter changes
+- **Pipeline Application**: Live preview applies current pipeline to sample data
+- **Status Indicators**: Visual feedback for preview state (ready/processing/error)
+- **Performance Optimization**: Uses data sampling for large datasets
+
+### **Legacy Compatibility**
+- **Backward Compatibility**: All existing APIs preserved through delegation
+- **Graceful Degradation**: Fallback methods ensure functionality if handlers fail
+- **Property Compatibility**: Pipeline steps accessible through compatibility properties
+- **Signal Preservation**: All Qt signal connections maintained across handlers
+
+---
+
+## 6. Integration
+
 ### **Architecture**
 - **Modular Design**: Uses reusable widgets from `components/widgets/` package
 - **Professional SVG Icons**: Custom spinboxes with decrease-circle.svg and increase-circle.svg
@@ -183,16 +359,33 @@ The page features a modern, two-panel layout optimized for efficient preprocessi
 - **Medical-grade Styling**: Professional appearance optimized for scientific applications
 
 ### **Integration**
-- **Project Management**: Seamless integration with project workflow
-- **Data Persistence**: Automatic saving of processed datasets
-- **Metadata Management**: Complete processing history and parameter tracking
-- **Visualization Pipeline**: Real-time plotting and display updates
+- **Project Management**: Seamless integration with project workflow through handler composition
+- **Data Persistence**: Automatic saving of processed datasets via DataManagerHandler
+- **Metadata Management**: Complete processing history and parameter tracking via ProcessingManagerHandler  
+- **Visualization Pipeline**: Real-time plotting and display updates via PreviewManagerHandler
 
-This enhanced preprocessing page provides a professional, medical-grade interface for preparing Raman spectral data for disease detection applications, combining advanced technical capabilities with user-friendly design principles.
+This enhanced preprocessing page provides a professional, medical-grade interface for preparing Raman spectral data for disease detection applications, now built on a robust, maintainable architecture that combines advanced technical capabilities with clean code principles.
 
 ---
 
-## 6. Related Documentation
+## 6. Architecture Documentation
+
+### **Handler Classes Architecture**
+- **[DataManagerHandler](../pages/preprocess_page_utils/data_manager.py)**: Data loading, previewing, and management operations
+- **[PipelineManagerHandler](../pages/preprocess_page_utils/pipeline_manager.py)**: Pipeline creation, modification, and step management  
+- **[ParameterManagerHandler](../pages/preprocess_page_utils/parameter_manager.py)**: Parameter widget display and real-time management
+- **[PreviewManagerHandler](../pages/preprocess_page_utils/preview_manager.py)**: Real-time preview system with automatic updates
+- **[ProcessingManagerHandler](../pages/preprocess_page_utils/processing_manager.py)**: Pipeline execution and result export
+
+### **Implementation Patterns**
+- **Composition Pattern**: Main class delegates responsibilities to specialized handlers
+- **Single Responsibility**: Each handler focuses on one business domain
+- **Backward Compatibility**: Delegation pattern preserves existing APIs
+- **Graceful Fallbacks**: Robust error handling with method availability checks
+
+---
+
+## 7. Related Documentation
 
 - **[Widgets Component Package](../docs/widgets-component-package.md)**: Comprehensive documentation for the reusable parameter widgets used throughout the preprocessing interface
 - **[Enhanced Parameter Widgets](../docs/enhanced-parameter-widgets.md)**: Technical details on widget implementation and customization

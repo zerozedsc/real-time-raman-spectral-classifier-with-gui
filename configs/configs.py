@@ -174,7 +174,7 @@ def load_config(file_path: str = "configs/app_configs.json") -> dict:
         create_logs("ConfigLoader", "config", f"Error decoding JSON from {file_path}: {e}", status='error')
         return {}
 
-def create_logs(log_name, filename, log_message, status='info'):
+def create_logs(log_name="LOGS", filename="logs", log_message="", status='info', show_console=False):
     """
     Create a log file with the specified name and message.
     Args:
@@ -184,7 +184,8 @@ def create_logs(log_name, filename, log_message, status='info'):
         status (str): Log level ('info', 'error', 'warning', 'debug').
     """
     
-    if status == "console":
+    if status == "console" and show_console:
+        print(log_message)
         return  # Exit if only console output is needed
     
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

@@ -35,13 +35,13 @@ class PreprocessingStepRegistry:
     def _build_step_registry(self) -> Dict[str, Dict[str, Any]]:
         """Build comprehensive registry of preprocessing steps organized by category."""
         registry = {
+            "miscellaneous": {},
             "calibration": {},
             "denoising": {},
             "cosmic_ray_removal": {},
             "baseline_correction": {},
             "derivatives": {},
             "normalisation": {},
-            "miscellaneous": {},
         }
 
         # Add ramanspy methods if available

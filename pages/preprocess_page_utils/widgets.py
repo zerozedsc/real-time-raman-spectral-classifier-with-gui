@@ -339,11 +339,11 @@ class RangeParameterWidget(QWidget):
         self.min_input = CustomDoubleSpinBox()
         self.min_input.setRange(self.range_min, self.range_max)
         self.min_input.setDecimals(1)
-        self.min_input.setToolTip(f"Minimum {param_name}")
+        self.min_input.setToolTip(LOCALIZE("PREPROCESS.UI.range_min_tooltip", param_name=param_name))
         self.min_input.setMinimumWidth(120)
         
         # Range separator
-        separator = QLabel("—")
+        separator = QLabel(LOCALIZE("PREPROCESS.UI.range_separator"))
         separator.setAlignment(Qt.AlignmentFlag.AlignCenter)
         separator.setStyleSheet("font-weight: bold; color: #7f8c8d; font-size: 14px;")
         
@@ -351,11 +351,11 @@ class RangeParameterWidget(QWidget):
         self.max_input = CustomDoubleSpinBox()
         self.max_input.setRange(self.range_min, self.range_max)
         self.max_input.setDecimals(1)
-        self.max_input.setToolTip(f"Maximum {param_name}")
+        self.max_input.setToolTip(LOCALIZE("PREPROCESS.UI.range_max_tooltip", param_name=param_name))
         self.max_input.setMinimumWidth(120)
         
         # Unit label
-        unit_label = QLabel("cm⁻¹")
+        unit_label = QLabel(LOCALIZE("PREPROCESS.UI.unit_wavenumber"))
         unit_label.setStyleSheet("font-weight: 500; color: #666; margin-left: 8px;")
         
         input_layout.addWidget(self.min_input)
@@ -391,13 +391,13 @@ class RangeParameterWidget(QWidget):
         self.min_slider = QSlider(Qt.Orientation.Horizontal)
         self.min_slider.setRange(int(self.range_min), int(self.range_max))
         self.min_slider.setFixedHeight(20)
-        self.min_slider.setToolTip("Drag to adjust minimum value")
+        self.min_slider.setToolTip(LOCALIZE("PREPROCESS.UI.slider_min_tooltip"))
         
         # Max slider
         self.max_slider = QSlider(Qt.Orientation.Horizontal)
         self.max_slider.setRange(int(self.range_min), int(self.range_max))
         self.max_slider.setFixedHeight(20)
-        self.max_slider.setToolTip("Drag to adjust maximum value")
+        self.max_slider.setToolTip(LOCALIZE("PREPROCESS.UI.slider_max_tooltip"))
         
         slider_row.addWidget(self.min_slider)
         slider_row.addWidget(self.max_slider)
@@ -609,7 +609,7 @@ class DictParameterWidget(QWidget):
         
         # Key input
         key_input = QLineEdit(str(key))
-        key_input.setPlaceholderText("Name (e.g., Si)")
+        key_input.setPlaceholderText(LOCALIZE("PREPROCESS.UI.dict_key_placeholder"))
         key_input.setStyleSheet("""
             QLineEdit {
                 padding: 4px;
@@ -624,7 +624,7 @@ class DictParameterWidget(QWidget):
         """)
         
         # Separator
-        separator = QLabel(":")
+        separator = QLabel(LOCALIZE("PREPROCESS.UI.dict_separator"))
         separator.setStyleSheet("font-weight: bold; color: #7f8c8d;")
         
         # Value input
@@ -651,7 +651,7 @@ class DictParameterWidget(QWidget):
             remove_button.setIconSize(QSize(16, 16))
         else:
             # Fallback to emoji if icon not found
-            remove_button.setText("🗑️")
+            remove_button.setText(LOCALIZE("PREPROCESS.UI.remove_item_button"))
         
         remove_button.setStyleSheet("""
             QPushButton {
@@ -923,7 +923,7 @@ class DynamicParameterWidget(QWidget):
             widget = QLineEdit()
             if default_value is not None:
                 widget.setText(str(default_value))
-            widget.setPlaceholderText("Optional - leave empty if not needed")
+            widget.setPlaceholderText(LOCALIZE("PREPROCESS.UI.optional_field_placeholder"))
             widget.setStyleSheet("""
                 QLineEdit {
                     padding: 6px;

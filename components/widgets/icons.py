@@ -18,7 +18,7 @@ ICONS_BASE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", 
 ICON_PATHS = {
     # Widget control icons (current usage)
     "minus": "minus.svg",
-    "plus": "plus.svg",
+    "plus": "plus.svg", 
     "trash": "trash-xmark.svg",
     "trash_bin": "trash-bin.svg",
     
@@ -30,7 +30,7 @@ ICON_PATHS = {
     "chevron_down": "chevron-down.svg",
     "eye_open": "eye-open.svg",          # Used in preprocess_page.py
     "eye_close": "eye-close.svg",        # Used in preprocess_page.py
-    "reload": "reload.svg",              # Used in preprocess_page.py, home_page.py
+    "reload": "reload.svg",              # Used in preprocess_page.py, home_page.py, utils.py
     "focus_horizontal": "focus-horizontal-round.svg",  # Manual focus button
     
     # Project management icons

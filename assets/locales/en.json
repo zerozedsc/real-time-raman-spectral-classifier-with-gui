@@ -179,6 +179,10 @@
         "preview_status_processing": "Processing preview...",
         "preview_status_error": "Preview error",
         "preview_status_disabled": "Preview disabled",
+        "enable_step_tooltip": "Click to enable this preprocessing step",
+        "disable_step_tooltip": "Click to disable this preprocessing step",
+        "step_enabled": "Enabled",
+        "step_disabled": "Disabled",
         "PURPOSE": {
             "SPIKE_REMOVAL": "Cosmic ray spike removal",
             "WAVENUMBER_CALIBRATION": "Wavenumber range adjustment and cropping",
@@ -296,6 +300,47 @@
             "NORMALISATION": "Normalization",
             "CALIBRATION": "Calibration",
             "DERIVATIVES": "Derivative Processing"
+        },
+        "UI": {
+            "add_button": "+",
+            "remove_button": "×",
+            "clear_button": "⌫",
+            "toggle_all_button": "↻",
+            "play_button": "▶",
+            "stop_button": "⏹",
+            "status_dot": "●",
+            "ready_status": "Ready",
+            "disabled_status": "Disabled",
+            "processing_status": "Processing...",
+            "error_status": "Error",
+            "manual_focus_tooltip": "Manual Focus - Focus on signal regions",
+            "range_separator": "—",
+            "dict_separator": ":",
+            "unit_wavenumber": "cm⁻¹",
+            "unit_minimum": "Minimum",
+            "unit_maximum": "Maximum",
+            "remove_item_button": "🗑️",
+            "slider_min_tooltip": "Drag to adjust minimum value",
+            "slider_max_tooltip": "Drag to adjust maximum value",
+            "range_min_tooltip": "Minimum {param_name}",
+            "range_max_tooltip": "Maximum {param_name}",
+            "dict_key_placeholder": "Name (e.g., Si)",
+            "optional_field_placeholder": "Optional - leave empty if not needed",
+            "preview_on": " Preview ON",
+            "preview_off": " Preview OFF"
+        },
+        "DIALOGS": {
+            "pipeline_difference_title": "Pipeline Differences Detected",
+            "pipeline_difference_message": "The current preprocessing pipeline differs from the selected preprocessed dataset.\n\nWould you like to:",
+            "use_current_pipeline": "Keep Current Pipeline",
+            "use_dataset_pipeline": "Load Dataset Pipeline",
+            "cancel_switch": "Cancel Switch",
+            "preview_toggle_warning_title": "Preview Mode Warning",
+            "preview_on_preprocessed_warning": "Warning: Enabling preview on preprocessed data may result in double preprocessing.\n\nContinue anyway?",
+            "preview_off_raw_warning": "Warning: Disabling preview on raw data will hide processing effects.\n\nContinue anyway?",
+            "dataset_type_switch_title": "Dataset Type Change Detected",
+            "raw_to_preprocessed_message": "Switching from raw to preprocessed dataset.\nPreview will be automatically disabled to prevent double preprocessing.",
+            "preprocessed_to_raw_message": "Switching from preprocessed to raw dataset.\nPreview will be automatically enabled to show processing effects."
         }
     }
 }

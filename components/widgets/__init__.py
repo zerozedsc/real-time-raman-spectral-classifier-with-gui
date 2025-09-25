@@ -33,7 +33,8 @@ from .icons import (
     create_button_icon, 
     create_toolbar_icon,
     get_icon_path,
-    list_available_icons
+    list_available_icons,
+    ICON_PATHS  # Import ICON_PATHS
 )
 
 __all__ = [
@@ -48,5 +49,6 @@ __all__ = [
     'create_button_icon',
     'create_toolbar_icon',
     'get_icon_path',
-    'list_available_icons'
+    'list_available_icons',
+    'ICON_PATHS'  # Add ICON_PATHS to exports
 ]

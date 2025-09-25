@@ -1,6 +1,46 @@
 # Changelog - Raman Spectroscopy Application
 
+# Changelog - Raman Spectroscopy Application
+
 ## Recent Session (Latest Updates)
+
+### 🐛 Critical Preprocessing Interface Fixes
+
+#### X-axis Padding Fix for Cropped Regions ✅ (September 25, 2025)
+- **Fixed Padding Implementation**: Changed from percentage-based to fixed ±50 wavenumber unit padding
+- **Enhanced Crop Boundary Visualization**: Cropped regions (e.g., 600-1800 cm⁻¹) now show proper boundaries with context
+- **Parameter Persistence**: Pipeline parameters now preserved when switching datasets (not just steps)
+- **Impact**: Users can now see crop boundaries clearly while maintaining focus on relevant spectral regions
+
+#### Real-time UI State Management ✅ 
+- **Fixed Enable/Disable Button States**: Pipeline step eye buttons now update in real-time when toggled
+- **Enhanced Toggle All Operations**: Toggle all existing steps now properly updates both step state and visual indicators
+- **Improved State Synchronization**: UI elements maintain consistency with underlying data model
+- **Impact**: Users can now see real-time feedback when enabling/disabling preprocessing steps
+
+#### Enhanced Dataset Switching Logic ✅
+- **Intelligent Step Persistence**: When switching between raw datasets, only enabled steps are maintained
+- **Prevented Unwanted Step Propagation**: Preprocessed dataset steps no longer automatically follow to raw datasets  
+- **Smart State Management**: Raw dataset switches preserve user-enabled pipeline configuration
+- **Impact**: Cleaner workflow when switching between different data sources
+
+#### Advanced Graph Visualization ✅
+- **Improved Auto-focus Padding**: Both auto-focus and manual focus now properly show 50-100 units of X-axis padding
+- **Enhanced Preview OFF Behavior**: Preview OFF correctly shows original unprocessed data without pipeline effects
+- **Optimized Signal Range Detection**: Better automatic range detection for meaningful Raman signals
+- **Impact**: Better visual representation of spectral data with proper focus regions
+
+#### Robust Warning System ✅
+- **Enhanced Preview Warnings**: Comprehensive dialog system warns users about:
+  - Double preprocessing risks when enabling preview on preprocessed data
+  - Hidden processing effects when disabling preview on raw data with active pipeline
+- **Intelligent Context Detection**: System automatically detects dataset types and potential user errors
+- **Impact**: Prevents common user errors that could lead to invalid results
+
+#### Complete Localization Support ✅
+- **Verified UI Text**: All interface elements properly use localization keys from assets/locales/en.json
+- **Internationalization Ready**: Full support for English/Japanese text switching
+- **Impact**: Consistent UI text display across all preprocessing interface elements
 
 ### 🧹 Code Quality Improvements
 

@@ -1,4 +1,6 @@
 import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 import pandas as pd
 import numpy as np
 from PySide6.QtWidgets import QWidget, QVBoxLayout
@@ -7,7 +9,7 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 from matplotlib.figure import Figure
 
 
-def detect_signal_range(wavenumbers, intensities, noise_threshold_percentile=20, signal_threshold_factor=1.2):
+def detect_signal_range(wavenumbers, intensities, noise_threshold_percentile=20, signal_threshold_factor=1.2, focus_padding=None, crop_bounds=None):
     """
     Automatically detect the range of wavenumbers where there is meaningful signal.
     Optimized for Raman spectroscopy data.
@@ -17,6 +19,8 @@ def detect_signal_range(wavenumbers, intensities, noise_threshold_percentile=20,
         intensities: Array or 2D array of intensity values 
         noise_threshold_percentile: Percentile to use for noise floor estimation
         signal_threshold_factor: Factor above noise floor to consider as signal
+        focus_padding: Additional padding in wavenumber units (default: None for percentage-based padding)
+        crop_bounds: Tuple of (min_wn, max_wn) to use as base range with padding instead of auto-detection
     
     Returns:
         tuple: (min_wavenumber, max_wavenumber) for the focused range
@@ -27,6 +31,27 @@ def detect_signal_range(wavenumbers, intensities, noise_threshold_percentile=20,
             mean_intensity = np.mean(intensities, axis=0)
         else:
             mean_intensity = intensities
+        
+        # If crop_bounds are provided, use them as base range with padding
+        if crop_bounds is not None:
+            min_crop, max_crop = crop_bounds
+            
+            # Apply focus_padding to the crop bounds
+            if focus_padding is not None:
+                padded_min = min_crop - focus_padding
+                padded_max = max_crop + focus_padding
+            else:
+                # Default fixed padding of 50 wavenumber units
+                padded_min = min_crop - 50
+                padded_max = max_crop + 50
+            
+            # Ensure bounds are within data range
+            data_min = np.min(wavenumbers)
+            data_max = np.max(wavenumbers)
+            final_min = max(data_min, padded_min)
+            final_max = min(data_max, padded_max)
+            
+            return final_min, final_max
         
         # For Raman spectroscopy, try a different approach
         # Look for regions with significant variance (indicating peaks)
@@ -62,8 +87,15 @@ def detect_signal_range(wavenumbers, intensities, noise_threshold_percentile=20,
         signal_start = signal_indices[0]
         signal_end = signal_indices[-1]
         
-        # Add padding (15% on each side)
-        padding_indices = int(len(wavenumbers) * 0.1)
+        # Add padding based on focus_padding parameter or default percentage
+        if focus_padding is not None:
+            # Convert focus_padding (wavenumber units) to indices
+            wn_per_index = (wavenumbers[-1] - wavenumbers[0]) / len(wavenumbers)
+            padding_indices = int(focus_padding / wn_per_index)
+        else:
+            # Default: 15% on each side
+            padding_indices = int(len(wavenumbers) * 0.1)
+        
         start_idx = max(0, signal_start - padding_indices)
         end_idx = min(len(wavenumbers) - 1, signal_end + padding_indices)
         
@@ -138,6 +170,7 @@ class MatplotlibWidget(QWidget):
                 new_ax = self.figure.add_subplot(len(axes_list), 1, i+1)
             
             # Copy all lines from the original axes
+            line_count = len(ax.get_lines())
             for line in ax.get_lines():
                 new_ax.plot(line.get_xdata(), line.get_ydata(), 
                            label=line.get_label(), 
@@ -167,7 +200,7 @@ class MatplotlibWidget(QWidget):
         self.figure.clear()
         self.canvas.draw()
     
-    def plot_spectra(self, data, title="Spectra", auto_focus=False):
+    def plot_spectra(self, data, title="Spectra", auto_focus=False, focus_padding=None, crop_bounds=None):
         """Plot spectra data directly."""
         self.figure.clear()
         ax = self.figure.add_subplot(111)
@@ -204,7 +237,7 @@ class MatplotlibWidget(QWidget):
                     # DataFrame with wavenumber index
                     wavenumbers = data.index.values
                     intensities = data.values
-                    min_wn, max_wn = detect_signal_range(wavenumbers, intensities.T)  # Transpose for proper shape
+                    min_wn, max_wn = detect_signal_range(wavenumbers, intensities.T, focus_padding=focus_padding, crop_bounds=crop_bounds)  # Transpose for proper shape
                     ax.set_xlim(min_wn, max_wn)
             except Exception as e:
                 pass  # Silently fall back to full range
@@ -261,7 +294,7 @@ class MatplotlibWidget(QWidget):
 
     def plot_comparison_spectra_with_wavenumbers(self, original_data, processed_data, 
                                                original_wavenumbers, processed_wavenumbers,
-                                               titles=None, colors=None, auto_focus=True):
+                                               titles=None, colors=None, auto_focus=True, focus_padding=None, crop_bounds=None):
         """Plot comparison between original and processed data with proper wavenumber axes."""
         self.figure.clear()
         ax = self.figure.add_subplot(111)
@@ -317,7 +350,7 @@ class MatplotlibWidget(QWidget):
                         focus_intensities = None
                     
                     if focus_intensities is not None:
-                        min_wn, max_wn = detect_signal_range(focus_wavenumbers, focus_intensities)
+                        min_wn, max_wn = detect_signal_range(focus_wavenumbers, focus_intensities, focus_padding=focus_padding, crop_bounds=crop_bounds)
                         ax.set_xlim(min_wn, max_wn)
                     
             except Exception as e:
@@ -337,6 +370,7 @@ def plot_spectra(df: pd.DataFrame, title: str = "", auto_focus: bool = False) ->
         title: Plot title
         auto_focus: Whether to automatically focus on signal regions
     """
+    
     fig = Figure(figsize=(8, 6), dpi=100, facecolor='#eaf2f8') # Themed background
     ax = fig.add_subplot(111, facecolor='#eaf2f8') # Themed background
 
@@ -360,7 +394,7 @@ def plot_spectra(df: pd.DataFrame, title: str = "", auto_focus: bool = False) ->
         df_to_plot = df
 
     # Plot each spectrum
-    for column in df_to_plot.columns:
+    for i, column in enumerate(df_to_plot.columns):
         ax.plot(df_to_plot.index, df_to_plot[column], label=column)
     
     ax.set_title(plot_title, fontsize=14, weight='bold')
