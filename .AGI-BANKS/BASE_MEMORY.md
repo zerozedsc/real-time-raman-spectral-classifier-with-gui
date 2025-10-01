@@ -1,0 +1,356 @@
+# Base Memory - AI Agent Knowledge Base
+
+> **Core knowledge and reference system for AI-assisted development**
+
+## 🎯 Purpose
+
+This document serves as the foundational knowledge base for AI age## 📋 Current Development Focus
+
+### Active Tasks (See `.docs/TODOS.md` for details)
+1. ✅ **Visualization Package Refactoring** - COMPLETE (Oct 1, 2025)
+   - Extracted FigureManager to separate file (387 lines)
+   - Reduced core.py to 4,405 lines (from 4,812)
+   - Full backward compatibility maintained
+   - Application tested and working
+2. 📋 **RamanVisualizer Modularization** - PLANNED (See `.docs/functions/RAMAN_VISUALIZER_REFACTORING_PLAN.md`)
+   - Phase 1-3 extraction (13-18 hours estimated)
+   - Deferred to future sprint
+3. ✅ **UI Improvements** - COMPLETE
+   - Dataset list enhancement (4-6 items visible)
+   - Export button styling (green, SVG icon)
+   - Preview button width fix
+
+### Recent Completions (October 2025)
+- ✅ Visualization package refactoring (visualization.py → visualization/)
+- ✅ Removed original visualization.py file
+- ✅ Comprehensive testing and validation
+- ✅ Documentation reorganization (.docs/ structure)
+- ✅ UI improvements (dataset list, export button, preview button)
+- Fixed xlim padding (±50 wavenumber units)
+- Enhanced parameter persistence
+- Removed debug logging the Raman Spectroscopy Analysis Application. It provides quick access to essential information and references to detailed documentation.
+
+## 📚 Documentation Structure
+
+### Primary Documentation Hub: `.docs/`
+All detailed documentation is centralized in the `.docs/` folder:
+- **Task Management**: `.docs/TODOS.md` - Start here for current tasks
+- **Architecture**: `.docs/main.md` - Application structure
+- **Pages**: `.docs/pages/` - Page-specific documentation
+- **Widgets**: `.docs/widgets/` - Widget system details
+- **Functions**: `.docs/functions/` - Function library docs
+- **Testing**: `.docs/testing/` - Test documentation
+
+### AI Agent Knowledge Base: `.AGI-BANKS/`
+High-level context and patterns (this folder):
+- `BASE_MEMORY.md` - This file (quick reference)
+- `PROJECT_OVERVIEW.md` - Architecture and design patterns
+- `FILE_STRUCTURE.md` - Codebase organization
+- `IMPLEMENTATION_PATTERNS.md` - Common coding patterns
+- `RECENT_CHANGES.md` - Latest updates and fixes
+- `DEVELOPMENT_GUIDELINES.md` - Coding standards
+- `HISTORY_PROMPT.md` - Completed work archive
+
+## 🚀 Quick Start
+
+### For New Tasks
+```
+1. Check .docs/TODOS.md for current task details
+2. Review PROJECT_OVERVIEW.md for architecture context
+3. Check IMPLEMENTATION_PATTERNS.md for coding patterns
+4. Review relevant .docs/ files for implementation details
+5. Implement changes following DEVELOPMENT_GUIDELINES.md
+6. Update both .docs/ and .AGI-BANKS as needed
+```
+
+### For Bug Fixes
+```
+1. Check RECENT_CHANGES.md for recent modifications
+2. Review relevant .docs/pages/ or .docs/widgets/ files
+3. Check FILE_STRUCTURE.md for file locations
+4. Implement fix following patterns
+5. Update TODOS.md and RECENT_CHANGES.md
+```
+
+## 🏗️ Project Architecture
+
+### Technology Stack
+- **Frontend**: PySide6 (Qt6) - Modern cross-platform GUI
+- **Visualization**: matplotlib with Qt backend
+- **Data Processing**: pandas, numpy, scipy
+- **Configuration**: JSON-based with live reloading
+- **Internationalization**: Multi-language support (EN/JA)
+
+### Key Directories
+```
+raman-app/
+├── main.py                    # Application entry point
+├── pages/                     # Application pages (UI views)
+│   ├── preprocess_page.py     # Main preprocessing interface
+│   ├── data_package_page.py   # Data import/management
+│   └── home_page.py           # Project management
+├── components/                # Reusable UI components
+│   ├── app_tabs.py           # Tab navigation
+│   ├── toast.py              # Notifications
+│   └── widgets/              # Custom widget library
+├── functions/                 # Core processing functions
+│   ├── data_loader.py        # File loading/parsing
+│   ├── visualization/        # 📦 Visualization package (Oct 2025 refactor)
+│   │   ├── __init__.py       # Package exports
+│   │   ├── core.py           # RamanVisualizer class
+│   │   └── figure_manager.py # Figure management
+│   ├── preprocess/           # Preprocessing algorithms
+│   └── ML.py                 # Machine learning
+├── configs/                   # Configuration management
+├── assets/                    # Static resources
+│   ├── icons/                # SVG icons
+│   ├── locales/              # EN/JA translations
+│   └── fonts/                # Typography
+├── .docs/                     # 📚 Detailed documentation hub
+└── .AGI-BANKS/               # 🤖 AI agent knowledge base
+```
+
+## 🎨 UI/UX Patterns
+
+### Preprocessing Page Structure
+- **Left Panel**: Dataset selection, pipeline building, output config
+- **Right Panel**: Parameter controls, visualization
+- **Key Features**: Global pipeline memory, parameter persistence, real-time preview
+
+### Color Scheme
+- **Primary**: Blue (`#1976d2`) - Active/enabled states
+- **Secondary**: Light blue (`#64b5f6`) - Disabled states  
+- **Success**: Green (`#2e7d32`)
+- **Warning**: Orange (minimal use)
+- **Error**: Red (`#dc3545`)
+- **Neutral**: Grays for backgrounds and borders
+
+### Widget Patterns
+- Enhanced parameter widgets with validation
+- Real-time value updates
+- Visual feedback for errors
+- Tooltip-based help system
+
+## 🔧 Common Patterns
+
+### Data Flow
+```
+1. Data Loading (data_loader.py)
+   ↓
+2. RAMAN_DATA global store (utils.py)
+   ↓
+3. Page UI (e.g., preprocess_page.py)
+   ↓
+4. Processing Pipeline (functions/preprocess/)
+   ↓
+5. Visualization (matplotlib_widget.py)
+```
+
+### Pipeline System
+```
+1. User selects category & method
+2. PipelineStep created with parameters
+3. Steps stored in pipeline_steps list
+4. Global memory preserves across dataset switches
+5. Real-time preview updates on changes
+```
+
+### File Operations
+```python
+# Import Pattern (data_loader.py)
+- Support: CSV, TXT, ASC, Pickle
+- Directory or single file
+- Wavenumber as index, spectra as columns
+
+# Export Pattern (to be implemented)
+- Similar formats as import
+- Selected dataset required
+- Preserve metadata where possible
+```
+
+## � Critical Development Context
+
+### GUI Application Architecture
+**Important**: This is a GUI application built with PySide6. Output and debugging require:
+1. **Log Files**: Check `logs/` folder for runtime information
+   - `PreprocessPage.log` - Preprocessing operations
+   - `data_loading.log` - Data import/export
+   - `RamanPipeline.log` - Pipeline execution
+   - `config.log` - Configuration changes
+2. **Terminal Output**: Run `uv run main.py` to see console output
+3. **No Direct Print**: GUI apps don't show print() in typical execution
+
+### Environment Management
+**Always check current environment before operations:**
+- Project uses **uv** package manager (pyproject.toml)
+- Commands: `uv run python script.py` or `uv run main.py`
+- Virtual environment managed by uv automatically
+- Dependencies: See `pyproject.toml` and `uv.lock`
+
+### Documentation Standards (Required)
+**All functions, classes, and features MUST include docstrings in this format:**
+
+```python
+def function_name(param1, param2):
+    """
+    Brief description of what the function does.
+    
+    Args:
+        param1 (type): Description of param1
+        param2 (type): Description of param2
+    
+    Returns:
+        type: Description of return value
+    
+    Raises:
+        ExceptionType: When this exception is raised
+    """
+```
+
+**For classes:**
+```python
+class ClassName:
+    """
+    Brief description of the class purpose.
+    
+    Attributes:
+        attr1 (type): Description of attr1
+        attr2 (type): Description of attr2
+    """
+```
+
+Refer to existing code for examples of proper documentation style.
+
+## �📋 Current Development Focus
+
+### Active Tasks (See `.docs/TODOS.md` for details)
+1. **Dataset Selection Highlighting** - Improve visual feedback (show 4-6 items with scroll)
+2. **Export Button Enhancement** - Use SVG icon, green color, simplified text
+3. **Preview Button Sizing** - Dynamic width based on text content
+4. **Visualization.py Refactoring** - Convert to package folder for better organization
+5. **Testing & Debugging** - Deep analysis and problem identification
+
+### Recent Completions
+- Fixed xlim padding (±50 wavenumber units)
+- Enhanced parameter persistence
+- Removed debug logging
+- Organized documentation structure
+
+## 🌐 Internationalization
+
+### Locale System
+- **Files**: `assets/locales/en.json`, `assets/locales/ja.json`
+- **Usage**: `LOCALIZE("KEY.SUBKEY", param=value)`
+- **Pattern**: Hierarchical keys (e.g., `PREPROCESS.input_datasets_title`)
+
+### Adding Localized Strings
+```json
+// en.json
+{
+  "PREPROCESS": {
+    "export_button": "Export Dataset",
+    "export_formats": "Select Format"
+  }
+}
+
+// ja.json  
+{
+  "PREPROCESS": {
+    "export_button": "データセットをエクスポート",
+    "export_formats": "形式を選択"
+  }
+}
+```
+
+## 🧪 Testing Protocol
+
+### Validation Process
+1. Create test documentation in `.docs/testing/feature-name/`
+2. Implement feature with debug logging
+3. Run terminal validation (45-second observation periods)
+4. Document results (screenshots, terminal output)
+5. Clean up test artifacts
+6. Update `.docs/TODOS.md` and `.AGI-BANKS/RECENT_CHANGES.md`
+
+### Test Documentation Structure
+```
+.docs/testing/
+└── feature-name/
+    ├── TEST_PLAN.md          # What to test
+    ├── RESULTS.md            # Test outcomes
+    ├── terminal_output.txt   # Console logs
+    └── screenshots/          # Visual evidence
+```
+
+## 🔗 Key References
+
+### Must-Read Documentation
+- `.docs/TODOS.md` - Current tasks and priorities
+- `.docs/pages/preprocess_page.md` - Main UI documentation
+- `PROJECT_OVERVIEW.md` - Architecture overview
+- `IMPLEMENTATION_PATTERNS.md` - Coding patterns
+
+### External Resources
+- PySide6 Documentation: https://doc.qt.io/qtforpython-6/
+- matplotlib Qt Backend: https://matplotlib.org/stable/users/explain/backends.html
+- pandas API: https://pandas.pydata.org/docs/
+
+## 📝 Documentation Updates
+
+### When to Update
+- **Immediately**: Critical bugs, breaking changes
+- **Per Feature**: New capabilities, UI changes
+- **Per Task**: Task completion, progress updates
+- **Weekly**: Review and consolidate changes
+
+### What to Update
+1. `.docs/TODOS.md` - Task progress
+2. Relevant `.docs/` component files - Implementation details
+3. `RECENT_CHANGES.md` - Summary of changes
+4. This file (BASE_MEMORY.md) - If core patterns change
+
+## 🎓 Development Guidelines
+
+### Code Quality
+- Follow PEP 8 style guide
+- Use type hints where beneficial
+- Document complex logic
+- Keep functions focused and modular
+
+### UI Development
+- Maintain consistent styling
+- Support both languages (EN/JA)
+- Provide clear visual feedback
+- Ensure accessibility
+
+### Git Workflow
+- Descriptive commit messages
+- Reference issues/tasks in commits
+- Keep commits focused
+- Regular pushes to backup work
+
+## 🆘 Troubleshooting
+
+### Common Issues
+1. **Import Errors**: Check sys.path manipulation in files
+2. **Locale Missing**: Add keys to both en.json and ja.json
+3. **UI Not Updating**: Check signal/slot connections
+4. **Preview Issues**: Verify global memory persistence
+
+### Where to Look
+- **UI Issues**: `.docs/pages/` documentation
+- **Data Issues**: `.docs/functions/` and `data_loader.py`
+- **Widget Issues**: `.docs/widgets/` documentation
+- **Style Issues**: `configs/style/stylesheets.py`
+
+---
+
+**Version**: 1.0  
+**Last Updated**: October 1, 2025  
+**Next Review**: After export functionality implementation
+
+**Quick Links**:
+- [TODOS](./../.docs/TODOS.md)
+- [Project Overview](./PROJECT_OVERVIEW.md)
+- [Recent Changes](./RECENT_CHANGES.md)
+- [File Structure](./FILE_STRUCTURE.md)

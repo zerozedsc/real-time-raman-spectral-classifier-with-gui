@@ -32,6 +32,7 @@ ICON_PATHS = {
     "eye_close": "eye-close.svg",        # Used in preprocess_page.py
     "reload": "reload.svg",              # Used in preprocess_page.py, home_page.py, utils.py
     "focus_horizontal": "focus-horizontal-round.svg",  # Manual focus button
+    "export": "export-button.svg",       # Export button icon
     
     # Project management icons
     "new_project": "new-project.svg",    # Used in home_page.py, utils.py

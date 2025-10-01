@@ -244,6 +244,34 @@ PREPROCESS_PAGE_STYLES = {
         }
     """,
     
+    'dataset_list': """
+        QListWidget {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: white;
+            padding: 4px;
+        }
+        QListWidget::item {
+            padding: 10px;
+            border-bottom: 1px solid #f1f3f4;
+            background-color: #ffffff;
+            margin-bottom: 2px;
+            border-radius: 3px;
+        }
+        QListWidget::item:hover {
+            background-color: #f5f5f5;
+        }
+        QListWidget::item:selected {
+            background-color: #1565c0;
+            color: white;
+            border: 2px solid #0d47a1;
+            font-weight: 500;
+        }
+        QListWidget::item:selected:hover {
+            background-color: #1976d2;
+        }
+    """,
+    
     'visualization_widget': """
         MatplotlibWidget {
             border: 1px solid #dee2e6;

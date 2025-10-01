@@ -47,6 +47,7 @@ dependencies = [
     "shap",
     "shiboken6",
     "six",
+    "skl2onnx>=1.19.1",
     "slicer",
     "sniffio",
     "threadpoolctl",

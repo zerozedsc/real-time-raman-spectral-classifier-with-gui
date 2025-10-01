@@ -4,6 +4,13 @@ from functions.ML import RamanML, MLModel
 from functions.configs import *
 from numpy import trapz
 
+# Import extracted modules (Phase 1, 2 & 3 refactoring)
+from . import peak_assignment
+from . import basic_plots
+from . import model_evaluation
+from . import ml_visualization
+from . import explainability
+
 from scipy.signal import find_peaks
 from sklearn.decomposition import PCA
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -66,10 +73,12 @@ class RamanVisualizer:
         peak: Union[int, float, str],
         pick_near: bool = False,
         tolerance: int = 5,
-        json_file_path: str = "data/raman_peaks.json"
+        json_file_path: str = "assets/data/raman_peaks.json"
     ) -> dict:
         """
         Get the assignment meaning of a Raman peak based on the raman_peaks.json database.
+        
+        **NOTE**: This method now delegates to the peak_assignment module.
 
         Parameters:
         -----------
@@ -82,7 +91,7 @@ class RamanVisualizer:
             Maximum distance (in cm⁻¹) to search for nearby peaks when pick_near=True.
             Default is 5.
         json_file_path : str, optional
-            Path to the raman_peaks.json file. Default is "data/raman_peaks.json".
+            Path to the raman_peaks.json file. Default is "assets/data/raman_peaks.json".
 
         Returns:
         --------
@@ -92,108 +101,20 @@ class RamanVisualizer:
             - If not found and pick_near=False: {"assignment": "Not Found"}
             - If not found and pick_near=True: nearest match or "Not Found"
         """
-        try:
-            # Convert peak to integer (round if float)
-            if isinstance(peak, (float, str)):
-                try:
-                    peak_int = int(round(float(peak)))
-                except (ValueError, TypeError):
-                    return {"assignment": "Invalid peak value"}
-            else:
-                peak_int = int(peak)
-
-            # Load the JSON data
-            try:
-                if hasattr(self, '_raman_peaks_cache'):
-                    # Use cached data if available
-                    raman_data = self._raman_peaks_cache
-                else:
-                    # Load and cache the data
-                    import json
-                    import os
-
-                    # Handle relative path from current working directory
-                    if not os.path.isabs(json_file_path):
-                        # Try relative to current working directory first
-                        if os.path.exists(json_file_path):
-                            full_path = json_file_path
-                        else:
-                            # Try relative to the script directory
-                            script_dir = os.path.dirname(
-                                os.path.abspath(__file__))
-                            full_path = os.path.join(
-                                script_dir, "..", json_file_path)
-                    else:
-                        full_path = json_file_path
-
-                    with open(full_path, 'r', encoding='utf-8') as file:
-                        raman_data = json.load(file)
-
-                    # Cache the data for future use
-                    self._raman_peaks_cache = raman_data
-
-            except FileNotFoundError:
-                create_logs("get_peak_assignment", "ML",
-                            f"Raman peaks file not found: {json_file_path}", status='error')
-                return {"assignment": "Database file not found"}
-            except json.JSONDecodeError as e:
-                create_logs("get_peak_assignment", "ML",
-                            f"Error parsing JSON file: {e}", status='error')
-                return {"assignment": "Database file corrupted"}
-
-            # Convert peak to string for lookup (JSON keys are strings)
-            peak_str = str(peak_int)
-
-            # Direct lookup first
-            if peak_str in raman_data:
-                result = raman_data[peak_str].copy()
-                result["peak"] = peak_int
-                return result
-
-            # If not found and pick_near is False, return "Not Found"
-            if not pick_near:
-                return {"assignment": "Not Found"}
-
-            # Find nearest peak within tolerance
-            nearest_peak = None
-            min_distance = float('inf')
-
-            for db_peak_str in raman_data.keys():
-                try:
-                    db_peak_int = int(db_peak_str)
-                    distance = abs(peak_int - db_peak_int)
-
-                    if distance <= tolerance and distance < min_distance:
-                        min_distance = distance
-                        nearest_peak = db_peak_str
-                except ValueError:
-                    # Skip invalid peak keys
-                    continue
-
-            # Return nearest peak if found within tolerance
-            if nearest_peak is not None:
-                result = raman_data[nearest_peak].copy()
-                result["peak"] = int(nearest_peak)
-                result["distance"] = min_distance
-                result["original_peak"] = peak_int
-                return result
-            else:
-                return {"assignment": "Not Found"}
-
-        except Exception as e:
-            create_logs("get_peak_assignment", "ML",
-                        f"Error in get_peak_assignment: {e}", status='error')
-            return {"assignment": "Error occurred during lookup"}
+        # Delegate to extracted module
+        return peak_assignment.get_peak_assignment(peak, pick_near, tolerance, json_file_path)
 
     def get_multiple_peak_assignments(
         self,
         peaks: List[Union[int, float, str]],
         pick_near: bool = False,
         tolerance: int = 5,
-        json_file_path: str = "data/raman_peaks.json"
+        json_file_path: str = "assets/data/raman_peaks.json"
     ) -> List[dict]:
         """
         Get assignments for multiple peaks at once.
+        
+        **NOTE**: This method now delegates to the peak_assignment module.
 
         Parameters:
         -----------
@@ -211,21 +132,19 @@ class RamanVisualizer:
         List[dict]
             List of dictionaries containing peak assignment information for each input peak.
         """
-        results = []
-        for peak in peaks:
-            result = self.get_peak_assignment(
-                peak, pick_near, tolerance, json_file_path)
-            results.append(result)
-        return results
+        # Delegate to extracted module
+        return peak_assignment.get_multiple_peak_assignments(peaks, pick_near, tolerance, json_file_path)
 
     def find_peaks_in_range(
         self,
         min_wavenumber: Union[int, float],
         max_wavenumber: Union[int, float],
-        json_file_path: str = "data/raman_peaks.json"
+        json_file_path: str = "assets/data/raman_peaks.json"
     ) -> List[dict]:
         """
         Find all peaks within a specified wavenumber range.
+        
+        **NOTE**: This method now delegates to the peak_assignment module.
 
         Parameters:
         -----------
@@ -241,47 +160,21 @@ class RamanVisualizer:
         List[dict]
             List of all peaks within the specified range.
         """
-        try:
-            # Load data using the existing method
-            dummy_result = self.get_peak_assignment(
-                1000, json_file_path=json_file_path)
-            if "Database file" in str(dummy_result.get("assignment", "")):
-                return []
-
-            # Get cached data
-            raman_data = self._raman_peaks_cache
-
-            results = []
-            for peak_str, data in raman_data.items():
-                try:
-                    peak_int = int(peak_str)
-                    if min_wavenumber <= peak_int <= max_wavenumber:
-                        result = data.copy()
-                        result["peak"] = peak_int
-                        results.append(result)
-                except ValueError:
-                    continue
-
-            # Sort by wavenumber
-            results.sort(key=lambda x: x["peak"])
-            return results
-
-        except Exception as e:
-            create_logs("find_peaks_in_range", "ML",
-                        f"Error in find_peaks_in_range: {e}", status='error')
-            return []
+        # Delegate to extracted module
+        return peak_assignment.find_peaks_in_range(min_wavenumber, max_wavenumber, json_file_path)
 
     def visualize_raman_spectra(self, wavenumber_colname: str = "wavenumber", title="Raman Spectra", figsize=(12, 6),
                                 xlim=None, ylim=None, legend=True,
                                 legend_loc='best', sample_limit=10) -> plt:
         """
         Visualize the Raman spectra data.
-        Clears any existing plots before creating a new one.
+        
+        **NOTE**: This method now delegates to the basic_plots module.
 
         Parameters:
         -----------
-        df : pandas DataFrame
-            DataFrame containing Raman data with wavenumber column and intensity columns
+        wavenumber_colname : str
+            Name of the wavenumber column
         title : str
             Plot title
         figsize : tuple
@@ -296,61 +189,24 @@ class RamanVisualizer:
             Legend location
         sample_limit : int
             Maximum number of samples to plot (to avoid overcrowding)
+
+        Returns:
+        --------
+        plt : matplotlib.pyplot
+            The plot object for further customization
         """
-        df = self.df
-
-        # Check if DataFrame is empty
-        if df.empty:
-            console_log("DataFrame is empty. No data to plot.")
-            return None
-
-        # Determine wavenumber axis
-        if df.index.name == wavenumber_colname:
-            wavenumbers = df.index.values
-            intensity_columns = df.columns
-        elif wavenumber_colname in df.columns:
-            wavenumbers = df[wavenumber_colname].values
-            intensity_columns = [
-                col for col in df.columns if col != wavenumber_colname]
-        else:
-            console_log(
-                f"Wavenumber column '{wavenumber_colname}' not found in DataFrame.")
-            return None
-
-        # Limit number of samples to plot if needed
-        if len(intensity_columns) > sample_limit:
-            console_log(
-                f"Limiting plot to {sample_limit} samples out of {len(intensity_columns)}")
-            intensity_columns = intensity_columns[:sample_limit]
-
-        # Clear any existing plots
-        plt.clf()
-        plt.close('all')
-        fig = plt.figure(num=1, figsize=figsize, clear=True)
-
-        # Plot each spectrum
-        for col in intensity_columns:
-            if df.index.name == wavenumber_colname:
-                plt.plot(wavenumbers, df[col], label=col)
-            else:
-                plt.plot(wavenumbers, df[col].values, label=col)
-
-        # Set plot attributes
-        plt.title(title)
-        plt.xlabel('Raman Shift (cm⁻¹)')
-        plt.ylabel('Intensity')
-        plt.grid(True, alpha=0.3)
-
-        if legend:
-            plt.legend(loc=legend_loc, fontsize='small')
-
-        if xlim:
-            plt.xlim(xlim)
-        if ylim:
-            plt.ylim(ylim)
-
-        plt.tight_layout()
-        return plt
+        # Delegate to extracted module
+        return basic_plots.visualize_raman_spectra(
+            df=self.df,
+            wavenumber_colname=wavenumber_colname,
+            title=title,
+            figsize=figsize,
+            xlim=xlim,
+            ylim=ylim,
+            legend=legend,
+            legend_loc=legend_loc,
+            sample_limit=sample_limit
+        )
 
     def visualize_processed_spectra(self, spectral_data, spectral_axis,
                                     title="Processed Raman Spectra", figsize=(12, 6),
@@ -360,6 +216,8 @@ class RamanVisualizer:
                                     add_mean=False) -> plt:
         """
         Visualize processed spectral data from ramanspy.
+        
+        **NOTE**: This method now delegates to the basic_plots module.
 
         Parameters:
         -----------
@@ -393,72 +251,28 @@ class RamanVisualizer:
         plt : matplotlib.pyplot
             The plot object for further customization
         """
-        # Check inputs
-        if spectral_data.shape[1] != len(spectral_axis):
-            # Transpose if needed (sometimes ramanspy returns (n_wavenumbers, n_samples))
-            if spectral_data.shape[0] == len(spectral_axis):
-                spectral_data = spectral_data.T
-            else:
-                raise ValueError(f"Spectral data shape {spectral_data.shape} doesn't match " +
-                                 f"spectral axis length {len(spectral_axis)}")
-
-        # Limit samples if needed
-        n_samples = spectral_data.shape[0]
-        if n_samples > sample_limit:
-            console_log(
-                f"Limiting plot to {sample_limit} samples out of {n_samples}")
-            plot_samples = min(n_samples, sample_limit)
-        else:
-            plot_samples = n_samples
-
-        # Prepare sample names
-        if sample_names is None:
-            sample_names = [f"Sample {i+1}" for i in range(plot_samples)]
-        elif len(sample_names) < plot_samples:
-            # Extend sample names if too few
-            sample_names = list(
-                sample_names) + [f"Sample {i+1}" for i in range(len(sample_names), plot_samples)]
-
-        # Clear any existing plots
-        plt.clf()
-        plt.close('all')
-        fig = plt.figure(num=1, figsize=figsize, clear=True)
-
-        # Plot each spectrum
-        cmap_func = plt.get_cmap(cmap)
-        for i in range(plot_samples):
-            color = cmap_func(i / max(1, plot_samples-1)
-                              ) if n_samples > 1 else cmap_func(0.5)
-            plt.plot(spectral_axis, spectral_data[i], label=sample_names[i],
-                     color=color, alpha=0.7)
-
-        # Add mean spectrum if requested
-        if add_mean and n_samples > 1:
-            mean_spectrum = np.mean(spectral_data[:plot_samples], axis=0)
-            plt.plot(spectral_axis, mean_spectrum, 'k-',
-                     linewidth=2, label='Mean Spectrum')
-
-        # Set plot attributes
-        plt.title(title)
-        plt.xlabel('Raman Shift (cm⁻¹)')
-        plt.ylabel('Intensity (normalized)')
-        plt.grid(True, alpha=0.3)
-
-        if legend:
-            if n_samples <= 15:  # Only show legend if not too many samples
-                plt.legend(loc=legend_loc, fontsize='small')
-
-        if xlim:
-            plt.xlim(xlim)
-        if ylim:
-            plt.ylim(ylim)
-
-        plt.tight_layout()
-        return plt
+        # Delegate to extracted module
+        return basic_plots.visualize_processed_spectra(
+            spectral_data=spectral_data,
+            spectral_axis=spectral_axis,
+            title=title,
+            figsize=figsize,
+            xlim=xlim,
+            ylim=ylim,
+            legend=legend,
+            sample_names=sample_names,
+            legend_loc=legend_loc,
+            sample_limit=sample_limit,
+            cmap=cmap,
+            add_mean=add_mean
+        )
 
     def extract_raman_characteristics(x: np.ndarray, y: np.ndarray, sample_name: str = "Sample", show_plot: bool = False) -> tuple[list[tuple], float]:
         """
         Extract Raman characteristics from the spectrum.
+        
+        **NOTE**: This method now delegates to the basic_plots module.
+        
         Parameters:
         ----------
         x : np.ndarray
@@ -477,46 +291,8 @@ class RamanVisualizer:
             Area under the curve
 
         """
-
-        # Find peaks
-        peaks, props = find_peaks(
-            y, height=np.percentile(y, 80))  # simple threshold
-        peak_positions = x[peaks]
-        peak_intensities = y[peaks]
-
-        # Sort peaks by intensity
-        sorted_idx = np.argsort(peak_intensities)[::-1]
-        top_peaks = [(peak_positions[i], peak_intensities[i])
-                     for i in sorted_idx[:5]]
-
-        # Area under curve
-        auc = trapz(y, x)
-
-        # Plot
-        if show_plot:
-            plt.figure(figsize=(10, 6))
-            plt.plot(x, y, label="Raman Spectrum")
-            plt.scatter(peak_positions, peak_intensities,
-                        color='red', label="Detected Peaks")
-            for pos, inten in top_peaks:
-                plt.text(pos, inten, f"{int(pos)}", fontsize=8, ha='center')
-            plt.title(f"Raman Spectrum - {sample_name}")
-            plt.xlabel("Wavenumber (cm⁻¹)")
-            plt.ylabel("Intensity (a.u.)")
-            plt.grid(True, alpha=0.3)
-            plt.legend()
-            plt.tight_layout()
-            plt.show()
-
-        # console_log characteristic summary
-        console_log(f"----- {sample_name} Characteristics -----")
-        console_log(f"Top Peaks:")
-        for i, (pos, inten) in enumerate(top_peaks):
-            console_log(f"  {i+1}. {pos:.1f} cm⁻¹  (Intensity: {inten:.1f})")
-        console_log(f"Total Area Under Curve (AUC): {auc:.2f}")
-        console_log(f"Approximate Noise Level (std): {np.std(y):.2f}")
-
-        return top_peaks, auc
+        # Delegate to extracted module
+        return basic_plots.extract_raman_characteristics(x, y, sample_name, show_plot)
 
     def pca2d(
         self,
@@ -584,352 +360,26 @@ class RamanVisualizer:
             - Decision boundary data must be pre-calculated using predict() with calculate_pca_boundary=True
             - No on-the-fly boundary calculation is performed to avoid redundant predictions
         """
-
-        # === AUTO-DETECT DATA SOURCE FROM ML_PROPERTY ===
-        if df is None and containers is None:
-            if hasattr(self, 'ML_PROPERTY') and self.ML_PROPERTY is not None:
-                # Use training data from ML_PROPERTY
-                if (self.ML_PROPERTY.X_train is not None and
-                    self.ML_PROPERTY.y_train is not None and
-                        self.ML_PROPERTY.common_axis is not None):
-
-                    console_log(
-                        "🔄 No input data provided, using training data from ML_PROPERTY...")
-                    df = self.ML_PROPERTY.X_train
-                    labels = self.ML_PROPERTY.y_train
-                    common_axis = self.ML_PROPERTY.common_axis
-                    current_n_features = self.ML_PROPERTY.n_features_in
-
-                    console_log(
-                        f"📊 Using training data: {df.shape[0]} samples, {df.shape[1]} features")
-
-                elif (self.ML_PROPERTY.X_test is not None and
-                      self.ML_PROPERTY.y_test is not None and
-                      self.ML_PROPERTY.common_axis is not None):
-
-                    console_log(
-                        "🔄 No training data available, using test data from ML_PROPERTY...")
-                    df = self.ML_PROPERTY.X_test
-                    labels = self.ML_PROPERTY.y_test
-                    common_axis = self.ML_PROPERTY.common_axis
-                    current_n_features = self.ML_PROPERTY.n_features_in
-
-                    console_log(
-                        f"📊 Using test data: {df.shape[0]} samples, {df.shape[1]} features")
-
-                else:
-                    raise ValueError(
-                        "No data found in ML_PROPERTY. Either provide df/containers explicitly or "
-                        "train a model first to populate ML_PROPERTY with data."
-                    )
-            else:
-                raise ValueError(
-                    "No ML_PROPERTY instance found and no input data provided. "
-                    "Either provide df/containers or ensure ML_PROPERTY is available."
-                )
-
-        # === FALLBACK TO INSTANCE ATTRIBUTES ===
-        # Handle default parameters with fallback to instance attributes
-        if labels is None:
-            labels = labels if labels is not None else getattr(
-                self, 'labels', None)
-
-        if df is None:
-            df = df if df is not None else getattr(self, 'df', None)
-
-        if containers is None:
-            containers = containers if containers is not None else getattr(
-                self, 'spectral_container', None)
-
-        if common_axis is None:
-            common_axis = common_axis if common_axis is not None else getattr(
-                self, 'common_axis', None)
-
-        if current_n_features is None:
-            current_n_features = current_n_features if current_n_features is not None else getattr(
-                self, 'n_features', None)
-
-        # === DATAFRAME/NUMPY ARRAY MODE ===
-        if df is not None:
-            console_log(f"Using DataFrame/Array mode with shape: {df.shape}")
-
-            # Handle both pandas DataFrame and numpy array
-            if isinstance(df, pd.DataFrame):
-                console_log("Input is pandas DataFrame")
-                if isinstance(labels, str):
-                    if labels in df.columns:
-                        y = df[labels].values
-                        X = df.drop(columns=[labels]).values
-                    else:
-                        raise ValueError(
-                            f"Label column '{labels}' not found in DataFrame")
-                else:
-                    y = np.array(labels)
-                    X = df.values
-
-            elif isinstance(df, np.ndarray):
-                console_log("Input is numpy array")
-                if labels is None:
-                    raise ValueError(
-                        "Labels must be provided when using numpy array input")
-                X = df
-                y = np.array(labels)
-
-            else:
-                raise ValueError(
-                    f"Unsupported data type: {type(df)}. Expected DataFrame or numpy array.")
-
-            # Verify dimensions match
-            if X.shape[0] != len(y):
-                raise ValueError(
-                    f"Shape mismatch: Data has {X.shape[0]} rows but {len(y)} labels provided")
-
-        # === SPECTRAL CONTAINER MODE ===
-        elif containers is not None:
-            console_log(
-                f"Using SpectralContainer mode with {len(containers)} containers")
-
-            if labels is None:
-                raise ValueError(
-                    "Labels must be provided for SpectralContainer input")
-
-            if common_axis is None or current_n_features is None:
-                raise ValueError(
-                    "common_axis and current_n_features must be provided for SpectralContainer input")
-
-            X_list = []
-            y_list = []
-            label_idx = 0
-
-            for container_idx, s_container in enumerate(containers):
-                if s_container.spectral_data is None or s_container.spectral_data.size == 0:
-                    continue
-
-                for single_spectrum in s_container.spectral_data:
-                    if single_spectrum.ndim != 1:
-                        continue
-
-                    # Interpolate spectrum to common axis if needed
-                    if len(s_container.spectral_axis) != current_n_features:
-                        interp_spectrum = np.interp(
-                            common_axis, s_container.spectral_axis, single_spectrum)
-                        X_list.append(interp_spectrum)
-                    else:
-                        X_list.append(single_spectrum)
-
-                    # Add corresponding label
-                    if label_idx < len(labels):
-                        y_list.append(labels[label_idx])
-                        label_idx += 1
-                    else:
-                        # Fallback based on container position
-                        if container_idx < len(containers) // 2:
-                            y_list.append("class_0")
-                        else:
-                            y_list.append("class_1")
-
-            if not X_list:
-                raise ValueError("No valid spectra found in containers")
-
-            X = np.array(X_list)
-            y = np.array(y_list)
-
-            # Final dimension check
-            if X.shape[0] != len(y):
-                console_log(
-                    f"Warning: Shape mismatch X={X.shape[0]}, y={len(y)}. Using integer indices.")
-                y = np.arange(X.shape[0])
-        else:
-            raise ValueError(
-                "Either df (DataFrame/numpy array) or containers (SpectralContainer list) must be provided, "
-                "or ensure ML_PROPERTY has training/test data available"
-            )
-
-        # === PCA COMPUTATION ===
-        console_log(
-            f"Generating PCA plot for {X.shape[0]} spectra with {len(np.unique(y))} unique classes: {np.unique(y)}")
-
-        # Handle sample limiting
-        original_X = X.copy()
-        original_y = y.copy()
-
-        if X.shape[0] > sample_limit:
-            console_log(
-                f"Limiting plot to {sample_limit} samples out of {X.shape[0]}")
-            indices = np.random.choice(X.shape[0], sample_limit, replace=False)
-            X = X[indices]
-            y = y[indices]
-
-        # Fit PCA on ALL data but transform limited samples for plotting
-        from sklearn.decomposition import PCA
-        pca = PCA(n_components=2)
-
-        # IMPORTANT: Fit PCA on the full dataset for better decision boundary
-        pca.fit(original_X)
-        # Transform only the limited samples for plotting
-        X_pca = pca.transform(X)
-
-        # === PLOTTING ===
-        plt.figure(figsize=figsize)
-        unique_labels = np.unique(y)
-
-        # Create color mapping for labels
-        if len(unique_labels) == 2:
-            # For binary classification, use specific colors
-            label_to_color = {
-                # Blue for first class (typically benign)
-                unique_labels[0]: '#1f77b4',
-                # Orange for second class (typically cancer)
-                unique_labels[1]: '#ff7f0e'
-            }
-        else:
-            # For multiclass, use colormap
-            colors = plt.get_cmap(cmap, len(unique_labels))
-            label_to_color = {label: colors(i)
-                              for i, label in enumerate(unique_labels)}
-
-        # === PRE-CALCULATED DECISION BOUNDARY VISUALIZATION ===
-        boundary_plotted = False
-        if show_decision_boundary and hasattr(self, 'ML_PROPERTY') and self.ML_PROPERTY is not None:
-            if (use_precalculated_boundary and
-                hasattr(self.ML_PROPERTY, 'pca_boundary_data') and
-                    self.ML_PROPERTY.pca_boundary_data is not None):
-
-                console_log(
-                    "🚀 Using pre-calculated PCA decision boundary data from ML_PROPERTY...")
-
-                try:
-                    boundary_data = self.ML_PROPERTY.pca_boundary_data
-
-                    # Check if the boundary data has required components
-                    if all(key in boundary_data for key in ['xx', 'yy', 'Z', 'pca']):
-                        # Get the boundary data
-                        xx = boundary_data['xx']
-                        yy = boundary_data['yy']
-                        Z = boundary_data['Z']
-                        boundary_pca = boundary_data['pca']
-
-                        # Transform current data using the boundary PCA for consistency
-                        X_pca_boundary = boundary_pca.transform(X)
-
-                        # Plot decision boundary
-                        plt.contourf(xx, yy, Z, levels=50, alpha=decision_boundary_alpha,
-                                     cmap='RdYlBu_r', vmin=0, vmax=1)
-                        plt.contour(xx, yy, Z, levels=[0.5], colors='black',
-                                    linestyles='--', linewidths=2, alpha=0.8)
-
-                        # Add colorbar
-                        cbar = plt.colorbar(
-                            label='Prediction Probability', shrink=0.8)
-                        cbar.ax.tick_params(labelsize=10)
-
-                        # Update X_pca to use the boundary PCA for consistency
-                        X_pca = X_pca_boundary
-
-                        console_log(
-                            "✅ Pre-calculated decision boundary plotted successfully!")
-                        boundary_plotted = True
-
-                        # console_log boundary info
-                        if 'explained_variance_ratio' in boundary_data:
-                            exp_var = boundary_data['explained_variance_ratio']
-                            console_log(
-                                f"📊 Boundary PCA variance explained: PC1={exp_var[0]:.1%}, PC2={exp_var[1]:.1%}")
-                            # Use boundary PCA variance for title
-                            explained_var = exp_var
-                        else:
-                            explained_var = pca.explained_variance_ratio_
-
-                except Exception as boundary_error:
-                    console_log(
-                        f"❌ Error using pre-calculated boundary data: {boundary_error}")
-                    boundary_plotted = False
-
-                else:
-                    console_log(
-                        "⚠️ Pre-calculated boundary data incomplete, missing required keys")
-            else:
-                if show_decision_boundary:
-                    console_log(
-                        "⚠️ No pre-calculated boundary data found in ML_PROPERTY.")
-                    console_log(
-                        "💡 Tip: Run predict() with calculate_pca_boundary=True first to generate boundary data")
-
-        # If no boundary was plotted, use the current PCA variance
-        if not boundary_plotted:
-            explained_var = pca.explained_variance_ratio_
-
-        # Plot data points with updated styling
-        for label in unique_labels:
-            idxs = np.where(y == label)[0]
-            plt.scatter(X_pca[idxs, 0], X_pca[idxs, 1],
-                        label=label,
-                        color=label_to_color[label],
-                        alpha=0.7,
-                        s=60,
-                        edgecolors='white',
-                        linewidth=0.5)
-
-        # Add centroids
-        centroids = []
-        for label in unique_labels:
-            idxs = np.where(y == label)[0]
-            centroid = X_pca[idxs].mean(axis=0)
-            centroids.append(centroid)
-
-            if add_centroids:
-                plt.scatter(*centroid,
-                            color=label_to_color[label],
-                            edgecolor='black',
-                            s=200,
-                            marker='X',
-                            zorder=5)
-                plt.text(centroid[0], centroid[1] - 0.5, f"{label} centroid",
-                         fontsize=10, weight='bold', ha='center')
-
-        # Line between centroids
-        if show_centroid_line and len(centroids) == 2:
-            plt.plot([centroids[0][0], centroids[1][0]],
-                     [centroids[0][1], centroids[1][1]],
-                     'k--', lw=2, label='Centroid Line', alpha=0.8)
-
-        # Formatting
-        title_with_variance = f"{title}\n(PC1: {explained_var[0]:.1%}, PC2: {explained_var[1]:.1%} variance explained)"
-
-        plt.title(title_with_variance, fontsize=12, fontweight='bold')
-        plt.xlabel(f"PC1 ({explained_var[0]:.1%} variance)", fontsize=11)
-        plt.ylabel(f"PC2 ({explained_var[1]:.1%} variance)", fontsize=11)
-
-        if legend:
-            plt.legend(loc=legend_loc, frameon=True,
-                       fancybox=True, shadow=True)
-
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
-
-        # console_log summary
-        console_log(f"\nPCA Summary:")
-        console_log(
-            f"- Total variance explained by PC1 + PC2: {sum(explained_var):.1%}")
-        console_log(f"- Number of samples plotted: {len(X_pca)}")
-        console_log(f"- Original feature dimensions: {original_X.shape[1]}")
-
-        # Add decision boundary info to summary
-        if show_decision_boundary:
-            if boundary_plotted:
-                console_log("- Decision boundary: ✅ Using pre-calculated data")
-            else:
-                console_log("- Decision boundary: ❌ Not available")
-                console_log(
-                    "  💡 Run predict() with calculate_pca_boundary=True to generate boundary data")
-
-        for label in unique_labels:
-            count = np.sum(y == label)
-            console_log(
-                f"- {label}: {count} samples ({count/len(y)*100:.1f}%)")
-
-        return plt
+        # Delegate to extracted module, passing ML_PROPERTY for auto-detection
+        return ml_visualization.pca2d(
+            df=df,
+            containers=containers,
+            labels=labels,
+            common_axis=common_axis,
+            current_n_features=current_n_features,
+            ml_property=self.ML_PROPERTY if hasattr(self, 'ML_PROPERTY') else None,
+            title=title,
+            figsize=figsize,
+            sample_limit=sample_limit,
+            cmap=cmap,
+            add_centroids=add_centroids,
+            show_centroid_line=show_centroid_line,
+            legend=legend,
+            legend_loc=legend_loc,
+            show_decision_boundary=show_decision_boundary,
+            decision_boundary_alpha=decision_boundary_alpha,
+            use_precalculated_boundary=use_precalculated_boundary
+        )
 
     def confusion_matrix_heatmap(
         self,
@@ -946,6 +396,8 @@ class RamanVisualizer:
     ) -> tuple[dict, sns.heatmap]:
         """
         Plot a confusion matrix as a heatmap.
+        
+        **NOTE**: This method now delegates to the model_evaluation module.
 
         Parameters:
             y_true (list):
@@ -973,63 +425,19 @@ class RamanVisualizer:
             plt (matplotlib.pyplot):
                 The plot object for further customization
         """
-        # Check input lengths
-        if len(y_true) != len(y_pred):
-            raise ValueError(
-                f"y_true and y_pred must have the same length. Got {len(y_true)} and {len(y_pred)}.")
-
-        # Compute confusion matrix
-        cm = confusion_matrix(y_true, y_pred, labels=class_labels)
-
-        # Calculate per-class prediction accuracy (recall)
-        per_class_accuracy = {}
-        for idx, label in enumerate(class_labels):
-            total = cm[idx, :].sum()
-            correct = cm[idx, idx]
-            acc = (correct / total) * 100 if total > 0 else 0
-            per_class_accuracy[label] = acc
-
-        # Normalize if requested
-        if normalize and fmt is None:
-            with np.errstate(all='ignore'):
-                cm_display = cm.astype('float') / cm.sum(axis=1, keepdims=True)
-            if fmt is None:
-                fmt = '.2f'
-        elif fmt is None:
-            cm_display = cm
-            fmt = 'd'
-        else:
-            cm_display = cm.astype('float') / cm.sum(axis=1, keepdims=True)
-            fmt = fmt
-
-        # Prepare annotation labels
-        if show_counts and normalize:
-            annot = np.empty_like(cm).astype(str)
-            for i in range(cm.shape[0]):
-                for j in range(cm.shape[1]):
-                    annot[i, j] = f"{cm_display[i, j]:.2f}\n({cm[i, j]})"
-        elif show_counts:
-            annot = cm
-        else:
-            annot = cm_display
-
-        ax = None
-
-        if show_heatmap:
-            plt.figure(figsize=figsize)
-            ax = sns.heatmap(
-                cm_display, annot=annot, fmt=fmt, cmap=cmap,
-                xticklabels=class_labels, yticklabels=class_labels,
-                cbar=False, square=True, linewidths=.5
-            )
-            plt.title(title)
-            plt.ylabel('True label')
-            plt.xlabel('Predicted label')
-            plt.xticks(rotation=45)
-            plt.yticks(rotation=0)
-            plt.show()
-
-        return per_class_accuracy, ax
+        # Delegate to extracted module
+        return model_evaluation.confusion_matrix_heatmap(
+            y_true=y_true,
+            y_pred=y_pred,
+            class_labels=class_labels,
+            title=title,
+            figsize=figsize,
+            cmap=cmap,
+            normalize=normalize,
+            show_counts=show_counts,
+            fmt=fmt,
+            show_heatmap=show_heatmap
+        )
 
     def shap_explain(
         self,
@@ -1076,917 +484,32 @@ class RamanVisualizer:
 
         Returns:
             dict: Comprehensive SHAP analysis results including performance metrics.
+        
+        **NOTE**: This method now delegates to the explainability module.
         """
-
-        def _validate_and_prepare_data():
-            """Validate and prepare data for SHAP explanation."""
+        
+        # Delegate to extracted module, passing ML_PROPERTY for data extraction
+        # Use instance ML_PROPERTY if none provided
+        if ML_PROPERTY is None:
             ML_PROPERTY = self.ML_PROPERTY
-
-            if ML_PROPERTY is None:
-                raise ValueError(
-                    "ML_PROPERTY instance is required for SHAP explanation.")
-
-            # Check if we have a trained model
-            model = None
-            ml_type = type(ML_PROPERTY).__name__
-
-            if ml_type == "RamanML":
-                model = getattr(ML_PROPERTY, '_model', None)
-            elif ml_type == "MLModel":
-                model = getattr(ML_PROPERTY, 'sklearn_model', None)
-
-            if model is None:
-                raise ValueError(
-                    "No trained model found in ML_PROPERTY instance.")
-
-            # For MLModel, we might not have training data, so we'll work with what we have
-            X_test = getattr(ML_PROPERTY, 'X_test', None)
-            y_test = getattr(ML_PROPERTY, 'y_test', None)
-            X_train = getattr(ML_PROPERTY, 'X_train', None)
-            y_train = getattr(ML_PROPERTY, 'y_train', None)
-
-            if X_test is None:
-                raise ValueError(
-                    "No test data found. X_test is required for SHAP explanation.")
-
-            # If no training data, create background data from test data
-            if X_train is None or len(X_train) == 0:
-                console_log(
-                    "No training data found. Using subset of test data as background.")
-                n_background = min(50, max(10, len(X_test) // 2))
-                if n_background == 0:
-                    n_background = 10
-
-                if len(X_test) < n_background:
-                    console_log(
-                        f"Warning: Only {len(X_test)} test samples available, duplicating to create {n_background} background samples")
-                    indices = np.random.choice(
-                        len(X_test), n_background, replace=True)
-                else:
-                    indices = np.random.choice(
-                        len(X_test), n_background, replace=False)
-
-                X_train = X_test[indices]
-                ML_PROPERTY.X_train = X_train
-
-                if y_test is not None:
-                    y_train = y_test[indices]
-                    ML_PROPERTY.y_train = y_train
-                else:
-                    y_train = np.array(['unknown'] * len(X_train))
-                    ML_PROPERTY.y_train = y_train
-
-            if len(X_train) == 0:
-                raise ValueError(
-                    "Cannot create background data - no samples available")
-
-            # Ensure y_train is available
-            if y_train is None:
-                console_log(
-                    "No training labels found. Using test labels as training labels.")
-                if y_test is not None:
-                    if hasattr(ML_PROPERTY, 'X_train') and len(ML_PROPERTY.X_train) < len(X_test):
-                        if len(ML_PROPERTY.X_train) <= len(y_test):
-                            y_train = y_test[:len(ML_PROPERTY.X_train)]
-                        else:
-                            repeats = len(
-                                ML_PROPERTY.X_train) // len(y_test) + 1
-                            y_train = np.tile(y_test, repeats)[
-                                :len(ML_PROPERTY.X_train)]
-                    else:
-                        y_train = y_test
-                    ML_PROPERTY.y_train = y_train
-                else:
-                    available_labels = ['benign', 'cancer']
-                    if hasattr(ML_PROPERTY, 'metadata') and 'labels' in ML_PROPERTY.metadata:
-                        available_labels = ML_PROPERTY.metadata['labels']
-                    elif hasattr(model, 'classes_'):
-                        available_labels = model.classes_.tolist()
-
-                    y_train = np.random.choice(available_labels, len(X_train))
-                    ML_PROPERTY.y_train = y_train
-                    console_log(
-                        f"Created dummy training labels with classes: {available_labels}")
-
-            return X_train, y_train, X_test, y_test, model
-
-        def _detect_model_type_enhanced(model):
-            """Enhanced model type detection with better SHAP strategy."""
-            model_type = type(model).__name__
-            is_svc = isinstance(model, SVC)
-            is_rf = isinstance(model, RandomForestClassifier)
-            is_calibrated = isinstance(model, CalibratedClassifierCV)
-
-            # Handle CalibratedClassifierCV
-            base_estimator = None
-            shap_model = model
-            shap_strategy = "auto"
-
-            if is_calibrated:
-
-                # ENHANCED: Better base estimator extraction
-                base_estimator = None
-
-                # Method 1: Try estimators_ attribute (most common)
-                if hasattr(model, 'estimators_') and len(model.estimators_) > 0:
-                    try:
-                        base_estimator = model.estimators_[0]
-                    except (IndexError, AttributeError) as e:
-
-                # Method 2: Try base_estimator attribute (deprecated but sometimes present)
-                if base_estimator is None and hasattr(model, 'base_estimator'):
-                    try:
-                        base_estimator = model.base_estimator
-                    except AttributeError as e:
-
-                # Method 3: Try to access calibrated_classifiers_ (newer sklearn versions)
-                if base_estimator is None and hasattr(model, 'calibrated_classifiers_'):
-                    try:
-                        if len(model.calibrated_classifiers_) > 0:
-                            base_estimator = model.calibrated_classifiers_[
-                                0].base_estimator
-                    except (IndexError, AttributeError) as e:
-
-                # Method 4: Inspect the model's internal structure
-                if base_estimator is None:
-                    try:
-                        # Print all available attributes for debugging
-                        available_attrs = [attr for attr in dir(
-                            model) if not attr.startswith('_')]
-
-                        # Try common attribute names
-                        for attr_name in ['base_estimator', 'estimator', 'estimators_', 'calibrated_classifiers_']:
-                            if hasattr(model, attr_name):
-                                attr_value = getattr(model, attr_name)
-
-                                if attr_name == 'estimators_' and isinstance(attr_value, list) and len(attr_value) > 0:
-                                    base_estimator = attr_value[0]
-                                    break
-                                elif attr_name == 'calibrated_classifiers_' and hasattr(attr_value, '__len__') and len(attr_value) > 0:
-                                    if hasattr(attr_value[0], 'base_estimator'):
-                                        base_estimator = attr_value[0].base_estimator
-                                        break
-                                elif attr_name in ['base_estimator', 'estimator'] and attr_value is not None:
-                                    base_estimator = attr_value
-                                    break
-
-                    except Exception as e:
-
-                if base_estimator is not None:
-                    base_is_svc = isinstance(base_estimator, SVC)
-                    base_is_rf = isinstance(
-                        base_estimator, RandomForestClassifier)
-                    base_is_linear_svc = base_is_svc and hasattr(
-                        base_estimator, 'kernel') and base_estimator.kernel == 'linear'
-                    base_model_type = type(base_estimator).__name__
-
-
-                    # ENHANCED: Determine optimal SHAP strategy based on output mode
-                    if shap_output_mode == "full" or force_kernel_explainer:
-                        shap_strategy = "kernel_for_full_values"
-                        shap_model = model  # Use calibrated model for full probability explanations
-                    elif shap_output_mode == "sparse" or (use_base_estimator and not force_kernel_explainer):
-                        shap_strategy = "base_estimator_for_speed"
-                        shap_model = base_estimator
-                    else:  # auto mode
-                        if base_is_rf:
-                            shap_strategy = "base_estimator_tree"
-                            shap_model = base_estimator
-                        elif base_is_linear_svc:
-                            shap_strategy = "base_estimator_linear"
-                            shap_model = base_estimator
-                        else:
-                            shap_strategy = "kernel_balanced"
-                            shap_model = model
-
-                    # Update flags to reflect the chosen strategy
-                    if shap_strategy.startswith("base_estimator"):
-                        is_svc = base_is_svc
-                        is_rf = base_is_rf
-                        is_linear_svc = base_is_linear_svc
-                    else:
-                        is_svc = False
-                        is_rf = False
-                        is_linear_svc = False
-
-                else:
-                    shap_strategy = "kernel_fallback"
-                    is_svc = False
-                    is_rf = False
-                    is_linear_svc = False
-                    base_model_type = "Unknown"
-            else:
-                # Non-calibrated models
-                is_linear_svc = is_svc and hasattr(
-                    model, 'kernel') and model.kernel == 'linear'
-                base_model_type = model_type
-
-                if force_kernel_explainer:
-                    shap_strategy = "kernel_forced"
-                elif shap_output_mode == "full":
-                    shap_strategy = "kernel_for_full_values"
-                elif is_rf:
-                    shap_strategy = "tree_native"
-                elif is_linear_svc:
-                    shap_strategy = "linear_native"
-                else:
-                    shap_strategy = "kernel_auto"
-
-            if is_calibrated:
-
-            return {
-                'model_type': model_type,
-                'is_svc': is_svc,
-                'is_rf': is_rf,
-                'is_calibrated': is_calibrated,
-                'is_linear_svc': is_linear_svc,
-                'base_model_type': base_model_type,
-                'shap_model': shap_model,
-                'base_estimator': base_estimator,
-                'shap_strategy': shap_strategy
-            }
-
-        def _optimize_data_for_performance(X_train, y_train, X_test, y_test, model_info):
-            """Enhanced data optimization with strategy-aware settings."""
-
-            background_data = X_train.copy()
-            test_data = X_test.copy()
-            labels = list(np.unique(y_train))
-
-            # Strategy-specific optimization
-            strategy = model_info['shap_strategy']
-
-            nonlocal max_background_samples, max_test_samples, nsamples, max_features
-
-            if fast_mode:
-                max_background_samples = min(max_background_samples, 20)
-                max_test_samples = min(max_test_samples, 10)
-                nsamples = min(nsamples, 20)
-                max_features = min(max_features, 200)
-            elif strategy in ["kernel_for_full_values", "kernel_forced", "kernel_balanced"]:
-                # For full SHAP values, use more samples but optimize background
-                if not fast_mode:
-                    # Slightly more for quality
-                    max_background_samples = min(max_background_samples, 40)
-                    # Increase for better quality
-                    nsamples = int(nsamples * kernel_nsamples_multiplier)
-            elif strategy.startswith("base_estimator") or strategy in ["tree_native", "linear_native"]:
-                # For base estimators, we can afford more samples
-                max_background_samples = min(max_background_samples, 100)
-                max_test_samples = min(max_test_samples, 50)
-
-            # Feature selection based on strategy
-            feature_selector = None
-            if strategy in ["kernel_for_full_values", "kernel_forced", "kernel_balanced"] and reduce_features and background_data.shape[1] > max_features:
-                # For kernel explainer with full values, be more conservative with feature reduction
-
-                from sklearn.feature_selection import SelectKBest, f_classif
-                selector = SelectKBest(f_classif, k=max_features)
-                background_data = selector.fit_transform(
-                    background_data, y_train)
-                test_data = selector.transform(test_data)
-                feature_selector = selector
-
-            elif ((model_info['is_svc'] or strategy.startswith("base_estimator")) and
-                  reduce_features and background_data.shape[1] > max_features):
-                # Standard feature reduction for other strategies
-
-                from sklearn.feature_selection import SelectKBest, f_classif
-                selector = SelectKBest(f_classif, k=max_features)
-                background_data = selector.fit_transform(
-                    background_data, y_train)
-                test_data = selector.transform(test_data)
-                feature_selector = selector
-
-            # Background sampling optimization
-            if background_data.shape[0] > max_background_samples:
-                if use_kmeans_sampling and strategy in ["kernel_for_full_values", "kernel_balanced"]:
-                    from sklearn.cluster import KMeans
-                    kmeans = KMeans(n_clusters=max_background_samples,
-                                    random_state=42, n_init=10)
-                    kmeans.fit(background_data)
-                    background_data = kmeans.cluster_centers_
-                else:
-                    indices = np.random.choice(
-                        background_data.shape[0], max_background_samples, replace=False)
-                    background_data = background_data[indices]
-
-            # Test data limitation
-            if test_data.shape[0] > max_test_samples:
-                test_data = test_data[:max_test_samples]
-
-
-            return {
-                'background_data': background_data,
-                'test_data': test_data,
-                'labels': labels,
-                'feature_selector': feature_selector
-            }
-
-        def _create_enhanced_shap_explainer(model_info, data_info):
-            """Enhanced SHAP explainer creation with strategy-based approach."""
-
-            model = model_info['shap_model']
-            original_model = model_info.get('original_model', model)
-            background_data = data_info['background_data']
-            test_data = data_info['test_data']
-            feature_selector = data_info['feature_selector']
-            strategy = model_info['shap_strategy']
-
-            # Adjusted nsamples for current strategy
-            current_nsamples = nsamples
-            if strategy in ["kernel_for_full_values", "kernel_forced"]:
-                current_nsamples = int(nsamples * kernel_nsamples_multiplier)
-            elif strategy.startswith("base_estimator"):
-                # Faster for base estimators
-                current_nsamples = max(nsamples // 2, 10)
-
-            # ... [existing _create_enhanced_feature_wrapper function stays the same] ...
-
-            # Strategy-based explainer creation
-            if strategy == "kernel_for_full_values":
-                # ... [existing implementation] ...
-
-            elif strategy == "base_estimator_tree":
-                # ... [existing implementation] ...
-
-            elif strategy == "base_estimator_linear":
-                # ... [existing implementation] ...
-
-            # 🔧 FIX: Handle native strategies for non-calibrated models
-            elif strategy == "tree_native":
-
-                if feature_selector is not None:
-                    class TreeFeatureWrapper:
-                        def __init__(self, model, selector):
-                            self.model = model
-                            self.selector = selector
-
-                        def predict_proba(self, X):
-                            return self.model.predict_proba(self.selector.transform(X))
-
-                    wrapped_model = TreeFeatureWrapper(model, feature_selector)
-                    explainer = shap.Explainer(
-                        wrapped_model.predict_proba, background_data)
-                    shap_values = explainer(test_data)
-                    expected_value = explainer.expected_value
-                else:
-                    explainer = shap.TreeExplainer(model)
-                    shap_values = explainer.shap_values(test_data)
-                    expected_value = explainer.expected_value
-
-            elif strategy == "linear_native":
-
-                try:
-                    if feature_selector is not None:
-                        wrapped_model = _create_enhanced_feature_wrapper(
-                            model, feature_selector, 'svc_enhanced')
-                        explainer = shap.LinearExplainer(
-                            wrapped_model, background_data)
-                        shap_values = explainer.shap_values(test_data)
-                    else:
-                        if hasattr(model, 'predict_proba') and model.probability:
-                            explainer = shap.LinearExplainer(
-                                model, background_data)
-                            shap_values = explainer.shap_values(test_data)
-                        else:
-                            raise Exception(
-                                "Linear SVC without probability - falling back to Kernel")
-
-                    expected_value = explainer.expected_value
-
-                except Exception as e:
-                    return _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples)
-
-            # 🔧 FIX: Handle all kernel strategies (including kernel_auto for SVC)
-            elif strategy in ["kernel_forced", "kernel_balanced", "kernel_auto"]:
-                return _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples)
-
-            else:
-                # Default fallback
-                return _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples)
-
-            return {
-                'explainer': explainer,
-                'shap_values': shap_values,
-                'expected_value': expected_value,
-                'strategy_used': strategy,
-                'nsamples_used': current_nsamples
-            }
-
-        def _create_kernel_fallback(model, background_data, test_data, feature_selector, current_nsamples):
-            """Create KernelExplainer as fallback."""
-
-            # Create prediction function
-            if hasattr(model, 'predict_proba'):
-                predict_fn = model.predict_proba
-            else:
-                def predict_fn(X):
-                    if hasattr(model, 'decision_function'):
-                        decision = model.decision_function(X)
-                        from scipy.special import expit
-                        if decision.ndim == 1:
-                            prob_pos = expit(decision)
-                            return np.column_stack([1 - prob_pos, prob_pos])
-                        else:
-                            exp_scores = np.exp(
-                                decision - np.max(decision, axis=1, keepdims=True))
-                            return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-                    else:
-                        # Last resort
-                        predictions = model.predict(X)
-                        n_classes = len(np.unique(predictions))
-                        return np.eye(n_classes)[predictions]
-
-            if feature_selector is not None:
-                class KernelFeatureWrapper:
-                    def __init__(self, model, selector, predict_fn):
-                        self.model = model
-                        self.selector = selector
-                        self.predict_fn = predict_fn
-
-                    def __call__(self, X):
-                        X_transformed = self.selector.transform(X)
-                        return self.predict_fn(X_transformed)
-
-                wrapped_predict = KernelFeatureWrapper(
-                    model, feature_selector, predict_fn)
-                explainer = shap.KernelExplainer(
-                    wrapped_predict, background_data)
-                shap_values = explainer.shap_values(
-                    test_data, nsamples=current_nsamples)
-            else:
-                explainer = shap.KernelExplainer(
-                    predict_fn, background_data, link="identity")
-                shap_values = explainer.shap_values(
-                    test_data, nsamples=current_nsamples)
-
-            expected_value = explainer.expected_value
-
-            return {
-                'explainer': explainer,
-                'shap_values': shap_values,
-                'expected_value': expected_value,
-                'strategy_used': 'kernel_fallback',
-                'nsamples_used': current_nsamples
-            }
-
-        def _create_kernel_explainer_for_svc(model, background_data, test_data, feature_selector):
-            """Create KernelExplainer specifically for SVC models."""
-            kernel_name = model.kernel if hasattr(
-                model, 'kernel') else 'Unknown'
-
-            # Create prediction function
-            if hasattr(model, 'predict_proba') and model.probability:
-                predict_fn = model.predict_proba
-            else:
-                def predict_fn(X):
-                    decision = model.decision_function(X)
-                    from scipy.special import expit
-                    if decision.ndim == 1:
-                        prob_pos = expit(decision)
-                        return np.column_stack([1 - prob_pos, prob_pos])
-                    else:
-                        exp_scores = np.exp(
-                            decision - np.max(decision, axis=1, keepdims=True))
-                        return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-
-            if feature_selector is not None:
-                class FeatureSelectedSVC:
-                    def __init__(self, model, selector):
-                        self.model = model
-                        self.selector = selector
-
-                    def __call__(self, X):
-                        return predict_fn(self.selector.transform(X))
-
-                wrapped_predict = FeatureSelectedSVC(model, feature_selector)
-                explainer = shap.KernelExplainer(
-                    wrapped_predict, X_train[:max_background_samples])
-                shap_values = explainer.shap_values(
-                    X_test[:max_test_samples], nsamples=nsamples)
-            else:
-                explainer = shap.KernelExplainer(
-                    predict_fn, background_data, link="identity")
-                shap_values = explainer.shap_values(
-                    test_data, nsamples=nsamples)
-
-            expected_value = explainer.expected_value
-
-            return {
-                'explainer': explainer,
-                'shap_values': shap_values,
-                'expected_value': expected_value
-            }
-
-        def _process_shap_values(shap_result, data_info):
-            """Process and normalize SHAP values from different explainer types."""
-
-            shap_values = shap_result['shap_values']
-            expected_value = shap_result['expected_value']
-            labels = data_info['labels']
-
-            # Determine n_classes from SHAP values
-            if isinstance(shap_values, list):
-                n_classes = len(shap_values)
-            elif hasattr(shap_values, 'values'):
-                shap_values_array = shap_values.values
-                if shap_values_array.ndim == 3:
-                    n_classes = shap_values_array.shape[-1]
-                else:
-                    n_classes = len(labels)
-            elif isinstance(shap_values, np.ndarray):
-                if shap_values.ndim == 3:
-                    n_classes = shap_values.shape[-1]
-                else:
-                    n_classes = len(labels)
-            else:
-                n_classes = len(labels)
-
-
-            # Normalize SHAP values to consistent format
-            if hasattr(shap_values, 'values'):
-                shap_values_array = shap_values.values
-                if shap_values_array.ndim == 3:
-                    n_classes = shap_values_array.shape[-1]
-                    shap_values = [shap_values_array[:, :, i]
-                                   for i in range(n_classes)]
-                elif shap_values_array.ndim == 2:
-                    n_classes = 1
-                    shap_values = [shap_values_array]
-                else:
-                    n_classes = 1
-                    shap_values = [shap_values_array.reshape(1, -1)]
-            elif isinstance(shap_values, list):
-                n_classes = len(shap_values)
-                for i, sv in enumerate(shap_values):
-                    if isinstance(sv, np.ndarray) and sv.ndim == 1:
-                        shap_values[i] = sv.reshape(1, -1)
-            elif isinstance(shap_values, np.ndarray):
-                if shap_values.ndim == 3:
-                    n_classes = shap_values.shape[-1]
-                    shap_values = [shap_values[:, :, i]
-                                   for i in range(n_classes)]
-                elif shap_values.ndim == 2:
-                    n_classes = 1
-                    shap_values = [shap_values]
-                else:
-                    n_classes = 1
-                    shap_values = [shap_values.reshape(1, -1)]
-
-            # Calculate mean absolute SHAP values for feature importance
-            mean_shap_values = []
-            for i, sv in enumerate(shap_values):
-                if isinstance(sv, np.ndarray):
-                    mean_shap_values.append(np.mean(np.abs(sv), axis=0))
-                else:
-                    mean_shap_values.append(np.abs(np.array(sv)).flatten())
-
-            # Ensure expected_value is properly formatted
-            if not isinstance(expected_value, (list, np.ndarray)):
-                expected_value = [expected_value] * n_classes
-            elif isinstance(expected_value, np.ndarray):
-                if expected_value.ndim == 0:
-                    expected_value = [float(expected_value)] * n_classes
-                elif len(expected_value) != n_classes:
-                    expected_value = [float(expected_value[0])] * n_classes
-                else:
-                    expected_value = [float(ev) for ev in expected_value]
-
-            return {
-                'shap_values': shap_values,
-                'expected_value': expected_value,
-                'mean_shap_values': mean_shap_values,
-                'n_classes': n_classes
-            }
-
-        def _extract_top_features(processed_shap, wavenumber_axis, max_display):
-            """Extract top contributing features for each class."""
-
-            shap_values = processed_shap['shap_values']
-            mean_shap_values = processed_shap['mean_shap_values']
-            n_classes = processed_shap['n_classes']
-            labels = data_info['labels']
-
-            # Calculate overall feature importance
-            overall_importance = np.mean(
-                [msv for msv in mean_shap_values], axis=0)
-            feature_importance_indices = np.argsort(overall_importance)[::-1]
-
-            # Get top features for each class
-            top_features = {}
-            for class_idx in range(n_classes):
-                class_shap = mean_shap_values[class_idx]
-
-                if hasattr(class_shap, 'ndim') and class_shap.ndim > 1:
-                    class_shap = class_shap.flatten()
-
-                top_indices = np.argsort(class_shap)[-max_display:][::-1]
-
-                class_features = []
-                for rank, idx in enumerate(top_indices):
-                    try:
-                        idx_val = int(idx)
-                        importance_val = float(class_shap[idx_val])
-
-                        if wavenumber_axis is not None and idx_val < len(wavenumber_axis):
-                            wavenumber_val = float(wavenumber_axis[idx_val])
-                            feature_name = f"{wavenumber_val:.1f} cm⁻¹"
-                        else:
-                            wavenumber_val = float(idx_val)
-                            feature_name = f"Feature_{idx_val}"
-
-                        class_features.append({
-                            "rank": int(rank + 1),
-                            "feature_index": idx_val,
-                            "wavenumber": wavenumber_val,
-                            "feature_name": feature_name,
-                            "importance": importance_val
-                        })
-                    except (ValueError, TypeError, IndexError) as e:
-                        continue
-
-                label_name = labels[class_idx] if class_idx < len(
-                    labels) else f"class_{class_idx}"
-                top_features[label_name] = class_features
-
-            return {
-                'top_features': top_features,
-                'overall_importance': overall_importance,
-                'feature_importance_indices': feature_importance_indices
-            }
-
-        def _generate_plots(processed_shap, feature_analysis, data_info, model_info, wavenumber_axis):
-            """Generate SHAP plots if requested."""
-            if not show_plots:
-                return {}
-
-
-            plots_dict = {}
-            test_data = data_info['test_data']
-            shap_values = processed_shap['shap_values']
-            n_classes = processed_shap['n_classes']
-            overall_importance = feature_analysis['overall_importance']
-            labels = data_info['labels']
-
-            try:
-                import matplotlib.pyplot as plt
-
-                # Create feature names
-                feature_names = []
-                if wavenumber_axis is not None:
-                    feature_names = [
-                        f"{float(wavenumber_axis[i]):.1f} cm⁻¹" for i in range(test_data.shape[1])]
-                else:
-                    feature_names = [
-                        f"Feature_{i}" for i in range(test_data.shape[1])]
-
-                # Summary plot
-                try:
-                    plt.figure(figsize=(12, 8))
-
-                    if n_classes == 1:
-                        shap.summary_plot(shap_values[0], test_data,
-                                          feature_names=feature_names,
-                                          max_display=max_display, show=False)
-                    else:
-                        if n_classes == 2:
-                            if model_info['is_calibrated'] or model_info['is_rf'] or model_info['is_base_rf']:
-                                shap.summary_plot(shap_values[1], test_data,
-                                                  feature_names=feature_names,
-                                                  max_display=max_display, show=False)
-                                plt.title(f'SHAP Summary Plot - {model_info["model_type"]}\n(Showing {labels[1] if len(labels) > 1 else "Positive"} Class)',
-                                          fontsize=14, fontweight='bold')
-                            else:
-                                shap.summary_plot(shap_values, test_data,
-                                                  feature_names=feature_names,
-                                                  max_display=max_display, show=False)
-                                plt.title(
-                                    f'SHAP Summary Plot - {model_info["model_type"]}', fontsize=14, fontweight='bold')
-                        else:
-                            shap.summary_plot(shap_values, test_data,
-                                              feature_names=feature_names,
-                                              max_display=max_display, show=False)
-                            plt.title(
-                                f'SHAP Summary Plot - {model_info["model_type"]}', fontsize=14, fontweight='bold')
-
-                    plt.tight_layout()
-                    plots_dict["summary_plot"] = plt.gcf()
-                    if show_plots:
-                        plt.show()
-                    else:
-                        plt.close()
-
-                except Exception as e:
-
-                # Feature importance plot
-                try:
-                    top_indices = np.argsort(overall_importance)[-max_display:]
-                    top_importance = overall_importance[top_indices]
-
-                    if wavenumber_axis is not None:
-                        try:
-                            feature_names_imp = [
-                                f"{float(wavenumber_axis[i]):.1f} cm⁻¹" for i in top_indices]
-                        except:
-                            feature_names_imp = [
-                                f"Feature_{i}" for i in top_indices]
-                    else:
-                        feature_names_imp = [
-                            f"Feature_{i}" for i in top_indices]
-
-                    plt.figure(figsize=(10, 8))
-                    bars = plt.barh(range(len(top_importance)),
-                                    top_importance, color='steelblue', alpha=0.7)
-                    plt.yticks(range(len(feature_names_imp)),
-                               feature_names_imp)
-                    plt.xlabel('Mean |SHAP value|', fontsize=12)
-                    plt.ylabel('Raman Shift (cm⁻¹)', fontsize=12)
-
-                    shap_model_name = f"{type(model_info['shap_model']).__name__}" + (
-                        " (Base)" if model_info['is_calibrated'] and use_base_estimator else "")
-                    plt.title(
-                        f'Feature Importance (SHAP) - {shap_model_name}', fontsize=14, fontweight='bold')
-
-                    for i, (bar, val) in enumerate(zip(bars, top_importance)):
-                        plt.text(val + 0.001, bar.get_y() + bar.get_height()/2,
-                                 f'{val:.3f}', ha='left', va='center', fontsize=9)
-
-                    plt.grid(axis='x', alpha=0.3)
-                    plt.tight_layout()
-
-                    plots_dict["importance_plot"] = plt.gcf()
-                    if show_plots:
-                        plt.show()
-                    else:
-                        plt.close()
-
-                except Exception as e:
-
-            except Exception as e:
-                create_logs("shap_plots", "ML",
-                            f"Error generating plots: {e}", status='warning')
-                plots_dict = {"plot_error": str(e)}
-
-            return plots_dict
-
-        def _create_final_results(processed_shap, feature_analysis, data_info, model_info, plots_dict, processing_time):
-            """Create the final results dictionary."""
-
-            # Prepare class-specific explanations
-            class_explanations = {}
-            shap_values = processed_shap['shap_values']
-            expected_value = processed_shap['expected_value']
-            mean_shap_values = processed_shap['mean_shap_values']
-            n_classes = processed_shap['n_classes']
-            top_features = feature_analysis['top_features']
-            labels = data_info['labels']
-
-            for i, label in enumerate(labels[:n_classes]):
-                try:
-                    if i < len(shap_values) and i < len(mean_shap_values):
-                        class_explanations[label] = {
-                            "shap_values": shap_values[i],
-                            "expected_value": expected_value[i] if i < len(expected_value) else 0.0,
-                            "mean_abs_shap": mean_shap_values[i],
-                            "top_features": top_features.get(label, [])
-                        }
-                except Exception as e:
-
-            return {
-                "success": True,
-                "msg": "shap_explain_success",
-                "shap_values": shap_values,
-                "expected_value": expected_value,
-                "explainer": shap_result['explainer'],
-                "feature_importance": feature_analysis['overall_importance'],
-                "feature_importance_ranking": feature_analysis['feature_importance_indices'],
-                "mean_shap_values": mean_shap_values,
-                "top_features": top_features,
-                "class_explanations": class_explanations,
-                "n_classes": n_classes,
-                "n_features": int(data_info['test_data'].shape[1]),
-                "background_size": int(data_info['background_data'].shape[0]),
-                "test_size": int(data_info['test_data'].shape[0]),
-                "processing_time": float(processing_time),
-                "wavenumber_axis": wavenumber_axis.tolist() if wavenumber_axis is not None else None,
-                "model_type": model_info['model_type'],
-                "base_model_type": model_info['base_model_type'] if model_info['is_calibrated'] else model_info['model_type'],
-                "is_calibrated": model_info['is_calibrated'],
-                "shap_model_used": type(model_info['shap_model']).__name__,
-                "used_base_estimator": model_info['is_calibrated'] and use_base_estimator,
-                "class_labels": labels,
-                "optimization_settings": {
-                    "max_background_samples": max_background_samples,
-                    "max_test_samples": max_test_samples,
-                    "nsamples": nsamples,
-                    "feature_reduction_used": data_info['feature_selector'] is not None,
-                    "features_before_reduction": X_train.shape[1] if data_info['feature_selector'] is not None else data_info['test_data'].shape[1],
-                    "features_after_reduction": data_info['test_data'].shape[1],
-                    "kmeans_sampling": use_kmeans_sampling,
-                    "fast_mode": fast_mode,
-                    "is_linear_svc": model_info['is_linear_svc'],
-                    "explainer_type": type(shap_result['explainer']).__name__,
-                    "use_base_estimator": use_base_estimator
-                },
-                **plots_dict
-            }
-
-        # =============== MAIN EXECUTION FLOW ===============
-        try:
-            start_time = time.time()
-            console_log("🚀 Starting enhanced SHAP explanation analysis...")
-
-            # Performance advice based on settings
-            if shap_output_mode == "full" and not fast_mode:
-                console_log(
-                    "💡 Performance Tip: You're using 'full' mode for complete SHAP values.")
-                console_log(
-                    "    This may take longer but gives the most detailed explanations.")
-                console_log(
-                    "    Consider using fast_mode=True or shap_output_mode='sparse' for speed.")
-            elif force_kernel_explainer:
-                console_log(
-                    "💡 Performance Tip: force_kernel_explainer=True ensures consistent results")
-                console_log("    but may be slower than native explainers.")
-
-            # Step 1: Validate and prepare data
-            X_train, y_train, X_test, y_test, model = _validate_and_prepare_data()
-
-            # Step 2: Enhanced model type detection
-            model_info = _detect_model_type_enhanced(model)
-            model_info['original_model'] = model
-
-            # Step 3: Get wavenumber axis
-            if wavenumber_axis is None:
-                if hasattr(ML_PROPERTY, "common_axis") and ML_PROPERTY.common_axis is not None:
-                    wavenumber_axis = ML_PROPERTY.common_axis
-                else:
-                    wavenumber_axis = None
-
-            # Step 4: Enhanced data optimization
-            data_info = _optimize_data_for_performance(
-                X_train, y_train, X_test, y_test, model_info)
-
-            # Update wavenumber axis if feature selection was applied
-            if data_info['feature_selector'] is not None and wavenumber_axis is not None:
-                wavenumber_axis = wavenumber_axis[data_info['feature_selector'].get_support(
-                )]
-
-            console_log(
-                f"🔬 Computing SHAP values using strategy: {model_info['shap_strategy']}")
-            console_log(f"    Test samples: {data_info['test_data'].shape[0]}")
-            console_log(
-                f"    Background samples: {data_info['background_data'].shape[0]}")
-
-            # Step 5: Create enhanced SHAP explainer
-            shap_result = _create_enhanced_shap_explainer(
-                model_info, data_info)
-
-            # Step 6: Process SHAP values (keep existing function)
-            processed_shap = _process_shap_values(shap_result, data_info)
-
-            # Step 7: Extract top features (keep existing function)
-            feature_analysis = _extract_top_features(
-                processed_shap, wavenumber_axis, max_display)
-
-            # Step 8: Generate plots (keep existing function)
-            plots_dict = _generate_plots(
-                processed_shap, feature_analysis, data_info, model_info, wavenumber_axis)
-
-            # Step 9: Create enhanced final results
-            processing_time = time.time() - start_time
-            results = _create_final_results(
-                processed_shap, feature_analysis, data_info, model_info, plots_dict, processing_time)
-
-            # Add enhanced metadata
-            results["optimization_settings"].update({
-                "shap_strategy_used": model_info['shap_strategy'],
-                "shap_output_mode": shap_output_mode,
-                "force_kernel_explainer": force_kernel_explainer,
-                "kernel_nsamples_multiplier": kernel_nsamples_multiplier,
-                "nsamples_used": shap_result.get('nsamples_used', nsamples)
-            })
-
-            console_log(
-                f"✅ Enhanced SHAP explanation completed in {processing_time:.2f} seconds!")
-            console_log(f"    Strategy used: {model_info['shap_strategy']}")
-            console_log(f"    Output mode: {shap_output_mode}")
-
-            return results
-
-        except Exception as e:
-            import traceback
-            error_details = traceback.format_exc()
-            console_log(f"❌ Error in enhanced SHAP explanation: {e}")
-
-            create_logs("shap_explain", "ML",
-                        f"Error in SHAP explanation: {e} \n {error_details}", status='error')
-        return {
-            "success": False,
-            "msg": "shap_explain_error",
-            "detail": f"{e} \n {error_details}",
-        }
+        
+        return explainability.shap_explain(
+            ml_property=ML_PROPERTY,
+            nsamples=nsamples,
+            show_plots=show_plots,
+            max_display=max_display,
+            wavenumber_axis=wavenumber_axis,
+            max_background_samples=max_background_samples,
+            max_test_samples=max_test_samples,
+            reduce_features=reduce_features,
+            max_features=max_features,
+            use_kmeans_sampling=use_kmeans_sampling,
+            fast_mode=fast_mode,
+            use_base_estimator=use_base_estimator,
+            force_kernel_explainer=force_kernel_explainer,
+            shap_output_mode=shap_output_mode,
+            kernel_nsamples_multiplier=kernel_nsamples_multiplier
+        )
 
     def lime_explain(
         self,
@@ -4398,417 +2921,3 @@ def plot_institution_distribution(
         console_log(f"❌ Error in plot_institution_distribution: {e}")
         import traceback
         traceback.print_exc()
-        return {
-            'success': False,
-            'error': str(e),
-            'traceback': traceback.format_exc()
-        }
-
-
-class FigureManager:
-    """
-    A class to manage and interact with saved matplotlib figures from preprocessing steps.
-
-    This class provides utilities to display, compare, save, and manage figures
-    that are stored in the plot_data dictionary from RamanPipeline preprocessing.
-    """
-
-    def __init__(self):
-        """Initialize the FigureManager."""
-        pass
-
-    def show_saved_figure(self, plot_data: Dict[str, Any], step_key: str):
-        """
-        Display a saved matplotlib figure.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        step_key : str
-            Key for the specific step to display (e.g., 'raw', 'step_1_Cropper').
-        """
-        if step_key not in plot_data:
-            available_keys = list(plot_data.keys())
-            raise ValueError(
-                f"Step key '{step_key}' not found. Available keys: {available_keys}")
-
-        step_data = plot_data[step_key]
-
-        if 'figure' not in step_data:
-            raise ValueError(f"No figure found for step '{step_key}'")
-
-        fig = step_data['figure']
-
-        # Display the figure
-        fig.show()
-
-        # Alternative for Jupyter notebooks
-        # plt.figure(fig.number)
-        # plt.show()
-
-    def show_combined_figure(self, plot_data: Dict[str, Any]):
-        """
-        Display the combined preprocessing figure.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        """
-        if 'combined_figure' not in plot_data:
-            raise ValueError("No combined figure found in plot_data")
-
-        fig = plot_data['combined_figure']
-        fig.show()
-
-    def list_available_figures(self, plot_data: Dict[str, Any]) -> None:
-        """
-        List all available figures in the plot data.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        """
-        console_log("Available preprocessing figures:")
-        console_log("=" * 40)
-
-        for key, data in plot_data.items():
-            if key == 'combined_figure':
-                console_log(
-                    f"Key: {key} | Combined preprocessing steps figure")
-            elif 'figure' in data:
-                step_info = f"Key: {key}"
-                if 'step_index' in data:
-                    step_info += f" | Step {data['step_index']}"
-                if 'step_name' in data:
-                    step_info += f" | {data['step_name']}"
-                if 'title' in data:
-                    step_info += f" | {data['title']}"
-
-                console_log(step_info)
-
-    def create_figure_comparison(self, plot_data: Dict[str, Any], step_keys: List[str],
-                                 figsize: Tuple[int, int] = (15, 10)) -> plt.Figure:
-        """
-        Create a new figure comparing multiple saved figures.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        step_keys : List[str]
-            List of step keys to compare.
-        figsize : Tuple[int, int]
-            Figure size for the comparison.
-
-        Returns
-        -------
-        plt.Figure
-            New comparison figure.
-        """
-        valid_keys = [
-            key for key in step_keys if key in plot_data and 'figure' in plot_data[key]]
-
-        if not valid_keys:
-            raise ValueError("No valid figures found for comparison")
-
-        n_plots = len(valid_keys)
-        comparison_fig, comparison_axes = plt.subplots(
-            n_plots, 1, figsize=figsize, sharex=True)
-
-        if n_plots == 1:
-            comparison_axes = [comparison_axes]
-
-        for i, key in enumerate(valid_keys):
-            original_fig = plot_data[key]['figure']
-            original_ax = original_fig.axes[0]  # Get the first (main) axis
-
-            # Copy the plot data to new axis
-            for line in original_ax.get_lines():
-                comparison_axes[i].plot(line.get_xdata(), line.get_ydata(),
-                                        alpha=line.get_alpha() or 1.0,
-                                        color=line.get_color(),
-                                        linestyle=line.get_linestyle(),
-                                        linewidth=line.get_linewidth())
-
-            # Copy title and labels
-            comparison_axes[i].set_title(plot_data[key]['title'])
-            comparison_axes[i].set_ylabel("Intensity")
-
-            # Copy any text annotations
-            for text in original_ax.texts:
-                comparison_axes[i].text(text.get_position()[0], text.get_position()[1],
-                                        text.get_text(), transform=text.get_transform(),
-                                        **text.get_properties())
-
-        comparison_axes[-1].set_xlabel("Wavenumber (cm⁻¹)")
-        comparison_fig.tight_layout()
-
-        return comparison_fig
-
-    def save_figure_to_file(self, plot_data: Dict[str, Any], step_key: str,
-                            filepath: str, dpi: int = 300, **kwargs):
-        """
-        Save a specific figure to file.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        step_key : str
-            Key for the specific step to save.
-        filepath : str
-            Path where to save the figure.
-        dpi : int
-            Resolution for saving.
-        **kwargs
-            Additional arguments for plt.savefig()
-        """
-        if step_key not in plot_data or 'figure' not in plot_data[step_key]:
-            raise ValueError(f"Figure not found for step '{step_key}'")
-
-        fig = plot_data[step_key]['figure']
-        fig.savefig(filepath, dpi=dpi, bbox_inches='tight', **kwargs)
-        console_log(f"Figure saved to: {filepath}")
-
-    def save_all_figures(self, plot_data: Dict[str, Any], output_dir: str,
-                         prefix: str = "preprocessing", dpi: int = 300, **kwargs):
-        """
-        Save all figures to individual files.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        output_dir : str
-            Directory to save figures.
-        prefix : str
-            Prefix for saved file names.
-        dpi : int
-            Resolution for saving.
-        **kwargs
-            Additional arguments for plt.savefig()
-        """
-        os.makedirs(output_dir, exist_ok=True)
-
-        saved_files = []
-
-        for key, data in plot_data.items():
-            if 'figure' in data:
-                if key == 'combined_figure':
-                    filename = f"{prefix}_combined.png"
-                else:
-                    # Extract step info for filename
-                    step_index = data.get('step_index', 0)
-                    step_name = data.get('step_name', key)
-                    filename = f"{prefix}_{step_index:02d}_{step_name}.png"
-
-                filepath = os.path.join(output_dir, filename)
-                self.save_figure_to_file(
-                    plot_data, key, filepath, dpi=dpi, **kwargs)
-                saved_files.append(filepath)
-
-        console_log(f"Saved {len(saved_files)} figures to {output_dir}")
-        return saved_files
-
-    def close_all_figures(self, plot_data: Dict[str, Any]):
-        """
-        Close all figures to free memory.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        """
-        closed_count = 0
-
-        for key, data in plot_data.items():
-            if key == 'combined_figure':
-                plt.close(data)
-                closed_count += 1
-            elif 'figure' in data:
-                plt.close(data['figure'])
-                closed_count += 1
-
-        console_log(f"Closed {closed_count} figures.")
-
-    def get_figure_info(self, plot_data: Dict[str, Any], step_key: str) -> Dict[str, Any]:
-        """
-        Get detailed information about a specific figure.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        step_key : str
-            Key for the specific step.
-
-        Returns
-        -------
-        Dict[str, Any]
-            Figure information including size, title, etc.
-        """
-        if step_key not in plot_data:
-            raise ValueError(f"Step key '{step_key}' not found")
-
-        step_data = plot_data[step_key]
-
-        if 'figure' not in step_data:
-            raise ValueError(f"No figure found for step '{step_key}'")
-
-        fig = step_data['figure']
-
-        info = {
-            'step_key': step_key,
-            'title': step_data.get('title', 'Unknown'),
-            'step_index': step_data.get('step_index', None),
-            'step_name': step_data.get('step_name', 'Unknown'),
-            'figure_size': fig.get_size_inches(),
-            'num_axes': len(fig.axes),
-            'parameters': step_data.get('parameters', {}),
-            'figure_object': fig
-        }
-
-        return info
-
-    def create_summary_table(self, plot_data: Dict[str, Any]) -> None:
-        """
-        Create a summary table of all available figures.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        """
-        import pandas as pd
-
-        summary_data = []
-
-        for key, data in plot_data.items():
-            if 'figure' in data or key == 'combined_figure':
-                row = {
-                    'Key': key,
-                    'Step Index': data.get('step_index', 'N/A'),
-                    'Step Name': data.get('step_name', 'Combined' if key == 'combined_figure' else 'Unknown'),
-                    'Title': data.get('title', 'N/A'),
-                    'Has Parameters': 'Yes' if data.get('parameters') else 'No'
-                }
-                summary_data.append(row)
-
-        if summary_data:
-            df = pd.DataFrame(summary_data)
-            console_log("Figure Summary:")
-            console_log("=" * 60)
-            console_log(df.to_string(index=False))
-        else:
-            console_log("No figures found in plot_data")
-
-    def export_figure_metadata(self, plot_data: Dict[str, Any], output_file: str):
-        """
-        Export figure metadata to JSON file.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        output_file : str
-            Path to output JSON file.
-        """
-        import json
-
-        metadata = {}
-
-        for key, data in plot_data.items():
-            if 'figure' in data or key == 'combined_figure':
-                # Extract serializable metadata (exclude figure object)
-                metadata[key] = {
-                    'title': data.get('title', ''),
-                    'step_index': data.get('step_index'),
-                    'step_name': data.get('step_name', ''),
-                    'parameters': data.get('parameters', {}),
-                    'has_figure': True
-                }
-
-        with open(output_file, 'w') as f:
-            json.dump(metadata, f, indent=2, default=str)
-
-        console_log(f"Metadata exported to: {output_file}")
-
-    def create_side_by_side_comparison(self, plot_data: Dict[str, Any],
-                                       step_keys: List[str],
-                                       figsize: Tuple[int, int] = (20, 6)) -> plt.Figure:
-        """
-        Create a side-by-side comparison of selected figures.
-
-        Parameters
-        ----------
-        plot_data : Dict[str, Any]
-            The plot_data dictionary from preprocess method.
-        step_keys : List[str]
-            List of step keys to compare side by side.
-        figsize : Tuple[int, int]
-            Figure size for the comparison.
-
-        Returns
-        -------
-        plt.Figure
-            New side-by-side comparison figure.
-        """
-        valid_keys = [
-            key for key in step_keys if key in plot_data and 'figure' in plot_data[key]]
-
-        if not valid_keys:
-            raise ValueError("No valid figures found for comparison")
-
-        n_plots = len(valid_keys)
-        comparison_fig, comparison_axes = plt.subplots(
-            1, n_plots, figsize=figsize, sharey=True)
-
-        if n_plots == 1:
-            comparison_axes = [comparison_axes]
-
-        for i, key in enumerate(valid_keys):
-            original_fig = plot_data[key]['figure']
-            original_ax = original_fig.axes[0]  # Get the first (main) axis
-
-            # Copy the plot data to new axis
-            for line in original_ax.get_lines():
-                comparison_axes[i].plot(line.get_xdata(), line.get_ydata(),
-                                        alpha=line.get_alpha() or 1.0,
-                                        color=line.get_color(),
-                                        linestyle=line.get_linestyle(),
-                                        linewidth=line.get_linewidth())
-
-            # Copy title and labels
-            comparison_axes[i].set_title(plot_data[key]['title'])
-            comparison_axes[i].set_xlabel("Wavenumber (cm⁻¹)")
-
-            if i == 0:  # Only set y-label for first subplot
-                comparison_axes[i].set_ylabel("Intensity")
-
-            # Copy any text annotations
-            for text in original_ax.texts:
-                comparison_axes[i].text(text.get_position()[0], text.get_position()[1],
-                                        text.get_text(), transform=text.get_transform(),
-                                        **text.get_properties())
-
-        comparison_fig.tight_layout()
-
-        return comparison_fig
-
-
-# Add this method to RamanPipeline class as well for convenience
-def add_figure_manager_to_raman_pipeline():
-    """
-    This function can be used to add FigureManager methods to RamanPipeline class.
-    """
-    # Add to RamanPipeline class
-
-    def get_figure_manager(self):
-        """Get a FigureManager instance for working with saved figures."""
-        return FigureManager()
-
-    # You can add this method to the RamanPipeline class
-    return get_figure_manager

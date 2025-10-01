@@ -2,12 +2,10 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import ramanspy as rp
-import torch
+
 import pickle
 import traceback
 import random
-
-from IPython.display import clear_output
 
 from functions.configs import *
 from functions.utils import translate_confusion_matrix
@@ -17,9 +15,12 @@ from functions.preprocess import RamanPipeline, SNV, BaselineCorrection, Transfo
 from functions.visualization import RamanVisualizer
 from functions.ML import RamanML, MLModel
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-device
-
+try:
+    import torch
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+except ImportError:
+    device = 'cpu'
+    print("PyTorch not installed, defaulting to CPU.")
 
 def processDFA1(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
     """

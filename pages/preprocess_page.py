@@ -182,17 +182,60 @@ class PreprocessPage(QWidget):
         layout.setContentsMargins(12, 16, 12, 12)
         layout.setSpacing(8)
 
+        # Button row with refresh and export
+        button_row = QHBoxLayout()
+        button_row.setSpacing(8)
+        
         # Refresh button with better styling
         refresh_btn = QPushButton("🔄 " + LOCALIZE("PREPROCESS.refresh_datasets"))
         refresh_btn.setObjectName("refreshButton")
         refresh_btn.setToolTip(LOCALIZE("PREPROCESS.refresh_datasets_tooltip"))
         refresh_btn.clicked.connect(self.load_project_data)
-        layout.addWidget(refresh_btn)
+        button_row.addWidget(refresh_btn)
+        
+        # Export button with SVG icon and green styling
+        export_btn = QPushButton(LOCALIZE("PREPROCESS.export_button"))
+        export_btn.setObjectName("exportButton")
+        export_icon = load_icon("export", "button", "#2e7d32")  # Green color
+        export_btn.setIcon(export_icon)
+        export_btn.setIconSize(QSize(16, 16))
+        export_btn.setToolTip(LOCALIZE("PREPROCESS.export_button_tooltip"))
+        export_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4caf50;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 6px 12px;
+                font-weight: 500;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:pressed {
+                background-color: #3d8b40;
+            }
+            QPushButton:disabled {
+                background-color: #a5d6a7;
+                color: #e0e0e0;
+            }
+        """)
+        export_btn.clicked.connect(self.export_dataset)
+        button_row.addWidget(export_btn)
+        
+        layout.addLayout(button_row)
 
-        # Dataset list
+        # Dataset list - shows 4-6 items with scrollbar
         self.dataset_list = QListWidget()
+        self.dataset_list.setObjectName("datasetList")
         self.dataset_list.setSelectionMode(QListWidget.ExtendedSelection)
-        self.dataset_list.setMaximumHeight(120)
+        self.dataset_list.setMaximumHeight(240)  # Increased to show 4-6 items instead of 2
+        
+        # Apply custom styling from stylesheets
+        from configs.style.stylesheets import PREPROCESS_PAGE_STYLES
+        if 'dataset_list' in PREPROCESS_PAGE_STYLES:
+            self.dataset_list.setStyleSheet(PREPROCESS_PAGE_STYLES['dataset_list'])
+        
         layout.addWidget(self.dataset_list)
         
         return input_group
@@ -284,11 +327,12 @@ class PreprocessPage(QWidget):
         preview_toggle_container = QHBoxLayout()
         preview_toggle_container.setSpacing(8)
         
-        # Create toggle button with eye icons
+        # Create toggle button with eye icons and dynamic width
         self.preview_toggle_btn = QPushButton()
         self.preview_toggle_btn.setCheckable(True)
         self.preview_toggle_btn.setChecked(True)
-        self.preview_toggle_btn.setFixedHeight(32)  # Fixed height, dynamic width
+        self.preview_toggle_btn.setFixedHeight(32)  # Fixed height
+        self.preview_toggle_btn.setMinimumWidth(120)  # Minimum width to accommodate text
         self.preview_toggle_btn.setToolTip(LOCALIZE("PREPROCESS.real_time_preview_tooltip"))
         
         # Load eye icons using centralized icon paths
@@ -481,6 +525,152 @@ class PreprocessPage(QWidget):
             create_logs("PreprocessPage", "load_data_error", 
                        f"Critical error loading project data: {e}", status='error')
             self.showNotification.emit(f"Error loading data: {str(e)}", "error")   
+    
+    def export_dataset(self):
+        """Export selected dataset to file with format selection."""
+        # Check if any dataset is selected
+        selected_items = self.dataset_list.selectedItems()
+        if not selected_items:
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.export_no_selection"),
+                "warning"
+            )
+            return
+        
+        # Get the first selected dataset
+        dataset_name = self._clean_dataset_name(selected_items[0].text())
+        
+        # Check if dataset exists in RAMAN_DATA
+        if dataset_name not in RAMAN_DATA:
+            self.showNotification.emit(
+                f"Dataset '{dataset_name}' not found",
+                "error"
+            )
+            return
+        
+        # Create export dialog
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle(LOCALIZE("PREPROCESS.export_dialog_title"))
+        dialog.setMinimumWidth(500)
+        
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(16)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Format selection
+        format_layout = QHBoxLayout()
+        format_layout.addWidget(QLabel(LOCALIZE("PREPROCESS.export_format_label")))
+        
+        format_combo = QComboBox()
+        formats = [
+            ("csv", LOCALIZE("PREPROCESS.export_format_csv")),
+            ("txt", LOCALIZE("PREPROCESS.export_format_txt")),
+            ("asc", LOCALIZE("PREPROCESS.export_format_asc")),
+            ("pkl", LOCALIZE("PREPROCESS.export_format_pickle"))
+        ]
+        for fmt_key, fmt_label in formats:
+            format_combo.addItem(fmt_label, fmt_key)
+        
+        format_layout.addWidget(format_combo)
+        layout.addLayout(format_layout)
+        
+        # File location selection
+        location_layout = QHBoxLayout()
+        location_layout.addWidget(QLabel(LOCALIZE("PREPROCESS.export_location_label")))
+        
+        location_edit = QLineEdit()
+        location_edit.setPlaceholderText(LOCALIZE("PREPROCESS.export_select_location"))
+        location_edit.setReadOnly(True)
+        
+        browse_btn = QPushButton(LOCALIZE("PREPROCESS.export_browse_button"))
+        
+        def browse_location():
+            path = QFileDialog.getExistingDirectory(
+                dialog,
+                LOCALIZE("PREPROCESS.export_select_location")
+            )
+            if path:
+                location_edit.setText(path)
+        
+        browse_btn.clicked.connect(browse_location)
+        
+        location_layout.addWidget(location_edit, 1)
+        location_layout.addWidget(browse_btn)
+        layout.addLayout(location_layout)
+        
+        # Filename
+        filename_layout = QHBoxLayout()
+        filename_layout.addWidget(QLabel(LOCALIZE("PREPROCESS.export_filename_label")))
+        
+        filename_edit = QLineEdit()
+        filename_edit.setText(dataset_name)
+        filename_layout.addWidget(filename_edit)
+        layout.addLayout(filename_layout)
+        
+        # Dialog buttons
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        )
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+        
+        # Execute dialog
+        if dialog.exec() == QDialog.Accepted:
+            try:
+                # Get export parameters
+                export_format = format_combo.currentData()
+                export_path = location_edit.text()
+                filename = filename_edit.text()
+                
+                if not export_path:
+                    self.showNotification.emit(
+                        "Please select export location",
+                        "warning"
+                    )
+                    return
+                
+                if not filename:
+                    self.showNotification.emit(
+                        "Please provide filename",
+                        "warning"
+                    )
+                    return
+                
+                # Build full file path
+                full_path = os.path.join(export_path, f"{filename}.{export_format}")
+                
+                # Get the data
+                df = RAMAN_DATA[dataset_name]
+                
+                # Export based on format
+                if export_format == "csv":
+                    df.to_csv(full_path)
+                elif export_format == "txt":
+                    # Tab-separated format
+                    df.to_csv(full_path, sep='\t')
+                elif export_format == "asc":
+                    # ASCII format (similar to txt)
+                    df.to_csv(full_path, sep='\t')
+                elif export_format == "pkl":
+                    df.to_pickle(full_path)
+                
+                self.showNotification.emit(
+                    LOCALIZE("PREPROCESS.export_success", 
+                            name=dataset_name, 
+                            path=full_path),
+                    "success"
+                )
+                
+            except Exception as e:
+                create_logs("PreprocessPage", "export_error",
+                           f"Error exporting dataset: {e}", status='error')
+                self.showNotification.emit(
+                    LOCALIZE("PREPROCESS.export_error", error=str(e)),
+                    "error"
+                )
     
     def _debug_selection_changed(self):
         """Debug wrapper for selection changes."""

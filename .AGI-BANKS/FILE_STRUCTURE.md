@@ -69,7 +69,10 @@ raman-app/
 │   ├── ML.py                # Machine learning integration
 │   ├── noise_func.py        # Noise reduction algorithms
 │   ├── utils.py             # General function utilities
-│   ├── visualization.py     # Advanced plotting functions
+│   ├── visualization/       # 📦 Visualization package (refactored Oct 2025)
+│   │   ├── __init__.py      # Package interface & exports
+│   │   ├── core.py          # Main RamanVisualizer class (4,405 lines)
+│   │   └── figure_manager.py # Figure management (387 lines)
 │   ├── andorsdk/            # Andor SDK components
 │   └── preprocess/          # Preprocessing algorithms
 ├── logs/                     # Application logs
@@ -278,13 +281,30 @@ raman-app/
   - Metadata extraction
   - Error handling and recovery
 
-#### `functions/visualization.py`
-- **Purpose**: Advanced plotting and visualization
+#### `functions/visualization/` ✨ Package (Refactored Oct 2025)
+- **Purpose**: Advanced plotting and visualization (now modular package)
+- **Structure**:
+  ```
+  visualization/
+  ├── __init__.py          # Package exports (RamanVisualizer, FigureManager)
+  ├── core.py              # Main RamanVisualizer class (4,405 lines)
+  └── figure_manager.py    # Figure management utilities (387 lines)
+  ```
+- **Key Classes**:
+  - `RamanVisualizer`: Main visualization coordinator
+    - PCA analysis (pca2d method)
+    - SHAP explainability (shap_explain method - 962 lines)
+    - LIME explainability (lime_explain method - 424 lines)
+    - Peak analysis and assignment
+    - Confusion matrices and classification reports
+  - `FigureManager`: Matplotlib figure lifecycle management
 - **Features**:
   - Scientific plotting templates
   - Customizable plot styles
   - Export capabilities
   - Interactive plot elements
+  - Backward compatible imports
+- **Future**: Planned further modularization into peak_analysis.py, shap_utils.py, lime_utils.py, etc.
 
 #### `functions/preprocess/`
 - **Purpose**: Preprocessing algorithm implementations
