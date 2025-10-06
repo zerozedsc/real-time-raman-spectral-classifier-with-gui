@@ -15,6 +15,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle(LOCALIZE("MAIN_WINDOW.title"))
         self.resize(1440, 900)
+        self.setMinimumHeight(600)  # Minimum height for non-maximized windows
+        self.setMinimumWidth(1000)   # Minimum width to maintain layout
 
         # --- Central stacked widget to manage main views (Home vs Workspace) ---
         self.central_stack = QStackedWidget()

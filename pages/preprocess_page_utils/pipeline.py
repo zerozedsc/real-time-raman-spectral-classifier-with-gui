@@ -39,7 +39,7 @@ class PipelineStep:
 
 
 class PipelineConfirmationDialog(QDialog):
-    """Enhanced dialog to confirm pipeline with detailed information."""
+    """Redesigned compact confirmation dialog with medical theme."""
     
     def __init__(self, pipeline_steps: List[PipelineStep], output_name: str, selected_datasets: List[str], parent=None):
         super().__init__(parent)
@@ -52,168 +52,401 @@ class PipelineConfirmationDialog(QDialog):
     
     def _setup_ui(self):
         self.setWindowTitle(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.title"))
-        self.setMinimumSize(900, 750)
-        self.resize(900, 750)
+        self.setMinimumSize(700, 600)
+        self.setMaximumSize(900, 800)
+        self.resize(750, 650)
         
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(20)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # Header with summary
+        # Scrollable content area
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(24, 24, 24, 24)
+        content_layout.setSpacing(20)
+        
+        # === MODERN HEADER SECTION ===
         header_frame = QFrame()
-        header_frame.setObjectName("confirmDialogHeader")
+        header_frame.setObjectName("headerCard")
         header_layout = QVBoxLayout(header_frame)
-        header_layout.setContentsMargins(20, 20, 20, 20)
-        header_layout.setSpacing(12)
+        header_layout.setContentsMargins(24, 20, 24, 20)
+        header_layout.setSpacing(16)
+        
+        # Title with icon
+        title_row = QHBoxLayout()
+        title_row.setSpacing(8)
+        
+        icon_label = QLabel("🔬")
+        icon_label.setStyleSheet("font-size: 24px;")
+        title_row.addWidget(icon_label)
         
         title_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.header"))
-        title_label.setObjectName("confirmDialogTitle")
-        header_layout.addWidget(title_label)
+        title_label.setObjectName("titleLabel")
+        title_row.addWidget(title_label)
+        title_row.addStretch()
         
-        # Summary statistics
-        summary_text = self._create_summary_text()
-        summary_label = QLabel(summary_text)
-        summary_label.setObjectName("confirmDialogSummary")
-        summary_label.setWordWrap(True)
-        header_layout.addWidget(summary_label)
+        header_layout.addLayout(title_row)
         
-        layout.addWidget(header_frame)
+        # Divider line
+        divider = QFrame()
+        divider.setFrameShape(QFrame.HLine)
+        divider.setStyleSheet("background-color: #e1e4e8; min-height: 1px; max-height: 1px;")
+        header_layout.addWidget(divider)
         
-        # Tabs for different sections
-        tabs = QTabWidget()
-        tabs.setObjectName("confirmDialogTabs")
+        # Summary metrics in a clean grid layout
+        metrics_grid = QGridLayout()
+        metrics_grid.setSpacing(16)
+        metrics_grid.setContentsMargins(0, 8, 0, 0)
         
-        # Input datasets tab
-        input_tab = self._create_input_tab()
-        tabs.addTab(input_tab, LOCALIZE("PREPROCESS.CONFIRM_DIALOG.input_tab"))
+        # Input datasets metric
+        input_metric = self._create_metric_item("📊", str(len(self.selected_datasets)), 
+                                                 LOCALIZE("PREPROCESS.CONFIRM_DIALOG.datasets_label"))
+        metrics_grid.addWidget(input_metric, 0, 0)
         
-        # Pipeline tab
-        pipeline_tab = self._create_pipeline_tab()
-        tabs.addTab(pipeline_tab, LOCALIZE("PREPROCESS.CONFIRM_DIALOG.pipeline_tab"))
+        # Pipeline steps metric
+        steps_metric = self._create_metric_item("⚙️", str(len(self.pipeline_steps)), 
+                                                LOCALIZE("PREPROCESS.CONFIRM_DIALOG.steps_label"))
+        metrics_grid.addWidget(steps_metric, 0, 1)
         
-        layout.addWidget(tabs)
+        # Output name metric
+        output_display = self.output_name
+        if len(output_display) > 25:
+            output_display = output_display[:22] + "..."
         
-        # Buttons
-        button_frame = QFrame()
-        button_layout = QHBoxLayout(button_frame)
-        button_layout.setContentsMargins(0, 10, 0, 0)
+        output_metric = self._create_metric_item("💾", output_display,
+                                                 LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_label"))
+        metrics_grid.addWidget(output_metric, 0, 2)
+        
+        # Add stretch column to prevent excessive stretching
+        metrics_grid.setColumnStretch(3, 1)
+        
+        header_layout.addLayout(metrics_grid)
+        content_layout.addWidget(header_frame)
+        
+        # === INPUT DATASETS SECTION ===
+        input_section = self._create_compact_section(
+            "📊 " + LOCALIZE("PREPROCESS.CONFIRM_DIALOG.input_section_title"),
+            self._create_datasets_content()
+        )
+        content_layout.addWidget(input_section)
+        
+        # === PIPELINE SECTION ===
+        pipeline_section = self._create_compact_section(
+            "⚙️ " + LOCALIZE("PREPROCESS.CONFIRM_DIALOG.pipeline_section_title"),
+            self._create_pipeline_content()
+        )
+        content_layout.addWidget(pipeline_section)
+        
+        content_layout.addStretch()
+        scroll.setWidget(content_widget)
+        main_layout.addWidget(scroll)
+        
+        # === BUTTON BAR ===
+        button_bar = QFrame()
+        button_bar.setObjectName("buttonBar")
+        button_layout = QHBoxLayout(button_bar)
+        button_layout.setContentsMargins(24, 16, 24, 16)
+        button_layout.setSpacing(12)
         
         button_layout.addStretch()
         
         cancel_btn = QPushButton(LOCALIZE("COMMON.cancel"))
         cancel_btn.setObjectName("cancelButton")
+        cancel_btn.setMinimumWidth(120)
+        cancel_btn.setCursor(Qt.PointingHandCursor)
         cancel_btn.clicked.connect(self.reject)
         
-        start_btn = QPushButton(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.start_processing"))
+        start_btn = QPushButton("▶ " + LOCALIZE("PREPROCESS.CONFIRM_DIALOG.start_processing"))
         start_btn.setObjectName("startButton")
+        start_btn.setMinimumWidth(160)
+        start_btn.setCursor(Qt.PointingHandCursor)
         start_btn.clicked.connect(self.accept)
         
         button_layout.addWidget(cancel_btn)
         button_layout.addWidget(start_btn)
         
-        layout.addWidget(button_frame)
+        main_layout.addWidget(button_bar)
+    
+    def _create_metric_item(self, icon: str, value: str, label: str) -> QFrame:
+        """Create a modern metric display item with icon, value, and label."""
+        metric = QFrame()
+        metric.setObjectName("metricItem")
+        metric_layout = QVBoxLayout(metric)
+        metric_layout.setContentsMargins(16, 12, 16, 12)
+        metric_layout.setSpacing(6)
+        
+        # Icon row
+        icon_label = QLabel(icon)
+        icon_label.setStyleSheet("font-size: 20px;")
+        icon_label.setAlignment(Qt.AlignCenter)
+        metric_layout.addWidget(icon_label)
+        
+        # Value (large and prominent)
+        value_label = QLabel(value)
+        value_label.setObjectName("metricValue")
+        value_label.setAlignment(Qt.AlignCenter)
+        metric_layout.addWidget(value_label)
+        
+        # Label (small description)
+        label_widget = QLabel(label)
+        label_widget.setObjectName("metricLabel")
+        label_widget.setAlignment(Qt.AlignCenter)
+        label_widget.setWordWrap(True)
+        metric_layout.addWidget(label_widget)
+        
+        return metric
+    
+    def _create_compact_section(self, title: str, content_widget: QWidget) -> QFrame:
+        """Create a compact section with title and content."""
+        section = QFrame()
+        section.setObjectName("contentCard")
+        section_layout = QVBoxLayout(section)
+        section_layout.setContentsMargins(16, 14, 16, 14)
+        section_layout.setSpacing(12)
+        
+        # Title
+        title_label = QLabel(title)
+        title_label.setObjectName("sectionTitle")
+        section_layout.addWidget(title_label)
+        
+        # Content
+        section_layout.addWidget(content_widget)
+        
+        return section
+    
+    def _create_datasets_content(self) -> QWidget:
+        """Create compact datasets list."""
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        
+        # Show first 3 datasets, then summary
+        max_display = 3
+        for i, dataset in enumerate(self.selected_datasets[:max_display]):
+            item_frame = QFrame()
+            item_frame.setObjectName("listItem")
+            item_layout = QHBoxLayout(item_frame)
+            item_layout.setContentsMargins(10, 8, 10, 8)
+            
+            item_label = QLabel(f"{i+1}. {dataset}")
+            item_label.setStyleSheet("font-size: 13px; color: #2c3e50;")
+            item_layout.addWidget(item_label)
+            
+            layout.addWidget(item_frame)
+        
+        # If more datasets, show count
+        if len(self.selected_datasets) > max_display:
+            more_label = QLabel(f"... + {len(self.selected_datasets) - max_display} " + 
+                              LOCALIZE("PREPROCESS.CONFIRM_DIALOG.more_datasets"))
+            more_label.setStyleSheet("font-size: 12px; color: #6c757d; font-style: italic; padding-left: 10px;")
+            layout.addWidget(more_label)
+        
+        return content
+    
+    def _create_pipeline_content(self) -> QWidget:
+        """Create compact pipeline steps list."""
+        content = QWidget()
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        
+        for i, step in enumerate(self.pipeline_steps):
+            step_frame = self._create_pipeline_step_item(i + 1, step)
+            layout.addWidget(step_frame)
+        
+        return content
+    
+    def _create_pipeline_step_item(self, step_number: int, step: PipelineStep) -> QFrame:
+        """Create a single pipeline step item with visual flow."""
+        item = QFrame()
+        item.setObjectName("pipelineItem")
+        item_layout = QVBoxLayout(item)
+        item_layout.setContentsMargins(12, 10, 12, 10)
+        item_layout.setSpacing(6)
+        
+        # Step header with number and category
+        header_layout = QHBoxLayout()
+        
+        # Step number badge
+        number_label = QLabel(str(step_number))
+        number_label.setObjectName("stepNumber")
+        number_label.setFixedSize(28, 28)
+        number_label.setAlignment(Qt.AlignCenter)
+        header_layout.addWidget(number_label)
+        
+        # Category and method
+        category_display = LOCALIZE(f"PREPROCESS.CATEGORY.{step.category.upper()}")
+        step_info_layout = QVBoxLayout()
+        step_info_layout.setSpacing(2)
+        
+        method_label = QLabel(f"<b>{step.method}</b>")
+        method_label.setStyleSheet("font-size: 13px; color: #1976d2;")
+        step_info_layout.addWidget(method_label)
+        
+        category_label = QLabel(category_display)
+        category_label.setStyleSheet("font-size: 11px; color: #6c757d;")
+        step_info_layout.addWidget(category_label)
+        
+        header_layout.addLayout(step_info_layout)
+        header_layout.addStretch()
+        
+        item_layout.addLayout(header_layout)
+        
+        # Parameters (if any)
+        if step.params:
+            params_text = self._format_parameters_compact(step.params)
+            params_label = QLabel(f"<i>{params_text}</i>")
+            params_label.setStyleSheet("font-size: 11px; color: #757575; padding-left: 36px;")
+            params_label.setWordWrap(True)
+            item_layout.addWidget(params_label)
+        
+        return item
+    
+    def _format_parameters_compact(self, params: Dict[str, Any]) -> str:
+        """Format parameters in a compact way."""
+        if not params:
+            return ""
+        
+        formatted = []
+        for key, value in list(params.items())[:4]:  # Show max 4 params
+            if isinstance(value, float):
+                formatted.append(f"{key}={value:.2f}")
+            elif isinstance(value, (tuple, list)):
+                formatted.append(f"{key}=({', '.join(map(str, value[:2]))}...)" if len(value) > 2 else f"{key}={value}")
+            elif isinstance(value, str) and len(str(value)) > 20:
+                formatted.append(f"{key}={str(value)[:20]}...")
+            else:
+                formatted.append(f"{key}={value}")
+        
+        result = " · ".join(formatted)
+        if len(params) > 4:
+            result += f" · +{len(params) - 4} more"
+        return result
     
     def _apply_styles(self):
-        """Apply comprehensive styling to the dialog."""
+        """Apply modern medical theme styling."""
         self.setStyleSheet("""
             QDialog {
-                background-color: #f8f9fa;
+                background-color: #f0f4f8;
             }
             
-            #confirmDialogHeader {
+            QScrollArea {
+                border: none;
+                background-color: transparent;
+            }
+            
+            /* Header Card */
+            #headerCard {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #e3f2fd, stop:1 #bbdefb);
-                border: 1px solid #90caf9;
-                border-radius: 12px;
+                    stop:0 #ffffff, stop:1 #f8fbff);
+                border: 1px solid #d0dae6;
+                border-radius: 10px;
             }
             
-            #confirmDialogTitle {
-                font-size: 18px;
-                font-weight: 700;
-                color: #1565c0;
-                margin: 0px;
-            }
-            
-            #confirmDialogSummary {
-                font-size: 14px;
-                color: #424242;
-                line-height: 1.5;
-            }
-            
-            #confirmDialogTabs {
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-            }
-            
-            #confirmDialogTabs::pane {
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                background-color: white;
-                margin-top: -1px;
-            }
-            
-            #confirmDialogTabs::tab-bar {
-                alignment: left;
-            }
-            
-            #confirmDialogTabs QTabBar::tab {
-                background: #f5f5f5;
-                border: 1px solid #e0e0e0;
-                padding: 12px 20px;
-                margin-right: 2px;
-                font-weight: 500;
-                min-width: 120px;
-            }
-            
-            #confirmDialogTabs QTabBar::tab:selected {
-                background: white;
-                border-bottom-color: white;
-                color: #1976d2;
+            #titleLabel {
+                font-size: 20px;
                 font-weight: 600;
+                color: #1a365d;
+                letter-spacing: -0.5px;
             }
             
-            #confirmDialogTabs QTabBar::tab:hover:!selected {
-                background: #eeeeee;
+            /* Metric Items */
+            #metricItem {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ffffff, stop:1 #fafcfe);
+                border: 1px solid #e1e8ed;
+                border-radius: 8px;
+                min-width: 140px;
+                max-width: 200px;
             }
             
-            QListWidget {
-                border: 1px solid #e0e0e0;
-                border-radius: 6px;
-                background-color: #fafafa;
-                padding: 8px;
+            #metricItem:hover {
+                border-color: #90caf9;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f8fbff, stop:1 #e3f2fd);
             }
             
-            QListWidget::item {
-                padding: 10px;
-                border-bottom: 1px solid #f0f0f0;
+            #metricValue {
+                font-size: 24px;
+                font-weight: 700;
+                color: #0078d4;
+                letter-spacing: -0.5px;
+            }
+            
+            #metricLabel {
+                font-size: 11px;
+                font-weight: 500;
+                color: #6c757d;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            /* Content Cards */
+            #contentCard {
                 background-color: white;
+                border: 1px solid #dee2e6;
+                border-radius: 10px;
+                padding: 14px 16px;
+            }
+            
+            #sectionTitle {
+                font-size: 15px;
+                font-weight: 600;
+                color: #2c3e50;
                 margin-bottom: 4px;
-                border-radius: 4px;
             }
             
-            QTreeWidget {
-                border: 1px solid #e0e0e0;
+            /* List Items */
+            #listItem {
+                background-color: #f8f9fa;
+                border: 1px solid #e9ecef;
                 border-radius: 6px;
-                background-color: white;
-                alternate-background-color: #f9f9f9;
+                padding: 8px 10px;
             }
             
-            QTreeWidget::item {
-                padding: 8px;
-                border-bottom: 1px solid #f0f0f0;
+            #listItem:hover {
+                background-color: #e9ecef;
+                border-color: #dee2e6;
             }
             
-            QTreeWidget::item:selected {
-                background-color: #e3f2fd;
-                color: #1976d2;
-            }
-            
-            QTextEdit {
-                border: 1px solid #e0e0e0;
+            /* Pipeline Items */
+            #pipelineItem {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #ffffff, stop:1 #f8f9fa);
+                border: 1px solid #e3f2fd;
+                border-left: 4px solid #1976d2;
                 border-radius: 6px;
+                padding: 10px 12px;
+            }
+            
+            #pipelineItem:hover {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f0f8ff, stop:1 #e3f2fd);
+                border-left-color: #0d47a1;
+            }
+            
+            #stepNumber {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1976d2, stop:1 #1565c0);
+                color: white;
+                border-radius: 14px;
+                font-weight: 700;
+                font-size: 13px;
+            }
+            
+            /* Button Bar */
+            #buttonBar {
                 background-color: white;
-                padding: 12px;
+                border: none;
+                border-top: 2px solid #e9ecef;
+                border-radius: 0px;
             }
             
             #startButton {
@@ -221,11 +454,10 @@ class PipelineConfirmationDialog(QDialog):
                     stop:0 #4caf50, stop:1 #388e3c);
                 color: white;
                 border: none;
+                border-radius: 8px;
                 padding: 12px 24px;
-                border-radius: 6px;
                 font-weight: 600;
                 font-size: 14px;
-                min-width: 120px;
             }
             
             #startButton:hover {
@@ -241,130 +473,48 @@ class PipelineConfirmationDialog(QDialog):
             #cancelButton {
                 background-color: #f5f5f5;
                 color: #424242;
-                border: 1px solid #e0e0e0;
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
                 padding: 12px 24px;
-                border-radius: 6px;
                 font-weight: 500;
                 font-size: 14px;
-                min-width: 120px;
-                margin-right: 12px;
             }
             
             #cancelButton:hover {
-                background-color: #eeeeee;
-                border-color: #bdbdbd;
+                background-color: #e9ecef;
+                border-color: #ced4da;
             }
             
-            QFrame {
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                padding: 16px;
+            #cancelButton:pressed {
+                background-color: #dee2e6;
+            }
+            
+            /* Scrollbar */
+            QScrollBar:vertical {
+                background-color: #f8f9fa;
+                width: 10px;
+                border-radius: 5px;
+                margin: 0px;
+            }
+            
+            QScrollBar::handle:vertical {
+                background-color: #ced4da;
+                border-radius: 5px;
+                min-height: 30px;
+            }
+            
+            QScrollBar::handle:vertical:hover {
+                background-color: #adb5bd;
+            }
+            
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: none;
             }
         """)
-    
-    def _create_summary_text(self) -> str:
-        """Create localized summary text for the header."""
-        total_datasets = len(self.selected_datasets)
-        total_steps = len(self.pipeline_steps)
-        
-        # Estimate processing time (rough calculation)
-        estimated_time = total_steps * 2  # 2 seconds per step average
-        
-        return LOCALIZE("PREPROCESS.CONFIRM_DIALOG.summary_text", 
-                       datasets=total_datasets,
-                       steps=total_steps, 
-                       time=estimated_time,
-                       output_name=self.output_name)
-    
-    def _create_input_tab(self) -> QWidget:
-        """Create input datasets tab."""
-        input_tab = QWidget()
-        input_layout = QVBoxLayout(input_tab)
-        input_layout.setContentsMargins(20, 20, 20, 20)
-        input_layout.setSpacing(16)
-        
-        # Header
-        header_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.selected_datasets_header"))
-        header_label.setStyleSheet("font-size: 16px; font-weight: 600; color: #424242; margin-bottom: 8px;")
-        input_layout.addWidget(header_label)
-        
-        # Dataset list
-        datasets_list = QListWidget()
-        datasets_list.setMaximumHeight(200)
-        for dataset in self.selected_datasets:
-            item = QListWidgetItem(f"📊 {dataset}")
-            datasets_list.addItem(item)
-        input_layout.addWidget(datasets_list)
-        
-        # Info
-        info_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.datasets_info", count=len(self.selected_datasets)))
-        info_label.setStyleSheet("font-style: italic; color: #666; font-size: 13px;")
-        input_layout.addWidget(info_label)
-        
-        input_layout.addStretch()
-        return input_tab
-    
-    def _create_pipeline_tab(self) -> QWidget:
-        """Create pipeline tab with detailed step information."""
-        pipeline_tab = QWidget()
-        pipeline_layout = QVBoxLayout(pipeline_tab)
-        pipeline_layout.setContentsMargins(20, 20, 20, 20)
-        pipeline_layout.setSpacing(16)
-        
-        # Header
-        header_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.pipeline_steps_header"))
-        header_label.setStyleSheet("font-size: 16px; font-weight: 600; color: #424242; margin-bottom: 8px;")
-        pipeline_layout.addWidget(header_label)
-        
-        # Pipeline tree
-        pipeline_tree = QTreeWidget()
-        pipeline_tree.setHeaderLabels([
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.step"), 
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.method"),
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.purpose"),
-            LOCALIZE("PREPROCESS.CONFIRM_DIALOG.parameters")
-        ])
-        
-        for i, step in enumerate(self.pipeline_steps):
-            category_display = LOCALIZE(f"PREPROCESS.CATEGORY.{step.category.upper()}")
-            purpose = self._get_step_purpose(step.category, step.method)
-            params_text = self._format_parameters(step.params) if step.params else LOCALIZE("PREPROCESS.CONFIRM_DIALOG.no_params")
-            
-            item = QTreeWidgetItem([
-                f"{i + 1}. {category_display}",
-                step.method,
-                purpose,
-                params_text
-            ])
-            pipeline_tree.addTopLevelItem(item)
-        
-        pipeline_tree.expandAll()
-        for i in range(4):
-            pipeline_tree.resizeColumnToContents(i)
-        pipeline_layout.addWidget(pipeline_tree)
-        
-        return pipeline_tab
-    
-    def _get_step_purpose(self, category: str, method: str) -> str:
-        """Get localized purpose/benefit of each preprocessing step."""
-        return LOCALIZE(f"PREPROCESS.PURPOSE.{category.upper()}")
-    
-    def _format_parameters(self, params: Dict[str, Any]) -> str:
-        """Format parameters for display."""
-        if not params:
-            return LOCALIZE("PREPROCESS.CONFIRM_DIALOG.default_params")
-        
-        formatted = []
-        for key, value in params.items():
-            if isinstance(value, (int, float)):
-                formatted.append(f"{key}={value}")
-            elif isinstance(value, (tuple, list)):
-                formatted.append(f"{key}={value}")
-            else:
-                formatted.append(f"{key}={str(value)[:20]}")
-        
-        return ", ".join(formatted[:3])  # Limit to 3 parameters for readability
     
     def _generate_benefits_content(self) -> str:
         """Generate HTML content describing expected benefits."""
@@ -574,7 +724,41 @@ class FailedStepsDialog(QDialog):
 
 
 class PipelineStepWidget(QWidget):
-    """Custom widget for displaying pipeline steps with toggle functionality."""
+    """
+    Custom widget for displaying pipeline steps with modern theme integration.
+    
+    Provides visual representation of preprocessing pipeline steps with enable/disable
+    toggle functionality, status indicators, and theme-consistent styling that matches
+    the application's design system.
+    
+    Features:
+    - Eye toggle button for enable/disable
+    - Status indicators for new vs existing steps  
+    - Checkbox for existing step reuse control
+    - Hover effects and visual feedback
+    - Color coding based on step state and source
+    
+    Args:
+        step (PipelineStep): The pipeline step data object
+        step_index (int): Index position in the pipeline
+        parent (QWidget, optional): Parent widget. Defaults to None.
+    
+    Signals:
+        toggled (int, bool): Emitted when step state changes (step_index, enabled)
+    
+    Use in:
+        - pages/preprocess_page.py: PreprocessPage.add_pipeline_step()
+        - pages/preprocess_page_utils/pipeline.py: Pipeline management
+    
+    Example:
+        >>> step = PipelineStep("Noise Removal", "SavGol")
+        >>> widget = PipelineStepWidget(step, 0)
+        >>> widget.toggled.connect(self.on_step_toggled)
+        
+    Note:
+        Widget automatically updates appearance based on step state.
+        Follows app theme colors: #0078d4 (primary), #28a745 (success), #dc3545 (danger)
+    """
     
     toggled = Signal(int, bool)  # step_index, enabled
     
@@ -582,17 +766,24 @@ class PipelineStepWidget(QWidget):
         super().__init__(parent)
         self.step = step
         self.step_index = step_index
+        self.is_selected = False  # Track selection state
         self._setup_ui()
+        
+    def set_selected(self, selected: bool):
+        """Set the selection state and update appearance."""
+        self.is_selected = selected
+        self._update_appearance()
         
     def _setup_ui(self):
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 4, 8, 4)
-        layout.setSpacing(8)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(10)
         
         # Add enable/disable toggle button with eye icon
         from components.widgets.icons import load_icon
         self.enable_toggle_btn = QPushButton()
         self.enable_toggle_btn.setFixedSize(24, 24)
+        self.enable_toggle_btn.setIconSize(QSize(16, 16))
         self.enable_toggle_btn.setFlat(True)
         self.enable_toggle_btn.clicked.connect(self._toggle_enabled)
         self._update_enable_button()
@@ -604,24 +795,57 @@ class PipelineStepWidget(QWidget):
             self.toggle_checkbox.setChecked(False)  # Default: don't reuse existing steps
             self.toggle_checkbox.setToolTip(LOCALIZE("PREPROCESS.toggle_existing_step_tooltip"))
             self.toggle_checkbox.toggled.connect(self._on_toggled)
+            self.toggle_checkbox.setStyleSheet("""
+                QCheckBox::indicator {
+                    width: 16px;
+                    height: 16px;
+                    border: 2px solid #ced4da;
+                    border-radius: 3px;
+                    background-color: white;
+                }
+                QCheckBox::indicator:checked {
+                    background-color: #0078d4;
+                    border-color: #0078d4;
+                }
+                QCheckBox::indicator:checked:hover {
+                    background-color: #106ebe;
+                    border-color: #106ebe;
+                }
+            """)
             layout.addWidget(self.toggle_checkbox)
             
-            # Visual indicator for existing steps
-            status_label = QLabel("⚙️")
+            # Visual indicator for existing steps (modern icon)
+            status_label = QLabel("⚙")
+            status_label.setStyleSheet("font-size: 14px; color: #6c757d;")
             status_label.setToolTip(LOCALIZE("PREPROCESS.existing_step_indicator"))
             layout.addWidget(status_label)
         else:
-            # Visual indicator for new steps
-            status_label = QLabel("➕")
+            # Visual indicator for new steps (modern icon)
+            status_label = QLabel("✚")
+            status_label.setStyleSheet("font-size: 14px; color: #28a745; font-weight: bold;")
             status_label.setToolTip(LOCALIZE("PREPROCESS.new_step_indicator"))
             layout.addWidget(status_label)
         
         # Step name label
         display_name = self.step.get_display_name()
         self.name_label = QLabel(display_name)
-        self.name_label.setWordWrap(True)
+        self.name_label.setWordWrap(False)
+        self.name_label.setTextFormat(Qt.PlainText)
+        self.name_label.setMinimumWidth(200)
+        self.name_label.setStyleSheet("""
+            QLabel {
+                font-size: 13px; 
+                color: #2c3e50; 
+                font-weight: 500;
+                padding: 2px 0px;
+            }
+        """)
         layout.addWidget(self.name_label, 1)
         
+        # Set widget styling to match app theme
+        self.setMinimumHeight(40)
+        # Note: Main styling is applied in _update_appearance() to avoid conflicts
+
         # Update appearance based on step status
         self._update_appearance()
     
@@ -646,24 +870,76 @@ class PipelineStepWidget(QWidget):
             # Step is enabled, show eye_open icon (indicating it's visible/enabled)
             icon = load_icon("eye_open", "button")
             tooltip = LOCALIZE("PREPROCESS.disable_step_tooltip")
+            button_style = """
+                QPushButton {
+                    background-color: #e8f5e8;
+                    border: 1px solid #28a745;
+                    border-radius: 12px;
+                }
+                QPushButton:hover {
+                    background-color: #28a745;
+                }
+            """
         else:
             # Step is disabled, show eye_close icon (indicating it's hidden/disabled)
             icon = load_icon("eye_close", "button")
             tooltip = LOCALIZE("PREPROCESS.enable_step_tooltip")
+            button_style = """
+                QPushButton {
+                    background-color: #f8d7da;
+                    border: 1px solid #dc3545;
+                    border-radius: 12px;
+                }
+                QPushButton:hover {
+                    background-color: #dc3545;
+                }
+            """
         
         self.enable_toggle_btn.setIcon(icon)
         self.enable_toggle_btn.setToolTip(tooltip)
+        self.enable_toggle_btn.setStyleSheet(button_style)
     
     def _update_appearance(self):
         """Update visual appearance based on step state."""
-        base_style = ""
+        widget_style = ""
+        text_style = ""
         
-        # Apply enabled/disabled styling first
+        # Base widget styling
+        base_widget_style = """
+            QWidget {
+                background-color: white;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                margin: 1px;
+            }
+            QWidget:hover {
+                background-color: #f8f9fa;
+                border-color: #adb5bd;
+            }
+        """
+        
+        # Apply enabled/disabled styling
         if not self.step.enabled:
-            base_style = """
+            # Disabled step - muted appearance
+            widget_style = """
+                QWidget {
+                    background-color: #f8f9fa;
+                    border: 1px solid #e9ecef;
+                    border-radius: 6px;
+                    margin: 1px;
+                }
+                QWidget:hover {
+                    background-color: #e9ecef;
+                    border-color: #ced4da;
+                }
+            """
+            text_style = """
                 QLabel {
-                    color: #bdbdbd;
+                    font-size: 13px;
+                    color: #6c757d;
+                    font-weight: 400;
                     font-style: italic;
+                    padding: 2px 0px;
                 }
             """
             tooltip_suffix = f" ({LOCALIZE('PREPROCESS.step_disabled')})"
@@ -674,62 +950,171 @@ class PipelineStepWidget(QWidget):
         if hasattr(self.step, 'source_dataset') and self.step.source_dataset:
             tooltip_suffix += f" (From: {self.step.source_dataset})"
         
-        # Then apply specific styling based on step type
+        # Apply specific styling based on step type
         if hasattr(self.step, 'is_existing') and self.step.is_existing:
             if hasattr(self, 'toggle_checkbox') and self.toggle_checkbox.isChecked():
                 # Existing step enabled for reuse
                 if self.step.enabled:
                     # Check if this step is from another dataset
                     if hasattr(self.step, 'source_dataset') and self.step.source_dataset:
-                        # Step from another dataset - use dark blue for imported steps
-                        self.name_label.setStyleSheet("""
+                        # Step from another dataset - blue accent
+                        widget_style = """
+                            QWidget {
+                                background-color: #e3f2fd;
+                                border: 1px solid #1976d2;
+                                border-radius: 6px;
+                                margin: 1px;
+                            }
+                            QWidget:hover {
+                                background-color: #e1f5fe;
+                                border-color: #1565c0;
+                            }
+                        """
+                        text_style = """
                             QLabel {
+                                font-size: 13px;
                                 color: #1976d2;
-                                font-weight: 500;
+                                font-weight: 600;
+                                padding: 2px 0px;
                             }
-                        """)
+                        """
                     else:
-                        # Step from current dataset - use green color
-                        self.name_label.setStyleSheet("""
-                            QLabel {
-                                color: #2e7d32;
-                                font-weight: 500;
+                        # Step from current dataset - green accent
+                        widget_style = """
+                            QWidget {
+                                background-color: #e8f5e8;
+                                border: 1px solid #28a745;
+                                border-radius: 6px;
+                                margin: 1px;
                             }
-                        """)
+                            QWidget:hover {
+                                background-color: #d4edda;
+                                border-color: #1e7e34;
+                            }
+                        """
+                        text_style = """
+                            QLabel {
+                                font-size: 13px;
+                                color: #155724;
+                                font-weight: 600;
+                                padding: 2px 0px;
+                            }
+                        """
                 else:
-                    self.name_label.setStyleSheet(base_style)
+                    # Use disabled styles if not enabled
+                    pass
                 self.setToolTip(LOCALIZE("PREPROCESS.existing_step_enabled_tooltip") + tooltip_suffix)
             else:
-                # Existing step disabled (default)
+                # Existing step disabled (default) - muted existing step style
+                widget_style = """
+                    QWidget {
+                        background-color: #f8f9fa;
+                        border: 1px solid #e9ecef;
+                        border-radius: 6px;
+                        margin: 1px;
+                        border-style: dashed;
+                    }
+                    QWidget:hover {
+                        background-color: #e9ecef;
+                        border-color: #ced4da;
+                    }
+                """
                 if hasattr(self.step, 'source_dataset') and self.step.source_dataset:
-                    # Step from another dataset - use lighter blue for disabled imported steps
-                    self.name_label.setStyleSheet("""
+                    # Step from another dataset - muted blue
+                    text_style = """
                         QLabel {
+                            font-size: 13px;
                             color: #64b5f6;
+                            font-weight: 400;
                             font-style: italic;
+                            padding: 2px 0px;
                         }
-                    """)
+                    """
                 else:
-                    # Step from current dataset - use standard gray
-                    self.name_label.setStyleSheet("""
+                    # Step from current dataset - muted gray
+                    text_style = """
                         QLabel {
-                            color: #757575;
+                            font-size: 13px;
+                            color: #6c757d;
+                            font-weight: 400;
                             font-style: italic;
+                            padding: 2px 0px;
                         }
-                    """)
+                    """
                 self.setToolTip(LOCALIZE("PREPROCESS.existing_step_disabled_tooltip") + tooltip_suffix)
         else:
-            # New step
+            # New step - primary theme colors
             if self.step.enabled:
-                self.name_label.setStyleSheet("""
-                    QLabel {
-                        color: #1976d2;
-                        font-weight: 500;
+                widget_style = """
+                    QWidget {
+                        background-color: white;
+                        border: 1px solid #0078d4;
+                        border-radius: 6px;
+                        margin: 1px;
                     }
-                """)
+                    QWidget:hover {
+                        background-color: #f0f8ff;
+                        border-color: #005a9e;
+                    }
+                """
+                text_style = """
+                    QLabel {
+                        font-size: 13px;
+                        color: #0078d4;
+                        font-weight: 600;
+                        padding: 2px 0px;
+                    }
+                """
             else:
-                self.name_label.setStyleSheet(base_style)
+                # Use base disabled styles
+                pass
             self.setToolTip(LOCALIZE("PREPROCESS.new_step_tooltip") + tooltip_suffix)
+        
+        # Apply the final styles
+        if widget_style:
+            self.setStyleSheet(widget_style)
+        else:
+            self.setStyleSheet(base_widget_style)
+        
+        # Override with selection styling if selected
+        if self.is_selected:
+            # Selected state - darker background with blue accent
+            selected_style = """
+                QWidget {
+                    background-color: #d4e6f7;
+                    border: 2px solid #0078d4;
+                    border-radius: 6px;
+                    margin: 1px;
+                }
+                QWidget:hover {
+                    background-color: #c8ddf6;
+                    border-color: #005a9e;
+                }
+            """
+            self.setStyleSheet(selected_style)
+            
+            # Ensure text is visible on selected background
+            selected_text_style = """
+                QLabel {
+                    font-size: 13px; 
+                    color: #003d6b; 
+                    font-weight: 600;
+                    padding: 2px 0px;
+                }
+            """
+            self.name_label.setStyleSheet(selected_text_style)
+        elif text_style:
+            self.name_label.setStyleSheet(text_style)
+        else:
+            # Default enabled style
+            self.name_label.setStyleSheet("""
+                QLabel {
+                    font-size: 13px; 
+                    color: #2c3e50; 
+                    font-weight: 500;
+                    padding: 2px 0px;
+                }
+            """)
     
     def is_enabled(self) -> bool:
         """Check if step is enabled for processing."""

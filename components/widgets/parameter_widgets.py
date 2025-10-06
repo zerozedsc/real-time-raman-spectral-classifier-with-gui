@@ -978,8 +978,17 @@ class DynamicParameterWidget(QWidget):
         elif param_type == "choice":
             widget = QComboBox()
             choices = info.get("choices", [])
-            widget.addItems(choices)
-            if default_value is not None and default_value in choices:
+            # Convert choices to strings for display, but keep original values for data mapping
+            choice_mapping = {}
+            for choice in choices:
+                str_choice = str(choice)
+                widget.addItem(str_choice)
+                choice_mapping[str_choice] = choice
+            
+            # Store original choices for value extraction
+            widget.choice_mapping = choice_mapping
+            
+            if default_value is not None:
                 widget.setCurrentText(str(default_value))
             widget.setStyleSheet("""
                 QComboBox {
@@ -1135,7 +1144,21 @@ class DynamicParameterWidget(QWidget):
                 elif param_type in ["float", "scientific"]:
                     params[param_name] = widget.value()
                 elif param_type == "choice":
-                    params[param_name] = widget.currentText()
+                    current_text = widget.currentText()
+                    if hasattr(widget, 'choice_mapping') and current_text in widget.choice_mapping:
+                        params[param_name] = widget.choice_mapping[current_text]
+                    else:
+                        # Fallback: try to convert to appropriate type
+                        try:
+                            # Try integer first
+                            params[param_name] = int(current_text)
+                        except ValueError:
+                            try:
+                                # Then try float
+                                params[param_name] = float(current_text)
+                            except ValueError:
+                                # Finally keep as string
+                                params[param_name] = current_text
                 elif param_type == "bool":
                     params[param_name] = widget.isChecked()
                 elif param_type == "tuple":

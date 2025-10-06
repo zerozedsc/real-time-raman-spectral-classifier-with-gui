@@ -426,6 +426,33 @@ REALTIME_PAGE_STYLES = {
             padding: 6px 12px;
             font-weight: 500;
         }
+    """,
+    
+    'selection_card': """
+        #selectionCard {
+            background-color: white;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 12px;
+        }
+    """,
+    
+    'modern_pipeline_group': """
+        QGroupBox#modernPipelineGroup {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        QGroupBox#modernPipelineGroup::title {
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            padding: 0px 8px;
+            color: #2c3e50;
+        }
     """
 }
 

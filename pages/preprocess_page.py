@@ -43,8 +43,8 @@ class PreprocessPage(QWidget):
     def _setup_ui(self):
         """Setup the main UI layout."""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(16, 12, 16, 16)  # Reduced top margin from 20 to 12
+        main_layout.setSpacing(16)  # Reduced spacing from 20 to 16
 
         # Create main splitter
         main_splitter = QSplitter(Qt.Horizontal)
@@ -72,8 +72,8 @@ class PreprocessPage(QWidget):
         left_panel.setMaximumWidth(450)
         
         layout = QVBoxLayout(left_panel)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 8, 12, 12)  # Reduced top margin from 16 to 8
+        layout.setSpacing(12)  # Reduced spacing from 16 to 12
 
         # Input datasets section
         input_group = self._create_input_datasets_group()
@@ -91,82 +91,257 @@ class PreprocessPage(QWidget):
         return left_panel
 
     def _create_pipeline_building_group(self) -> QGroupBox:
-        """Create pipeline building group with categories."""
-        pipeline_group = QGroupBox(LOCALIZE("PREPROCESS.pipeline_building_title"))
+        """Create modern pipeline building group with enhanced medical theme and optimized layout."""
+        pipeline_group = QGroupBox()
+        pipeline_group.setObjectName("modernPipelineGroup")
+        
+        # Create custom title widget to match Input Datasets section
+        title_widget = QWidget()
+        title_layout = QHBoxLayout(title_widget)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(8)
+        
+        title_label = QLabel(LOCALIZE("PREPROCESS.pipeline_building_title"))
+        title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        # Apply stylesheet
+        from configs.style.stylesheets import PREPROCESS_PAGE_STYLES
+        if 'modern_pipeline_group' in PREPROCESS_PAGE_STYLES:
+            pipeline_group.setStyleSheet(PREPROCESS_PAGE_STYLES['modern_pipeline_group'])
         
         layout = QVBoxLayout(pipeline_group)
-        layout.setContentsMargins(12, 16, 12, 12)
-        layout.setSpacing(12)
-
-        # Category and method selection
-        selection_layout = QVBoxLayout()
+        layout.setContentsMargins(12, 4, 12, 12)
+        layout.setSpacing(8)
         
-        # Category selection
-        cat_layout = QHBoxLayout()
-        cat_layout.addWidget(QLabel(LOCALIZE("PREPROCESS.category")))
+        # Add title widget
+        layout.addWidget(title_widget)
+
+        # Compact category and method selection in a single row
+        selection_row = QHBoxLayout()
+        selection_row.setSpacing(8)
+        
+        # Category dropdown (compact)
+        cat_container = QVBoxLayout()
+        cat_container.setSpacing(4)
+        cat_label = QLabel("📂 " + LOCALIZE("PREPROCESS.category"))
+        cat_label.setStyleSheet("font-weight: 500; color: #495057; font-size: 11px;")
+        cat_container.addWidget(cat_label)
+        
         self.category_combo = QComboBox()
+        self.category_combo.setStyleSheet("""
+            QComboBox {
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                padding: 5px 8px;
+                background: white;
+                font-size: 12px;
+            }
+            QComboBox:hover {
+                border-color: #0078d4;
+            }
+            QComboBox:focus {
+                border-color: #0078d4;
+                outline: none;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 18px;
+            }
+        """)
         categories = PREPROCESSING_REGISTRY.get_categories()
         for category in categories:
             display_name = LOCALIZE(f"PREPROCESS.CATEGORY.{category.upper()}")
             self.category_combo.addItem(display_name, category)
-        cat_layout.addWidget(self.category_combo)
-        selection_layout.addLayout(cat_layout)
+        cat_container.addWidget(self.category_combo)
+        selection_row.addLayout(cat_container, 1)
         
-        # Method selection
-        method_layout = QHBoxLayout()
-        method_layout.addWidget(QLabel(LOCALIZE("PREPROCESS.method")))
+        # Method dropdown (compact)
+        method_container = QVBoxLayout()
+        method_container.setSpacing(4)
+        method_label = QLabel("⚙️ " + LOCALIZE("PREPROCESS.method"))
+        method_label.setStyleSheet("font-weight: 500; color: #495057; font-size: 11px;")
+        method_container.addWidget(method_label)
+        
         self.method_combo = QComboBox()
-        method_layout.addWidget(self.method_combo)
-        selection_layout.addLayout(method_layout)
+        self.method_combo.setStyleSheet("""
+            QComboBox {
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                padding: 5px 8px;
+                background: white;
+                font-size: 12px;
+            }
+            QComboBox:hover {
+                border-color: #0078d4;
+            }
+            QComboBox:focus {
+                border-color: #0078d4;
+                outline: none;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 18px;
+            }
+        """)
+        method_container.addWidget(self.method_combo)
+        selection_row.addLayout(method_container, 1)
         
-        layout.addLayout(selection_layout)
-
-        # Add step button with better icon
-        add_step_btn = QPushButton(LOCALIZE("PREPROCESS.UI.add_button"))
-        add_step_btn.setObjectName("iconButton")
+        # Add step button (compact, square icon button with SVG)
+        add_step_btn = QPushButton()
+        add_step_btn.setObjectName("addStepButton")
+        add_step_btn.setFixedSize(60, 50)  # Tall enough to match the two-row height
+        plus_icon = load_svg_icon(get_icon_path("plus"), "white", QSize(24, 24))
+        add_step_btn.setIcon(plus_icon)
+        add_step_btn.setIconSize(QSize(24, 24))
+        add_step_btn.setStyleSheet("""
+            QPushButton#addStepButton {
+                background-color: #28a745;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 20px;
+                font-weight: 600;
+            }
+            QPushButton#addStepButton:hover {
+                background-color: #218838;
+            }
+            QPushButton#addStepButton:pressed {
+                background-color: #1e7e34;
+            }
+        """)
         add_step_btn.setToolTip(LOCALIZE("PREPROCESS.add_step_button"))
+        add_step_btn.setCursor(Qt.PointingHandCursor)
         add_step_btn.clicked.connect(self.add_pipeline_step)
+        selection_row.addWidget(add_step_btn, 0, Qt.AlignBottom)
         
-        # Center the add button
-        add_button_layout = QHBoxLayout()
-        add_button_layout.addStretch()
-        add_button_layout.addWidget(add_step_btn)
-        add_button_layout.addStretch()
-        layout.addLayout(add_button_layout)
+        layout.addLayout(selection_row)
 
-        # Pipeline steps list with custom widgets
+        # Pipeline steps list label
+        steps_label = QLabel("📋 " + LOCALIZE("PREPROCESS.pipeline_steps_label"))
+        steps_label.setStyleSheet("font-weight: 600; font-size: 12px; color: #2c3e50; margin-top: 2px;")
+        layout.addWidget(steps_label)
+        
+        # Pipeline steps list with modern styling (optimized for non-maximized windows)
         self.pipeline_list = QListWidget()
-        self.pipeline_list.setMaximumHeight(250)
+        self.pipeline_list.setObjectName("modernPipelineList")
+        self.pipeline_list.setMinimumHeight(180)
+        self.pipeline_list.setMaximumHeight(215)  # Show max 5 steps before scrolling
         self.pipeline_list.setDragDropMode(QListWidget.InternalMove)
+        self.pipeline_list.setStyleSheet("""
+            QListWidget#modernPipelineList {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 6px;
+                padding: 4px;
+            }
+            QListWidget#modernPipelineList::item {
+                background-color: transparent;
+                border: none;
+                padding: 2px;
+                margin: 2px 0px;
+                border-radius: 0px;
+            }
+            QListWidget#modernPipelineList::item:selected {
+                background-color: transparent;
+                border: none;
+            }
+            QListWidget#modernPipelineList::item:hover {
+                background-color: transparent;
+                border: none;
+            }
+        """)
         layout.addWidget(self.pipeline_list)
 
-        # Pipeline control buttons with improved icons
+        # Pipeline control buttons with SVG icons (more compact)
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(6)
         
-        # Remove button
-        remove_btn = QPushButton(LOCALIZE("PREPROCESS.UI.remove_button"))
-        remove_btn.setObjectName("iconButton")
+        # Remove button (more compact with SVG icon)
+        remove_btn = QPushButton()
+        remove_btn.setObjectName("compactButton")
+        remove_btn.setFixedHeight(28)
+        trash_icon = load_svg_icon(get_icon_path("trash_bin"), "#dc3545", QSize(14, 14))
+        remove_btn.setIcon(trash_icon)
+        remove_btn.setIconSize(QSize(14, 14))
+        remove_btn.setStyleSheet("""
+            QPushButton#compactButton {
+                background-color: #f8f9fa;
+                color: #495057;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-weight: 500;
+                font-size: 14px;
+            }
+            QPushButton#compactButton:hover {
+                background-color: #e9ecef;
+                border-color: #adb5bd;
+            }
+            QPushButton#compactButton:pressed {
+                background-color: #dee2e6;
+            }
+        """)
         remove_btn.setToolTip(LOCALIZE("PREPROCESS.remove_step"))
+        remove_btn.setCursor(Qt.PointingHandCursor)
         remove_btn.clicked.connect(self.remove_pipeline_step)
         
-        # Clear button
-        clear_btn = QPushButton(LOCALIZE("PREPROCESS.UI.clear_button"))
-        clear_btn.setObjectName("iconButton")
+        # Clear button (more compact)
+        clear_btn = QPushButton("🧹")
+        clear_btn.setObjectName("compactButton")
+        clear_btn.setFixedHeight(28)
+        clear_btn.setStyleSheet("""
+            QPushButton#compactButton {
+                background-color: #f8f9fa;
+                color: #495057;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-weight: 500;
+                font-size: 14px;
+            }
+            QPushButton#compactButton:hover {
+                background-color: #e9ecef;
+                border-color: #adb5bd;
+            }
+            QPushButton#compactButton:pressed {
+                background-color: #dee2e6;
+            }
+        """)
         clear_btn.setToolTip(LOCALIZE("PREPROCESS.clear_pipeline"))
+        clear_btn.setCursor(Qt.PointingHandCursor)
         clear_btn.clicked.connect(self.clear_pipeline)
         
-        # Toggle all existing steps button
-        self.toggle_all_btn = QPushButton(LOCALIZE("PREPROCESS.UI.toggle_all_button"))
-        self.toggle_all_btn.setObjectName("iconButton")
+        # Toggle all existing steps button (more compact)
+        self.toggle_all_btn = QPushButton("🔄")
+        self.toggle_all_btn.setObjectName("compactButton")
+        self.toggle_all_btn.setFixedHeight(28)
+        self.toggle_all_btn.setStyleSheet("""
+            QPushButton#compactButton {
+                background-color: #f8f9fa;
+                color: #495057;
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-weight: 500;
+                font-size: 14px;
+            }
+            QPushButton#compactButton:hover {
+                background-color: #e9ecef;
+                border-color: #adb5bd;
+            }
+            QPushButton#compactButton:pressed {
+                background-color: #dee2e6;
+            }
+        """)
         self.toggle_all_btn.setToolTip(LOCALIZE("PREPROCESS.toggle_all_existing"))
         self.toggle_all_btn.setVisible(False)  # Initially hidden
+        self.toggle_all_btn.setCursor(Qt.PointingHandCursor)
         self.toggle_all_btn.clicked.connect(self.toggle_all_existing_steps)
         
-        # Add buttons with spacing
+        # Add buttons
         button_layout.addWidget(remove_btn)
-        button_layout.addSpacing(12)
         button_layout.addWidget(clear_btn)
-        button_layout.addSpacing(12)
         button_layout.addWidget(self.toggle_all_btn)
         button_layout.addStretch()
         
@@ -175,78 +350,308 @@ class PreprocessPage(QWidget):
         return pipeline_group
 
     def _create_input_datasets_group(self) -> QGroupBox:
-        """Create input datasets selection group."""
-        input_group = QGroupBox(LOCALIZE("PREPROCESS.input_datasets_title"))
+        """Create input datasets selection group with tabs for filtering."""
+        input_group = QGroupBox()
         
-        layout = QVBoxLayout(input_group)
-        layout.setContentsMargins(12, 16, 12, 12)
-        layout.setSpacing(8)
-
-        # Button row with refresh and export
-        button_row = QHBoxLayout()
-        button_row.setSpacing(8)
+        # Create custom title with hint button and action buttons
+        title_widget = QWidget()
+        title_layout = QHBoxLayout(title_widget)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(8)
         
-        # Refresh button with better styling
-        refresh_btn = QPushButton("🔄 " + LOCALIZE("PREPROCESS.refresh_datasets"))
-        refresh_btn.setObjectName("refreshButton")
-        refresh_btn.setToolTip(LOCALIZE("PREPROCESS.refresh_datasets_tooltip"))
-        refresh_btn.clicked.connect(self.load_project_data)
-        button_row.addWidget(refresh_btn)
+        title_label = QLabel(LOCALIZE("PREPROCESS.input_datasets_title"))
+        title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+        title_layout.addWidget(title_label)
         
-        # Export button with SVG icon and green styling
-        export_btn = QPushButton(LOCALIZE("PREPROCESS.export_button"))
-        export_btn.setObjectName("exportButton")
-        export_icon = load_icon("export", "button", "#2e7d32")  # Green color
-        export_btn.setIcon(export_icon)
-        export_btn.setIconSize(QSize(16, 16))
-        export_btn.setToolTip(LOCALIZE("PREPROCESS.export_button_tooltip"))
-        export_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4caf50;
+        # Hint button with ? icon
+        hint_btn = QPushButton("?")
+        hint_btn.setObjectName("hintButton")
+        hint_btn.setFixedSize(20, 20)
+        hint_btn.setToolTip(
+            LOCALIZE("PREPROCESS.multi_select_hint") + "\n\n" +
+            LOCALIZE("PREPROCESS.multi_dataset_hint")
+        )
+        hint_btn.setCursor(Qt.PointingHandCursor)
+        hint_btn.setStyleSheet("""
+            QPushButton#hintButton {
+                background-color: #e7f3ff;
+                color: #0078d4;
+                border: 1px solid #90caf9;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 0px;
+            }
+            QPushButton#hintButton:hover {
+                background-color: #0078d4;
                 color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 6px 12px;
-                font-weight: 500;
+                border-color: #0078d4;
             }
-            QPushButton:hover {
-                background-color: #45a049;
+        """)
+        title_layout.addWidget(hint_btn)
+        
+        # Add stretch to push buttons to the right
+        title_layout.addStretch()
+        
+        # Refresh button - compact icon in title bar
+        refresh_btn = QPushButton()
+        refresh_btn.setObjectName("titleBarButton")
+        reload_icon = load_svg_icon(get_icon_path("reload"), "#0078d4", QSize(14, 14))
+        refresh_btn.setIcon(reload_icon)
+        refresh_btn.setIconSize(QSize(14, 14))
+        refresh_btn.setFixedSize(24, 24)
+        refresh_btn.setToolTip(LOCALIZE("PREPROCESS.refresh_datasets_tooltip"))
+        refresh_btn.setCursor(Qt.PointingHandCursor)
+        refresh_btn.setStyleSheet("""
+            QPushButton#titleBarButton {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px;
             }
-            QPushButton:pressed {
-                background-color: #3d8b40;
+            QPushButton#titleBarButton:hover {
+                background-color: #e7f3ff;
+                border-color: #0078d4;
             }
-            QPushButton:disabled {
-                background-color: #a5d6a7;
-                color: #e0e0e0;
+            QPushButton#titleBarButton:pressed {
+                background-color: #d0e7ff;
+            }
+        """)
+        refresh_btn.clicked.connect(self.load_project_data)
+        title_layout.addWidget(refresh_btn)
+        
+        # Export button - compact icon in title bar
+        export_btn = QPushButton()
+        export_btn.setObjectName("titleBarButtonGreen")
+        export_icon = load_svg_icon(get_icon_path("export"), "#28a745", QSize(14, 14))
+        export_btn.setIcon(export_icon)
+        export_btn.setIconSize(QSize(14, 14))
+        export_btn.setFixedSize(24, 24)
+        export_btn.setToolTip(LOCALIZE("PREPROCESS.export_button_tooltip"))
+        export_btn.setCursor(Qt.PointingHandCursor)
+        export_btn.setStyleSheet("""
+            QPushButton#titleBarButtonGreen {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px;
+            }
+            QPushButton#titleBarButtonGreen:hover {
+                background-color: #d4edda;
+                border-color: #28a745;
+            }
+            QPushButton#titleBarButtonGreen:pressed {
+                background-color: #c3e6cb;
+            }
+            QPushButton#titleBarButtonGreen:disabled {
+                opacity: 0.5;
             }
         """)
         export_btn.clicked.connect(self.export_dataset)
-        button_row.addWidget(export_btn)
+        title_layout.addWidget(export_btn)
         
-        layout.addLayout(button_row)
+        input_group.setStyleSheet("""
+            QGroupBox {
+                font-weight: 600;
+                font-size: 13px;
+                color: #2c3e50;
+                border: 2px solid #dee2e6;
+                border-radius: 8px;
+                margin-top: 8px;
+                padding-top: 8px;
+            }
+        """)
+        input_group.setTitle("")  # Empty title since we use custom widget
+        
+        layout = QVBoxLayout(input_group)
+        layout.setContentsMargins(12, 2, 12, 8)  # Reduced top margin from 4 to 2, bottom from 12 to 8
+        layout.setSpacing(6)  # Reduced spacing from 8 to 6
+        
+        # Add title widget
+        layout.addWidget(title_widget)
 
-        # Dataset list - shows 4-6 items with scrollbar
-        self.dataset_list = QListWidget()
-        self.dataset_list.setObjectName("datasetList")
-        self.dataset_list.setSelectionMode(QListWidget.ExtendedSelection)
-        self.dataset_list.setMaximumHeight(240)  # Increased to show 4-6 items instead of 2
+        # Tab widget for filtering datasets (no separate button row)
+        self.dataset_tabs = QTabWidget()
+        self.dataset_tabs.setObjectName("datasetTabs")
         
-        # Apply custom styling from stylesheets
-        from configs.style.stylesheets import PREPROCESS_PAGE_STYLES
-        if 'dataset_list' in PREPROCESS_PAGE_STYLES:
-            self.dataset_list.setStyleSheet(PREPROCESS_PAGE_STYLES['dataset_list'])
+        # Style tabs for medical theme
+        self.dataset_tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 2px solid #dee2e6;
+                border-radius: 4px;
+                background-color: white;
+                top: -1px;
+            }
+            QTabBar::tab {
+                background-color: #f8f9fa;
+                color: #495057;
+                border: 1px solid #dee2e6;
+                border-bottom: none;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                padding: 6px 12px;
+                margin-right: 2px;
+                min-width: 60px;
+            }
+            QTabBar::tab:selected {
+                background-color: white;
+                color: #0078d4;
+                font-weight: 600;
+                border-color: #0078d4;
+                border-bottom: 2px solid white;
+            }
+            QTabBar::tab:hover {
+                background-color: #e9ecef;
+            }
+        """)
         
-        layout.addWidget(self.dataset_list)
+        # Create three tabs with separate list widgets
+        self.dataset_list_all = QListWidget()
+        self.dataset_list_raw = QListWidget()
+        self.dataset_list_preprocessed = QListWidget()
+        
+        # Configure all list widgets - increased height to show minimum 3-4 items
+        for list_widget in [self.dataset_list_all, self.dataset_list_raw, self.dataset_list_preprocessed]:
+            list_widget.setObjectName("datasetList")
+            list_widget.setSelectionMode(QListWidget.ExtendedSelection)
+            list_widget.setMinimumHeight(140)  # Increased from 100 to 140 (shows ~3-4 items)
+            list_widget.setMaximumHeight(160)  # Increased from 120 to 160 (shows ~4-5 items)
+            
+            # Apply custom styling
+            from configs.style.stylesheets import PREPROCESS_PAGE_STYLES
+            if 'dataset_list' in PREPROCESS_PAGE_STYLES:
+                list_widget.setStyleSheet(PREPROCESS_PAGE_STYLES['dataset_list'])
+            
+            # Connect selection changed signal for all lists
+            list_widget.itemSelectionChanged.connect(self._on_dataset_selection_changed)
+        
+        # Add tabs
+        self.dataset_tabs.addTab(self.dataset_list_all, LOCALIZE("PREPROCESS.tab_all_datasets"))
+        self.dataset_tabs.addTab(self.dataset_list_raw, LOCALIZE("PREPROCESS.tab_raw_datasets"))
+        self.dataset_tabs.addTab(self.dataset_list_preprocessed, LOCALIZE("PREPROCESS.tab_preprocessed_datasets"))
+        
+        # Set default to "All" tab
+        self.dataset_tabs.setCurrentIndex(0)
+        
+        # Keep reference to the active list (for backward compatibility)
+        self.dataset_list = self.dataset_list_all
+        
+        # Connect tab change to update active list reference
+        self.dataset_tabs.currentChanged.connect(self._on_dataset_tab_changed)
+        
+        layout.addWidget(self.dataset_tabs)
         
         return input_group
+    
+    def _on_dataset_tab_changed(self, index: int):
+        """Update the active dataset list reference when tab changes."""
+        if index == 0:
+            self.dataset_list = self.dataset_list_all
+        elif index == 1:
+            self.dataset_list = self.dataset_list_raw
+        elif index == 2:
+            self.dataset_list = self.dataset_list_preprocessed
+        
+        # Trigger selection changed event for the newly active tab
+        self._on_dataset_selection_changed()
+    
+    def _on_dataset_selection_changed(self):
+        """Handle dataset selection changes across all tabs - syncs selection and updates visualization."""
+        selected_items = self.dataset_list.selectedItems()
+        
+        if not selected_items:
+            self.plot_widget.clear_plot()
+            self._clear_preprocessing_history()
+            self._clear_default_output_name()
+            self.original_data = None
+            self.processed_data = None
+            self.preview_data = None
+            return
+        
+        # Set default output name based on first selected dataset
+        first_dataset_name = self._clean_dataset_name(selected_items[0].text())
+        self._set_default_output_name(first_dataset_name)
+        
+        # Handle single selection for preprocessing history
+        if len(selected_items) == 1:
+            dataset_name = self._clean_dataset_name(selected_items[0].text())
+            
+            try:
+                metadata = PROJECT_MANAGER.get_dataframe_metadata(dataset_name)
+                is_preprocessed = metadata and metadata.get('is_preprocessed', False)
+                
+                if is_preprocessed:
+                    # Show preprocessing history
+                    self._show_preprocessing_history(metadata)
+                    # Load existing pipeline with steps DISABLED by default
+                    self._load_preprocessing_pipeline(metadata.get('preprocessing_pipeline', []), default_disabled=True, source_dataset=dataset_name)
+                    # Auto-disable preview for preprocessed datasets
+                    self.preview_enabled = False
+                    self._update_preview_button_state(False)
+                    self._last_selected_was_preprocessed = True
+                else:
+                    # Check if switching from preprocessed to raw
+                    if hasattr(self, '_last_selected_was_preprocessed') and self._last_selected_was_preprocessed:
+                        self.preview_enabled = True
+                        self._update_preview_button_state(True)
+                    
+                    # For raw datasets, restore from global pipeline memory
+                    self._restore_global_pipeline_memory()
+                    self._clear_preprocessing_history_display_only()
+                    self._last_selected_was_preprocessed = False
+                    
+            except Exception as e:
+                create_logs("PreprocessPage", "preview_error",
+                           f"Error previewing dataset {dataset_name}: {e}", status='error')
+                self._clear_preprocessing_history()
+        else:
+            self._clear_preprocessing_history()
+        
+        # Show spectral data and store for preview
+        all_dfs = []
+        for item in selected_items:
+            dataset_name = self._clean_dataset_name(item.text())
+            if dataset_name in RAMAN_DATA:
+                all_dfs.append(RAMAN_DATA[dataset_name])
+        
+        if all_dfs:
+            try:
+                combined_df = pd.concat(all_dfs, axis=1)
+                self.original_data = combined_df
+                
+                # Show data with current preview mode
+                if self.preview_enabled and hasattr(self, 'pipeline_steps') and self.pipeline_steps:
+                    self._schedule_preview_update()
+                else:
+                    fig = plot_spectra(combined_df, title="Original Data (Preview OFF)", auto_focus=False)
+                    self.plot_widget.update_plot(fig)
+                    
+            except Exception as e:
+                create_logs("PreprocessPage", "preview_error",
+                           f"Error previewing data: {e}", status='error')
+                self.plot_widget.clear_plot()
 
     def _create_output_configuration_group(self) -> QGroupBox:
         """Create output configuration group."""
-        output_group = QGroupBox(LOCALIZE("PREPROCESS.output_config_title"))
+        output_group = QGroupBox()
+        
+        # Create custom title widget to match other sections
+        title_widget = QWidget()
+        title_layout = QHBoxLayout(title_widget)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(8)
+        
+        title_label = QLabel(LOCALIZE("PREPROCESS.output_config_title"))
+        title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
         
         layout = QVBoxLayout(output_group)
-        layout.setContentsMargins(12, 16, 12, 12)
-        layout.setSpacing(12)
+        layout.setContentsMargins(12, 4, 12, 12)
+        layout.setSpacing(8)
+        
+        # Add title widget
+        layout.addWidget(title_widget)
 
         # Output name input
         name_layout = QVBoxLayout()
@@ -293,8 +698,25 @@ class PreprocessPage(QWidget):
         layout.setSpacing(16)
 
         # Parameters section
-        self.params_group = QGroupBox(LOCALIZE("PREPROCESS.parameters_title"))
+        self.params_group = QGroupBox()
+        
+        # Create custom title widget to match other sections
+        params_title_widget = QWidget()
+        params_title_layout = QHBoxLayout(params_title_widget)
+        params_title_layout.setContentsMargins(0, 0, 0, 0)
+        params_title_layout.setSpacing(8)
+        
+        params_title_label = QLabel(LOCALIZE("PREPROCESS.parameters_title"))
+        params_title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+        params_title_layout.addWidget(params_title_label)
+        params_title_layout.addStretch()
+        
         params_layout = QVBoxLayout(self.params_group)
+        params_layout.setContentsMargins(12, 4, 12, 12)
+        params_layout.setSpacing(8)
+        
+        # Add title widget
+        params_layout.addWidget(params_title_widget)
         
         # Scrollable area for parameters
         scroll_area = QScrollArea()
@@ -316,23 +738,37 @@ class PreprocessPage(QWidget):
         layout.addWidget(self.params_group, 1)
 
         # Visualization section
-        plot_group = QGroupBox(LOCALIZE("PREPROCESS.visualization_title"))
-        plot_layout = QVBoxLayout(plot_group)
+        plot_group = QGroupBox()
         
-        # Preview controls - Enhanced UI
+        # Create custom title widget to match other sections
+        viz_title_widget = QWidget()
+        viz_title_layout = QHBoxLayout(viz_title_widget)
+        viz_title_layout.setContentsMargins(0, 0, 0, 0)
+        viz_title_layout.setSpacing(8)
+        
+        viz_title_label = QLabel(LOCALIZE("PREPROCESS.visualization_title"))
+        viz_title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+        viz_title_layout.addWidget(viz_title_label)
+        viz_title_layout.addStretch()
+        
+        plot_layout = QVBoxLayout(plot_group)
+        plot_layout.setContentsMargins(12, 4, 12, 12)
+        plot_layout.setSpacing(8)
+        
+        # Add title widget
+        plot_layout.addWidget(viz_title_widget)
+        
+        # Preview controls - Compact UI for non-maximized windows
         preview_controls = QHBoxLayout()
-        preview_controls.setSpacing(15)
+        preview_controls.setSpacing(8)
+        preview_controls.setContentsMargins(0, 0, 0, 0)
         
         # Preview mode toggle with enhanced styling
-        preview_toggle_container = QHBoxLayout()
-        preview_toggle_container.setSpacing(8)
-        
-        # Create toggle button with eye icons and dynamic width
         self.preview_toggle_btn = QPushButton()
         self.preview_toggle_btn.setCheckable(True)
         self.preview_toggle_btn.setChecked(True)
-        self.preview_toggle_btn.setFixedHeight(32)  # Fixed height
-        self.preview_toggle_btn.setMinimumWidth(120)  # Minimum width to accommodate text
+        self.preview_toggle_btn.setFixedHeight(28)  # Reduced from 32
+        self.preview_toggle_btn.setMinimumWidth(110)  # Reduced from 120
         self.preview_toggle_btn.setToolTip(LOCALIZE("PREPROCESS.real_time_preview_tooltip"))
         
         # Load eye icons using centralized icon paths
@@ -343,22 +779,20 @@ class PreprocessPage(QWidget):
         self._update_preview_button_state(True)
         
         self.preview_toggle_btn.toggled.connect(self._toggle_preview_mode)
-        preview_toggle_container.addWidget(self.preview_toggle_btn)
+        preview_controls.addWidget(self.preview_toggle_btn)
         
-        preview_controls.addLayout(preview_toggle_container)
-        
-        # Manual refresh button with SVG icon
+        # Manual refresh button with SVG icon (compact)
         self.manual_refresh_btn = QPushButton()
-        reload_icon = load_svg_icon(get_icon_path("reload"), "#7f8c8d", QSize(16, 16))
+        reload_icon = load_svg_icon(get_icon_path("reload"), "#7f8c8d", QSize(14, 14))
         self.manual_refresh_btn.setIcon(reload_icon)
-        self.manual_refresh_btn.setIconSize(QSize(16, 16))
-        self.manual_refresh_btn.setFixedSize(32, 32)
+        self.manual_refresh_btn.setIconSize(QSize(14, 14))
+        self.manual_refresh_btn.setFixedSize(28, 28)  # Reduced from 32x32
         self.manual_refresh_btn.setToolTip(LOCALIZE("PREPROCESS.manual_refresh_tooltip"))
         self.manual_refresh_btn.setStyleSheet("""
             QPushButton {
                 background-color: #ecf0f1;
                 border: 2px solid #bdc3c7;
-                border-radius: 16px;
+                border-radius: 14px;
                 padding: 0px;
             }
             QPushButton:hover {
@@ -372,18 +806,18 @@ class PreprocessPage(QWidget):
         self.manual_refresh_btn.clicked.connect(self._manual_refresh_preview)
         preview_controls.addWidget(self.manual_refresh_btn)
         
-        # Manual focus button with SVG icon
+        # Manual focus button with SVG icon (compact)
         self.manual_focus_btn = QPushButton()
-        focus_icon = load_svg_icon(get_icon_path("focus_horizontal"), "#7f8c8d", QSize(16, 16))
+        focus_icon = load_svg_icon(get_icon_path("focus_horizontal"), "#7f8c8d", QSize(14, 14))
         self.manual_focus_btn.setIcon(focus_icon)
-        self.manual_focus_btn.setIconSize(QSize(16, 16))
-        self.manual_focus_btn.setFixedSize(32, 32)
+        self.manual_focus_btn.setIconSize(QSize(14, 14))
+        self.manual_focus_btn.setFixedSize(28, 28)  # Reduced from 32x32
         self.manual_focus_btn.setToolTip(LOCALIZE("PREPROCESS.UI.manual_focus_tooltip"))
         self.manual_focus_btn.setStyleSheet("""
             QPushButton {
                 background-color: #ecf0f1;
                 border: 2px solid #bdc3c7;
-                border-radius: 16px;
+                border-radius: 14px;
                 padding: 0px;
             }
             QPushButton:hover {
@@ -399,29 +833,20 @@ class PreprocessPage(QWidget):
         
         preview_controls.addStretch()
         
-        # Enhanced status indicator with label
-        status_container = QHBoxLayout()
-        status_container.setSpacing(5)
-        
-        status_label = QLabel(LOCALIZE("PREPROCESS.preview_status"))
-        status_label.setStyleSheet("font-size: 11px; color: #7f8c8d; font-weight: bold;")
-        status_container.addWidget(status_label)
-        
+        # Compact status indicator
         self.preview_status = QLabel(LOCALIZE("PREPROCESS.UI.status_dot"))
-        self.preview_status.setStyleSheet("color: #27ae60; font-size: 14px;")
+        self.preview_status.setStyleSheet("color: #27ae60; font-size: 12px;")
         self.preview_status.setToolTip(LOCALIZE("PREPROCESS.preview_status_ready"))
-        status_container.addWidget(self.preview_status)
+        preview_controls.addWidget(self.preview_status)
         
         self.preview_status_text = QLabel(LOCALIZE("PREPROCESS.UI.ready_status"))
-        self.preview_status_text.setStyleSheet("font-size: 11px; color: #27ae60; font-weight: bold;")
-        status_container.addWidget(self.preview_status_text)
-        
-        preview_controls.addLayout(status_container)
+        self.preview_status_text.setStyleSheet("font-size: 10px; color: #27ae60; font-weight: bold;")
+        preview_controls.addWidget(self.preview_status_text)
         
         plot_layout.addLayout(preview_controls)
         
         self.plot_widget = MatplotlibWidget()
-        self.plot_widget.setMinimumHeight(400)
+        self.plot_widget.setMinimumHeight(300)  # Reduced from 400 for compact layout
         plot_layout.addWidget(self.plot_widget)
 
         layout.addWidget(plot_group, 2)
@@ -432,8 +857,8 @@ class PreprocessPage(QWidget):
         """Connect UI signals to their handlers."""
         self.category_combo.currentTextChanged.connect(self.update_method_combo)
         
-        # Use itemSelectionChanged instead of itemClicked for better responsiveness
-        self.dataset_list.itemSelectionChanged.connect(self._debug_selection_changed)
+        # Note: itemSelectionChanged is now connected in _create_input_datasets_group for all list widgets
+        # This ensures all tabs (All, Raw, Preprocessed) respond to selection changes
         
         self.pipeline_list.currentItemChanged.connect(self.on_pipeline_step_selected)
         self.run_button.clicked.connect(self.run_preprocessing)
@@ -456,10 +881,12 @@ class PreprocessPage(QWidget):
                 self.method_combo.addItem(method_name)
 
     def load_project_data(self):
-        """Load project data and populate the dataset list with preprocessing info."""
+        """Load project data and populate the dataset lists (all tabs) with preprocessing info."""
         try:
-            # Clear existing UI
-            self.dataset_list.clear()
+            # Clear existing UI in all tabs
+            self.dataset_list_all.clear()
+            self.dataset_list_raw.clear()
+            self.dataset_list_preprocessed.clear()
             self.plot_widget.clear_plot()
             
             create_logs("PreprocessPage", "data_loading", 
@@ -467,58 +894,91 @@ class PreprocessPage(QWidget):
             
             if RAMAN_DATA:
                 # Sort datasets: raw data first, then preprocessed
-                dataset_items = []
+                all_items = []
+                raw_items = []
+                preprocessed_items = []
                 
                 for dataset_name in sorted(RAMAN_DATA.keys()):
-                    item = QListWidgetItem()
-                    
                     # Check if this is preprocessed data
                     try:
                         metadata = PROJECT_MANAGER.get_dataframe_metadata(dataset_name)
                         is_preprocessed = metadata and metadata.get('is_preprocessed', False)
                         
+                        # Create items for each list
+                        item_all = QListWidgetItem()
+                        item_specific = QListWidgetItem()
+                        
                         if is_preprocessed:
-                            item.setText(f"🔬 {dataset_name}")
-                            item.setToolTip(LOCALIZE("PREPROCESS.preprocessed_data_tooltip", 
+                            # Preprocessed data
+                            item_all.setText(f"🔬 {dataset_name}")
+                            item_all.setToolTip(LOCALIZE("PREPROCESS.preprocessed_data_tooltip", 
                                                    steps=len(metadata.get('preprocessing_pipeline', []))))
-                            dataset_items.append((1, item))  # Preprocessed data (sort order 1)
+                            item_specific.setText(f"🔬 {dataset_name}")
+                            item_specific.setToolTip(LOCALIZE("PREPROCESS.preprocessed_data_tooltip", 
+                                                   steps=len(metadata.get('preprocessing_pipeline', []))))
+                            
+                            all_items.append((1, item_all))  # Preprocessed (sort order 1)
+                            preprocessed_items.append(item_specific)
                         else:
-                            item.setText(f"📊 {dataset_name}")
-                            item.setToolTip(LOCALIZE("PREPROCESS.raw_data_tooltip"))
-                            dataset_items.append((0, item))  # Raw data (sort order 0)
+                            # Raw data
+                            item_all.setText(f"📊 {dataset_name}")
+                            item_all.setToolTip(LOCALIZE("PREPROCESS.raw_data_tooltip"))
+                            item_specific.setText(f"📊 {dataset_name}")
+                            item_specific.setToolTip(LOCALIZE("PREPROCESS.raw_data_tooltip"))
+                            
+                            all_items.append((0, item_all))  # Raw (sort order 0)
+                            raw_items.append(item_specific)
                             
                     except Exception as e:
-                        # Fallback for metadata access errors
-                        item.setText(f"📊 {dataset_name}")
-                        item.setToolTip(LOCALIZE("PREPROCESS.raw_data_tooltip"))
-                        dataset_items.append((0, item))
+                        # Fallback for metadata access errors - treat as raw
+                        item_all = QListWidgetItem(f"📊 {dataset_name}")
+                        item_all.setToolTip(LOCALIZE("PREPROCESS.raw_data_tooltip"))
+                        item_specific = QListWidgetItem(f"📊 {dataset_name}")
+                        item_specific.setToolTip(LOCALIZE("PREPROCESS.raw_data_tooltip"))
+                        
+                        all_items.append((0, item_all))
+                        raw_items.append(item_specific)
+                        
                         create_logs("PreprocessPage", "metadata_error", 
                                    f"Error accessing metadata for {dataset_name}: {e}", status='warning')
                     
-                    # Ensure the item is selectable
-                    item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                    # Ensure items are selectable
+                    item_all.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                    item_specific.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
                 
-                # Sort and add items (raw data first, then preprocessed)
-                dataset_items.sort(key=lambda x: x[0])
-                for _, item in dataset_items:
-                    self.dataset_list.addItem(item)
+                # Sort and populate "All" tab (raw first, then preprocessed)
+                all_items.sort(key=lambda x: x[0])
+                for _, item in all_items:
+                    self.dataset_list_all.addItem(item)
                 
-                # Enable the dataset list
-                self.dataset_list.setEnabled(True)
+                # Populate "Raw" tab
+                for item in raw_items:
+                    self.dataset_list_raw.addItem(item)
                 
-                # Auto-select first item if available
-                if self.dataset_list.count() > 0:
-                    self.dataset_list.setCurrentRow(0)
+                # Populate "Preprocessed" tab
+                for item in preprocessed_items:
+                    self.dataset_list_preprocessed.addItem(item)
+                
+                # Enable all dataset lists
+                self.dataset_list_all.setEnabled(True)
+                self.dataset_list_raw.setEnabled(True)
+                self.dataset_list_preprocessed.setEnabled(True)
+                
+                # Auto-select first item in "All" tab if available
+                if self.dataset_list_all.count() > 0:
+                    self.dataset_list_all.setCurrentRow(0)
                     self.showNotification.emit(
                         LOCALIZE("PREPROCESS.datasets_loaded", count=len(RAMAN_DATA)), 
                         "info"
                     )
             else:
-                # No data available
-                item = QListWidgetItem(LOCALIZE("PREPROCESS.no_datasets_available"))
-                item.setFlags(Qt.ItemFlag.NoItemFlags)  # Make it non-selectable
-                self.dataset_list.addItem(item)
-                self.dataset_list.setEnabled(False)
+                # No data available - add placeholder in all tabs
+                for list_widget in [self.dataset_list_all, self.dataset_list_raw, self.dataset_list_preprocessed]:
+                    item = QListWidgetItem(LOCALIZE("PREPROCESS.no_datasets_available"))
+                    item.setFlags(Qt.ItemFlag.NoItemFlags)  # Make it non-selectable
+                    list_widget.addItem(item)
+                    list_widget.setEnabled(False)
+                
                 self.showNotification.emit(LOCALIZE("PREPROCESS.no_data_warning"), "warning")
                 
         except Exception as e:
@@ -527,7 +987,7 @@ class PreprocessPage(QWidget):
             self.showNotification.emit(f"Error loading data: {str(e)}", "error")   
     
     def export_dataset(self):
-        """Export selected dataset to file with format selection."""
+        """Export selected dataset(s) to file with format selection and metadata export."""
         # Check if any dataset is selected
         selected_items = self.dataset_list.selectedItems()
         if not selected_items:
@@ -537,27 +997,130 @@ class PreprocessPage(QWidget):
             )
             return
         
-        # Get the first selected dataset
-        dataset_name = self._clean_dataset_name(selected_items[0].text())
+        # Get selected datasets
+        dataset_names = [self._clean_dataset_name(item.text()) for item in selected_items]
         
-        # Check if dataset exists in RAMAN_DATA
-        if dataset_name not in RAMAN_DATA:
-            self.showNotification.emit(
-                f"Dataset '{dataset_name}' not found",
-                "error"
-            )
-            return
+        # Check if all datasets exist in RAMAN_DATA
+        for dataset_name in dataset_names:
+            if dataset_name not in RAMAN_DATA:
+                self.showNotification.emit(
+                    LOCALIZE("PREPROCESS.export_dataset_not_found", name=dataset_name),
+                    "error"
+                )
+                return
         
         # Create export dialog
-        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFileDialog, QCheckBox
         
         dialog = QDialog(self)
         dialog.setWindowTitle(LOCALIZE("PREPROCESS.export_dialog_title"))
-        dialog.setMinimumWidth(500)
+        dialog.setMinimumWidth(550)
+        
+        # Apply medical-themed styling to dialog
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #f8f9fa;
+            }
+            QLabel {
+                color: #2c3e50;
+                font-size: 13px;
+            }
+            QLabel#infoLabel {
+                color: #0078d4;
+                font-weight: 600;
+                background-color: #e3f2fd;
+                border-left: 4px solid #0078d4;
+                padding: 10px;
+                border-radius: 4px;
+            }
+            QLabel#hintLabel {
+                color: #6c757d;
+                font-size: 11px;
+                font-style: italic;
+            }
+            QLineEdit {
+                padding: 10px;
+                border: 2px solid #ced4da;
+                border-radius: 6px;
+                font-size: 13px;
+                background-color: white;
+            }
+            QLineEdit:focus {
+                border-color: #0078d4;
+                background-color: #f0f8ff;
+            }
+            QLineEdit:read-only {
+                background-color: #e9ecef;
+            }
+            QComboBox {
+                padding: 10px;
+                border: 2px solid #ced4da;
+                border-radius: 6px;
+                background-color: white;
+                font-size: 13px;
+            }
+            QComboBox:focus {
+                border-color: #0078d4;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;
+            }
+            QComboBox::down-arrow {
+                image: url(assets/icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+            }
+            QPushButton {
+                background-color: #0078d4;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: 500;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #106ebe;
+            }
+            QPushButton:pressed {
+                background-color: #005a9e;
+            }
+            QCheckBox {
+                color: #2c3e50;
+                font-size: 13px;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 20px;
+                height: 20px;
+                border: 2px solid #ced4da;
+                border-radius: 4px;
+                background-color: white;
+            }
+            QCheckBox::indicator:hover {
+                border-color: #0078d4;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #28a745;
+                border-color: #28a745;
+                image: url(assets/icons/checkmark.svg);
+            }
+            QDialogButtonBox QPushButton {
+                min-width: 80px;
+                padding: 10px 16px;
+            }
+        """)
         
         layout = QVBoxLayout(dialog)
         layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setContentsMargins(24, 24, 24, 24)
+        
+        # Multiple dataset info
+        if len(dataset_names) > 1:
+            info_label = QLabel(LOCALIZE("PREPROCESS.export_multiple_info", count=len(dataset_names)))
+            info_label.setObjectName("infoLabel")
+            layout.addWidget(info_label)
         
         # Format selection
         format_layout = QHBoxLayout()
@@ -584,12 +1147,20 @@ class PreprocessPage(QWidget):
         location_edit.setPlaceholderText(LOCALIZE("PREPROCESS.export_select_location"))
         location_edit.setReadOnly(True)
         
+        # Load last used export location
+        last_export_path = getattr(self, '_last_export_location', None)
+        if last_export_path and os.path.exists(last_export_path):
+            location_edit.setText(last_export_path)
+        
         browse_btn = QPushButton(LOCALIZE("PREPROCESS.export_browse_button"))
         
         def browse_location():
+            # Use last location or current directory as starting point
+            start_path = location_edit.text() if location_edit.text() else os.getcwd()
             path = QFileDialog.getExistingDirectory(
                 dialog,
-                LOCALIZE("PREPROCESS.export_select_location")
+                LOCALIZE("PREPROCESS.export_select_location"),
+                start_path
             )
             if path:
                 location_edit.setText(path)
@@ -600,14 +1171,27 @@ class PreprocessPage(QWidget):
         location_layout.addWidget(browse_btn)
         layout.addLayout(location_layout)
         
-        # Filename
-        filename_layout = QHBoxLayout()
-        filename_layout.addWidget(QLabel(LOCALIZE("PREPROCESS.export_filename_label")))
+        # Filename (only for single export)
+        if len(dataset_names) == 1:
+            filename_layout = QHBoxLayout()
+            filename_layout.addWidget(QLabel(LOCALIZE("PREPROCESS.export_filename_label")))
+            
+            filename_edit = QLineEdit()
+            filename_edit.setText(dataset_names[0])
+            filename_layout.addWidget(filename_edit)
+            layout.addLayout(filename_layout)
+        else:
+            # For multiple exports, show info that original names will be used
+            multi_name_label = QLabel(LOCALIZE("PREPROCESS.export_multiple_names_info"))
+            multi_name_label.setObjectName("hintLabel")
+            multi_name_label.setWordWrap(True)
+            layout.addWidget(multi_name_label)
         
-        filename_edit = QLineEdit()
-        filename_edit.setText(dataset_name)
-        filename_layout.addWidget(filename_edit)
-        layout.addLayout(filename_layout)
+        # Metadata export checkbox
+        metadata_checkbox = QCheckBox(LOCALIZE("PREPROCESS.export_metadata_checkbox"))
+        metadata_checkbox.setChecked(True)
+        metadata_checkbox.setToolTip(LOCALIZE("PREPROCESS.export_metadata_tooltip"))
+        layout.addWidget(metadata_checkbox)
         
         # Dialog buttons
         button_box = QDialogButtonBox(
@@ -623,46 +1207,91 @@ class PreprocessPage(QWidget):
                 # Get export parameters
                 export_format = format_combo.currentData()
                 export_path = location_edit.text()
-                filename = filename_edit.text()
+                export_metadata = metadata_checkbox.isChecked()
                 
+                # Validate location
                 if not export_path:
-                    self.showNotification.emit(
-                        "Please select export location",
-                        "warning"
+                    from PySide6.QtWidgets import QMessageBox
+                    QMessageBox.warning(
+                        self,
+                        LOCALIZE("PREPROCESS.export_warning_title"),
+                        LOCALIZE("PREPROCESS.export_no_location_warning"),
+                        QMessageBox.Ok
                     )
                     return
                 
-                if not filename:
+                # Validate location exists
+                if not os.path.exists(export_path):
                     self.showNotification.emit(
-                        "Please provide filename",
-                        "warning"
+                        LOCALIZE("PREPROCESS.export_invalid_location"),
+                        "error"
                     )
                     return
                 
-                # Build full file path
-                full_path = os.path.join(export_path, f"{filename}.{export_format}")
+                # Store last export location
+                self._last_export_location = export_path
                 
-                # Get the data
-                df = RAMAN_DATA[dataset_name]
-                
-                # Export based on format
-                if export_format == "csv":
-                    df.to_csv(full_path)
-                elif export_format == "txt":
-                    # Tab-separated format
-                    df.to_csv(full_path, sep='\t')
-                elif export_format == "asc":
-                    # ASCII format (similar to txt)
-                    df.to_csv(full_path, sep='\t')
-                elif export_format == "pkl":
-                    df.to_pickle(full_path)
-                
-                self.showNotification.emit(
-                    LOCALIZE("PREPROCESS.export_success", 
-                            name=dataset_name, 
-                            path=full_path),
-                    "success"
-                )
+                # Export single or multiple datasets
+                if len(dataset_names) == 1:
+                    # Single export
+                    filename = filename_edit.text() if len(dataset_names) == 1 else dataset_names[0]
+                    
+                    if not filename:
+                        self.showNotification.emit(
+                            LOCALIZE("PREPROCESS.export_no_filename_warning"),
+                            "warning"
+                        )
+                        return
+                    
+                    success = self._export_single_dataset(
+                        dataset_names[0], 
+                        export_path, 
+                        filename, 
+                        export_format, 
+                        export_metadata
+                    )
+                    
+                    if success:
+                        self.showNotification.emit(
+                            LOCALIZE("PREPROCESS.export_success", 
+                                    name=dataset_names[0], 
+                                    path=os.path.join(export_path, f"{filename}.{export_format}")),
+                            "success"
+                        )
+                else:
+                    # Multiple exports
+                    success_count = 0
+                    failed_count = 0
+                    
+                    for dataset_name in dataset_names:
+                        success = self._export_single_dataset(
+                            dataset_name, 
+                            export_path, 
+                            dataset_name, 
+                            export_format, 
+                            export_metadata
+                        )
+                        if success:
+                            success_count += 1
+                        else:
+                            failed_count += 1
+                    
+                    # Show summary
+                    if failed_count == 0:
+                        self.showNotification.emit(
+                            LOCALIZE("PREPROCESS.export_multiple_success", 
+                                    count=success_count,
+                                    path=export_path),
+                            "success"
+                        )
+                    else:
+                        self.showNotification.emit(
+                            LOCALIZE("PREPROCESS.export_multiple_partial", 
+                                    success=success_count,
+                                    failed=failed_count,
+                                    total=len(dataset_names)),
+                            "warning"
+                        )
                 
             except Exception as e:
                 create_logs("PreprocessPage", "export_error",
@@ -672,127 +1301,127 @@ class PreprocessPage(QWidget):
                     "error"
                 )
     
-    def _debug_selection_changed(self):
-        """Debug wrapper for selection changes."""
-        self.preview_raw_data()
-    
-    def preview_raw_data(self):
-        """Preview the selected data and show preprocessing history if applicable."""
-        selected_items = self.dataset_list.selectedItems()
+    def _export_single_dataset(self, dataset_name: str, export_path: str, 
+                               filename: str, export_format: str, 
+                               export_metadata: bool = True) -> bool:
+        """
+        Export a single dataset with optional metadata.
         
-        if not selected_items:
-            self.plot_widget.clear_plot()
-            self._clear_preprocessing_history()
-            self._clear_default_output_name()
-            # Clear preview data
-            self.original_data = None
-            self.processed_data = None
-            return
-        
-        # Set default output name based on first selected dataset
-        first_dataset_name = self._clean_dataset_name(selected_items[0].text())
-        self._set_default_output_name(first_dataset_name)
-        
-        # Handle single selection for preprocessing history
-        if len(selected_items) == 1:
-            dataset_name = self._clean_dataset_name(selected_items[0].text())
+        Args:
+            dataset_name: Name of the dataset in RAMAN_DATA
+            export_path: Directory path for export
+            filename: Base filename (without extension)
+            export_format: File format (csv, txt, asc, pkl)
+            export_metadata: Whether to export metadata JSON
             
-            try:
+        Returns:
+            bool: True if export successful, False otherwise
+        """
+        try:
+            # Build full file path
+            full_path = os.path.join(export_path, f"{filename}.{export_format}")
+            
+            # Get the data
+            df = RAMAN_DATA[dataset_name]
+            
+            # Export based on format
+            if export_format == "csv":
+                df.to_csv(full_path)
+            elif export_format == "txt":
+                # Tab-separated format
+                df.to_csv(full_path, sep='\t')
+            elif export_format == "asc":
+                # ASCII format (similar to txt)
+                df.to_csv(full_path, sep='\t')
+            elif export_format == "pkl":
+                df.to_pickle(full_path)
+            
+            # Export metadata if requested
+            if export_metadata:
+                # Get metadata from project for this specific dataset
                 metadata = PROJECT_MANAGER.get_dataframe_metadata(dataset_name)
-                is_preprocessed = metadata and metadata.get('is_preprocessed', False)
+                if metadata is None:
+                    # If no metadata found, create empty metadata dictionary
+                    metadata = {}
                 
-                if is_preprocessed:
-                    # Store the current pipeline state before switching
-                    current_pipeline_backup = None
-                    if hasattr(self, 'pipeline_steps') and self.pipeline_steps:
-                        current_pipeline_backup = [
-                            {
-                                'category': step.category,
-                                'method': step.method,
-                                'params': step.params.copy(),
-                                'enabled': step.enabled
-                            } for step in self.pipeline_steps
-                        ]
-                    
-                    # Check if we have existing pipeline steps from a different dataset
-                    if (hasattr(self, 'pipeline_steps') and len(self.pipeline_steps) > 0 and 
-                        hasattr(self, '_last_selected_was_preprocessed') and 
-                        hasattr(self, '_last_selected_dataset_name') and 
-                        getattr(self, '_last_selected_dataset_name', None) != dataset_name):
-                        
-                        # Check if current pipeline differs from target dataset pipeline
-                        target_pipeline = metadata.get('preprocessing_pipeline', [])
-                        if self._pipelines_differ(self.pipeline_steps, target_pipeline):
-                            # Ask user if they want to replace current pipeline with new one or keep existing
-                            self._show_pipeline_transfer_dialog(dataset_name, current_pipeline_backup)
-                        else:
-                            self._show_preprocessing_history(metadata)
-                            # Load existing pipeline with steps DISABLED by default
-                            self._load_preprocessing_pipeline(target_pipeline, default_disabled=True, source_dataset=dataset_name)
-                            # Auto-disable preview for preprocessed datasets to prevent double processing
-                            self.preview_enabled = False
-                            self._update_preview_button_state(False)
-                    else:
-                        self._show_preprocessing_history(metadata)
-                        # Load existing pipeline with steps DISABLED by default
-                        self._load_preprocessing_pipeline(metadata.get('preprocessing_pipeline', []), default_disabled=True, source_dataset=dataset_name)
-                        # Auto-disable preview for preprocessed datasets to prevent double processing
-                        self.preview_enabled = False
-                        self._update_preview_button_state(False)
-                    
-                    # Mark this as a preprocessed dataset selection
-                    self._last_selected_was_preprocessed = True
-                    self._last_selected_dataset_name = dataset_name
-                else:
-                    
-                    # Check if we're switching from preprocessed to raw dataset
-                    if (hasattr(self, '_last_selected_was_preprocessed') and self._last_selected_was_preprocessed):
-                        self.preview_enabled = True
-                        self._update_preview_button_state(True)
-                    
-                    # For raw datasets, restore from global pipeline memory
-                    self._restore_global_pipeline_memory()
-                    self._clear_preprocessing_history_display_only()
-                    
-                    # Mark this as a raw dataset selection
-                    self._last_selected_was_preprocessed = False
-                    self._last_selected_dataset_name = dataset_name
-                    
-            except Exception as e:
-                create_logs("PreprocessPage", "history_error", 
-                        f"Error loading preprocessing history for {dataset_name}: {e}", status='warning')
-                self._clear_preprocessing_history()
-        else:
-            self._clear_preprocessing_history()
+                self._export_metadata_json(
+                    metadata, 
+                    export_path, 
+                    filename,
+                    df.shape,
+                    dataset_name
+                )
+            
+            return True
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "export_single_error",
+                       f"Error exporting {dataset_name}: {e}", status='error')
+            return False
     
-        # Show spectral data and store for preview
-        all_dfs = []
-        for item in selected_items:
-            dataset_name = self._clean_dataset_name(item.text())
-            if dataset_name in RAMAN_DATA:
-                all_dfs.append(RAMAN_DATA[dataset_name])
+    def _export_metadata_json(self, metadata: Dict, export_path: str, 
+                              filename: str, data_shape: tuple, dataset_name: str = None):
+        """
+        Export metadata to JSON file.
         
-        if all_dfs:
-            try:
-                combined_df = pd.concat(all_dfs, axis=1)
-                
-                # Store original data for preview system as DataFrame to preserve index/wavenumbers
-                self.original_data = combined_df
-                
-                # Show data with current preview mode
-                if self.preview_enabled and hasattr(self, 'pipeline_steps') and self.pipeline_steps:
-                    # Trigger preview update
-                    self._schedule_preview_update()
-                else:
-                    # Show original data without auto-focus when preview is OFF
-                    fig = plot_spectra(combined_df, title="Original Data (Preview OFF)", auto_focus=False)
-                    self.plot_widget.update_plot(fig)
-                    
-            except Exception as e:
-                create_logs("PreprocessPage", "preview_error", 
-                        f"Error previewing data: {e}", status='error')
-                self.plot_widget.clear_plot()
-
+        Args:
+            metadata: Metadata dictionary from PROJECT_MANAGER
+            export_path: Directory path for export
+            filename: Base filename (without extension)
+            data_shape: Shape of the exported dataframe
+            dataset_name: Original dataset name in RAMAN_DATA
+        """
+        try:
+            import json
+            from datetime import datetime
+            
+            # Get additional metadata from the project's dataPackage structure
+            project_metadata = metadata if metadata else {}
+            
+            # Build metadata export dictionary
+            export_meta = {
+                "export_info": {
+                    "export_date": datetime.now().isoformat(),
+                    "dataset_name": filename,
+                    "original_name": dataset_name if dataset_name else filename,
+                    "data_shape": {
+                        "rows": data_shape[0],
+                        "columns": data_shape[1]
+                    }
+                },
+                "sample": project_metadata.get("sample", {}),
+                "instrument": project_metadata.get("instrument", {}),
+                "measurement": project_metadata.get("measurement", {}),
+                "notes": project_metadata.get("notes", {}),
+                "preprocessing": {
+                    "is_preprocessed": project_metadata.get("is_preprocessed", False),
+                    "processing_date": project_metadata.get("processing_date", None),
+                    "source_datasets": project_metadata.get("source_datasets", []),
+                    "pipeline": project_metadata.get("preprocessing_pipeline", []),
+                    "pipeline_summary": project_metadata.get("pipeline_summary", {}),
+                    "successful_steps": project_metadata.get("successful_pipeline", []),
+                    "failed_steps": project_metadata.get("failed_pipeline", [])
+                },
+                "spectral_info": {
+                    "num_spectra": project_metadata.get("num_spectra", data_shape[1]),
+                    "spectral_axis_start": project_metadata.get("spectral_axis", [None])[0] if project_metadata.get("spectral_axis") else None,
+                    "spectral_axis_end": project_metadata.get("spectral_axis", [None, None])[-1] if project_metadata.get("spectral_axis") else None,
+                    "spectral_points": len(project_metadata.get("spectral_axis", [])) if project_metadata.get("spectral_axis") else data_shape[0]
+                }
+            }
+            
+            # Write to JSON file (match dataset name)
+            metadata_path = os.path.join(export_path, f"{filename}.json")
+            with open(metadata_path, 'w', encoding='utf-8') as f:
+                json.dump(export_meta, f, indent=2, ensure_ascii=False)
+            
+            create_logs("PreprocessPage", "metadata_export",
+                       f"Exported metadata to {metadata_path}", status='info')
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "metadata_export_error",
+                       f"Error exporting metadata: {e}", status='error')
+    
     def add_pipeline_step(self):
         """Add a new step to the preprocessing pipeline."""
         current_category = self.category_combo.currentData()
@@ -898,19 +1527,41 @@ class PreprocessPage(QWidget):
 
     def on_step_toggled(self, step_index: int, enabled: bool):
         """Handle step toggle state change."""
-        if 0 <= step_index < len(self.pipeline_steps):
-            step = self.pipeline_steps[step_index]
-            step.enabled = enabled
+        # Find the actual step index by searching through the list widget
+        actual_step_index = None
+        sender_widget = self.sender()
+        
+        # Search for the widget that sent the signal
+        for i in range(self.pipeline_list.count()):
+            item = self.pipeline_list.item(i)
+            widget = self.pipeline_list.itemWidget(item)
+            if widget == sender_widget:
+                actual_step_index = i
+                break
+        
+        # Fallback to the provided step_index if we couldn't find the widget
+        if actual_step_index is None:
+            actual_step_index = step_index
+        
+        # Validate the index
+        if not (0 <= actual_step_index < len(self.pipeline_steps)):
+            create_logs("PreprocessPage", "step_toggle_error", 
+                       f"Invalid step index {actual_step_index}, pipeline has {len(self.pipeline_steps)} steps", 
+                       status='error')
+            return
             
-            # Save to global memory after state change
-            self._save_to_global_memory()
-            
-            # Trigger automatic preview update
-            self._schedule_preview_update()
-            
-            create_logs("PreprocessPage", "step_toggled", 
-                       f"Step {step_index} ({step.method}) {'enabled' if enabled else 'disabled'}", 
-                       status='info')
+        step = self.pipeline_steps[actual_step_index]
+        step.enabled = enabled
+        
+        # Save to global memory after state change
+        self._save_to_global_memory()
+        
+        # Trigger automatic preview update
+        self._schedule_preview_update()
+        
+        create_logs("PreprocessPage", "step_toggled", 
+                   f"Step {actual_step_index} ({step.method}) {'enabled' if enabled else 'disabled'}", 
+                   status='info')
 
     def toggle_all_existing_steps(self):
         """Toggle all existing steps on/off."""
@@ -956,6 +1607,13 @@ class PreprocessPage(QWidget):
     
     def on_pipeline_step_selected(self, current, previous):
         """Handle pipeline step selection to show appropriate parameters."""
+        # Update visual selection state for all widgets
+        for i in range(self.pipeline_list.count()):
+            item = self.pipeline_list.item(i)
+            widget = self.pipeline_list.itemWidget(item)
+            if widget and hasattr(widget, 'set_selected'):
+                widget.set_selected(item == current)
+        
         # Save parameters from the previously selected step
         if previous and self.current_step_widget:
             prev_step_index = previous.data(Qt.ItemDataRole.UserRole)
@@ -2432,8 +3090,6 @@ class PreprocessPage(QWidget):
                 memory_step.enabled = step.enabled  # Preserve enabled state
                 self._global_pipeline_memory.append(memory_step)
                 
-
-    
     def _restore_global_pipeline_memory(self):
         """Restore pipeline steps from global memory."""
         if hasattr(self, '_global_pipeline_memory') and self._global_pipeline_memory:

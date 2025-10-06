@@ -3,6 +3,25 @@
 ## Project Overview
 This is a comprehensive PySide6-based desktop application for Raman spectroscopy data analysis and preprocessing. The application provides a modern GUI interface for loading, visualizing, and processing Raman spectral data with a sophisticated preprocessing pipeline system.
 
+## Recent Updates & Improvements (October 2025)
+
+### UI/UX Enhancements
+- **Input Datasets Layout Optimization**: Moved refresh and export buttons to title bar, reduced padding to show 3-4 items minimum
+- **Pipeline Step Selection Visual Feedback**: Added darker background highlighting when pipeline steps are selected
+- **Pipeline Add Button Color**: Changed from blue to green (#28a745) for better visual consistency
+- **Section Title Standardization**: All sections now use consistent custom title widgets with hint button pattern
+
+### Bug Fixes
+- **Derivative Order Parameter Issue**: Fixed choice parameter handling for integer values in DynamicParameterWidget
+- **Pipeline Eye Button Error**: Fixed "list index out of range" error by implementing robust step index validation
+- **Pipeline Widget Styling Conflicts**: Resolved styling conflicts between QListWidget items and PipelineStepWidget
+
+### Code Quality Improvements
+- Enhanced parameter widget choice handling with proper type conversion
+- Improved error handling and logging for pipeline operations
+- Added comprehensive documentation for PipelineStepWidget class
+- Standardized layout margins and spacing across preprocessing page
+
 ## Architecture Overview
 
 ### Core Technologies
@@ -126,6 +145,47 @@ def _should_auto_focus(self) -> bool:
     enabled_steps = [step for step in self.pipeline if step.enabled]
     return any(step.method in range_limiting_steps for step in enabled_steps)
 ```
+
+## Component Architecture & Recent Improvements
+
+### Pipeline Step Widget (`pages/preprocess_page_utils/pipeline.py`)
+- **Purpose**: Interactive widgets for individual pipeline steps with visual state management
+- **Key Features**:
+  - Enable/disable toggle with eye icon buttons
+  - **NEW**: Selection visual feedback with darker blue background highlighting
+  - Color-coded states: new steps (green ✚), existing steps (gray ⚙), disabled (muted)
+  - Hover effects and visual state transitions
+  - **FIXED**: Robust step index validation to prevent "list index out of range" errors
+- **Technical Implementation**: 
+  - `set_selected(bool)`: Method for managing selection appearance
+  - `_update_appearance()`: Comprehensive state-based styling system
+  - Error-safe signal handling with dynamic index resolution
+
+### Parameter Widget System (`components/widgets/parameter_widgets.py`)
+- **Purpose**: Dynamic UI generation for preprocessing method parameters
+- **Key Features**:
+  - Automatic widget creation based on parameter type definitions (int, float, choice, bool, tuple, scientific)
+  - **FIXED**: Enhanced choice parameter handling with proper integer/float type conversion
+  - Real-time parameter validation and live preview updates
+  - Range-aware tuple parameters for spectral data bounds
+- **Technical Improvement**:
+  ```python
+  # NEW: Proper choice parameter type mapping
+  choice_mapping = {str(choice): choice for choice in choices}
+  widget.choice_mapping = choice_mapping  # Preserve original types
+  ```
+
+### Preprocessing Page Layout (`pages/preprocess_page.py`)
+- **Purpose**: Main preprocessing interface with optimized space utilization
+- **Recent Enhancements**:
+  - **Input Datasets**: Moved refresh/export buttons to title bar, increased list height to show 3-4 items minimum
+  - **Pipeline Building**: Changed add button from blue to green (#28a745) for visual consistency
+  - **Section Titles**: Standardized all sections to use custom title widgets with hint button pattern
+  - **Layout Optimization**: Reduced padding (20px→12px top, 16px spacing) for better space utilization
+- **Visual Improvements**:
+  - Consistent 24px title bar action buttons with hover effects
+  - Transparent title bar button styling for clean integration
+  - Selection highlighting for pipeline steps with 2px blue border
 
 ## Data Flow Architecture
 

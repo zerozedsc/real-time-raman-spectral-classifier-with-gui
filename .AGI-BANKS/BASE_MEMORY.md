@@ -1,10 +1,72 @@
 # Base Memory - AI Agent Knowledge Base
 
-> **Core knowledge and reference system for AI-assisted development**
+> **Core knowledge and reference system for AI-assisted development**  
+> **Last Updated**: October 6, 2025 (Evening #2) - Height Optimization for Non-Maximized Windows
 
 ## 🎯 Purpose
 
-This document serves as the foundational knowledge base for AI age## 📋 Current Development Focus
+This document serves as the foundational knowledge base for AI agents working on the Raman Spectroscopy Analysis Application. It provides quick access to essential information and references to detailed documentation.
+
+## ⚠️ CRITICAL: Non-Maximized Window Design Constraint
+
+**Updated**: October 6, 2025 (Evening #2)
+
+### Design Principle
+The application **MUST** work well in non-maximized window mode (e.g., 800x600 resolution). All UI sections must be optimized for smaller heights.
+
+### Height Management Guidelines
+1. **List Widgets**:
+   - Calculate height based on actual item size measurement
+   - **Dataset lists**: Show max **4 items** before scroll (**120px** height)
+   - **Pipeline lists**: Show max **5 steps** before scroll (215px height)
+   - **Item height**: Dataset items ~28px, Pipeline items ~40px
+
+2. **Compact Controls**:
+   - Button sizes: **28x28px** for compact headers (not 32x32px)
+   - Icon sizes: **14x14px** in compact buttons (not 16x16px)
+   - Spacing: **8px** between controls in compact layouts
+   - Font sizes: Reduce by 1-2px in compact areas
+
+3. **Section Headers**:
+   - Explicit margins: **12px** all sides
+   - Minimal spacing: **8px** between elements
+   - No extra label containers (combine text + controls directly)
+
+4. **Main Window**:
+   - Minimum height: **600px** (for non-maximized mode)
+   - Minimum width: **1000px**
+   - Default size: 1440x900
+
+5. **Applied in**:
+   - ✅ Input Dataset Section: 100-120px (shows 4 items)
+   - ✅ Pipeline Construction: 180-215px (shows 5 steps)
+   - ✅ Visualization Header: Compact 28px buttons, 8px spacing
+   - ✅ Visualization Plot: 300px minimum (reduced from 400px)
+   - ✅ Main Window: 600px minimum height
+
+### Example Implementation
+```python
+# Dataset list - shows 4 items (actual item height ~28px)
+list_widget.setMinimumHeight(100)
+list_widget.setMaximumHeight(120)
+
+# Pipeline list - shows 5 steps (actual item height ~40px)
+self.pipeline_list.setMinimumHeight(180)
+self.pipeline_list.setMaximumHeight(215)
+
+# Visualization plot - compact
+self.plot_widget.setMinimumHeight(300)  # Reduced from 400
+
+# Main window constraints
+self.setMinimumHeight(600)
+self.setMinimumWidth(1000)
+
+# Compact buttons
+button.setFixedSize(28, 28)
+icon = load_svg_icon(path, color, QSize(14, 14))
+```
+
+## 📋 Current Development Focus
 
 ### Active Tasks (See `.docs/TODOS.md` for details)
 1. ✅ **Visualization Package Refactoring** - COMPLETE (Oct 1, 2025)
@@ -19,16 +81,27 @@ This document serves as the foundational knowledge base for AI age## 📋 Curren
    - Dataset list enhancement (4-6 items visible)
    - Export button styling (green, SVG icon)
    - Preview button width fix
+4. ✅ **Export Feature Enhancements** - COMPLETE (Oct 3, 2025)
+   - Metadata JSON export alongside datasets
+   - Location validation with warning dialog
+   - Default location persistence across exports
+   - Multiple dataset batch export support
 
 ### Recent Completions (October 2025)
+- ✅ **Export Functionality (Oct 3, 2025)**:
+  - Automatic metadata export in JSON format
+  - Smart location validation and warnings
+  - Last-used location persistence
+  - Multi-dataset batch export capability
+  - Comprehensive localization (EN/JA)
 - ✅ Visualization package refactoring (visualization.py → visualization/)
 - ✅ Removed original visualization.py file
 - ✅ Comprehensive testing and validation
 - ✅ Documentation reorganization (.docs/ structure)
 - ✅ UI improvements (dataset list, export button, preview button)
-- Fixed xlim padding (±50 wavenumber units)
-- Enhanced parameter persistence
-- Removed debug logging the Raman Spectroscopy Analysis Application. It provides quick access to essential information and references to detailed documentation.
+- ✅ Fixed xlim padding (±50 wavenumber units)
+- ✅ Enhanced parameter persistence
+- ✅ Removed debug logging the Raman Spectroscopy Analysis Application. It provides quick access to essential information and references to detailed documentation.
 
 ## 📚 Documentation Structure
 

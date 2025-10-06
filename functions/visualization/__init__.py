@@ -14,27 +14,29 @@ Main Components:
     - Model evaluation: ML model assessment plots (functions.visualization.model_evaluation)
     - ML visualization: PCA/t-SNE/UMAP plots (functions.visualization.ml_visualization) [Phase 2]
     - Explainability: SHAP model explanations (functions.visualization.explainability) [Phase 3]
+    - Interactive inspection: Spectrum inspection with SHAP/LIME (functions.visualization.interactive_inspection) [Phase 4A+4B]
+    - LIME analysis: LIME explainability for model predictions (functions.visualization.lime_analysis) [Phase 5]
 
 Usage:
     >>> from functions.visualization import RamanVisualizer, FigureManager
     >>> viz = RamanVisualizer(df=dataframe)
     >>> viz.visualize_raman_spectra()
     
-    >>> # Direct function imports (Phase 1, 2 & 3 refactoring - backward compatible)
+    >>> # Direct function imports (Phase 1, 2, 3, 4 & 5 refactoring - backward compatible)
     >>> from functions.visualization import get_peak_assignment, visualize_raman_spectra
     >>> from functions.visualization import pca2d  # Phase 2
     >>> from functions.visualization import shap_explain  # Phase 3
+    >>> from functions.visualization import inspect_spectra  # Phase 4A
+    >>> from functions.visualization import spectrum_with_highlights_spectrum  # Phase 4B
+    >>> from functions.visualization import create_enhanced_table  # Phase 4B
+    >>> from functions.visualization import lime_explain  # Phase 5
     
 For backward compatibility, all imports from the original visualization.py
 are available directly from this package.
 """
-
 # Import everything from core for backward compatibility
 from .core import (
     RamanVisualizer,
-    spectrum_with_highlights_spectrum,
-    create_shap_plots,
-    create_enhanced_table,
 )
 
 # Import FigureManager
@@ -56,7 +58,6 @@ from .basic_plots import (
 
 from .model_evaluation import (
     confusion_matrix_heatmap,
-    plot_institution_distribution
 )
 
 # Import extracted modules (Phase 2 refactoring)
@@ -69,6 +70,24 @@ from .explainability import (
     shap_explain,
 )
 
+# Import extracted modules (Phase 4A refactoring)
+from .interactive_inspection import (
+    inspect_spectra,
+)
+
+# Import extracted modules (Phase 4B refactoring)
+from .interactive_inspection import (
+    spectrum_with_highlights_spectrum,
+    create_shap_plots,
+    create_enhanced_table,
+    plot_institution_distribution,
+)
+
+# Import extracted modules (Phase 5 refactoring)
+from .lime_analysis import (
+    lime_explain,
+)
+
 # Define public API
 __all__ = [
     # Main class
@@ -77,11 +96,6 @@ __all__ = [
     # Figure management
     'FigureManager',
     'add_figure_manager_to_raman_pipeline',
-    
-    # Standalone functions (legacy)
-    'spectrum_with_highlights_spectrum',
-    'create_shap_plots',
-    'create_enhanced_table',
     
     # Peak assignment functions (Phase 1)
     'get_peak_assignment',
@@ -96,15 +110,26 @@ __all__ = [
     
     # Model evaluation functions (Phase 1)
     'confusion_matrix_heatmap',
-    'plot_institution_distribution',
     
     # ML visualization functions (Phase 2)
     'pca2d',
     
     # Explainability functions (Phase 3)
     'shap_explain',
+    
+    # Interactive inspection functions (Phase 4A)
+    'inspect_spectra',
+    
+    # Interactive inspection helper functions (Phase 4B)
+    'spectrum_with_highlights_spectrum',
+    'create_shap_plots',
+    'create_enhanced_table',
+    'plot_institution_distribution',
+    
+    # LIME explainability functions (Phase 5)
+    'lime_explain',
 ]
 
 # Version info
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 __author__ = 'Raman Analysis Team'
