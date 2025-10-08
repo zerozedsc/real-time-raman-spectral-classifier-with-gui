@@ -393,19 +393,3 @@ class ParameterConstraints:
         # Default suggestion based on research
         return constraint.get("default")
 
-
-# Example usage and testing
-if __name__ == "__main__":
-    constraints = ParameterConstraints()
-    
-    # Test parameter validation
-    test_cases = [
-        ("spike_gaussian_kernel", 5),    # Valid
-        ("spike_gaussian_kernel", 6),    # Invalid (even)
-        ("baseline_asls_p", 0.01),       # Valid
-        ("baseline_asls_p", 1.5),        # Invalid (>1)
-    ]
-    
-    for param, value in test_cases:
-        is_valid, msg = constraints.validate_parameter(param, value)
-        print(f"  Hint: {constraints.get_parameter_hint(param, value)}")

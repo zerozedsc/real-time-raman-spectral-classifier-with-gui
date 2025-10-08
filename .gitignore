@@ -208,6 +208,7 @@ dist-ssr
 projects/*
 logs/*
 *.pyc
+*.*.pyc
 *.cpython-312.pyc
 __pycache__/
 .AGI-BANKS/

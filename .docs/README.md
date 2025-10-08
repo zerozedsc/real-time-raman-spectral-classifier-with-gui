@@ -6,6 +6,14 @@
 
 This directory contains all project documentation, organized by component type for easy navigation and maintenance. All development work should reference and update these documents as appropriate.
 
+### 🆕 Recent Major Updates (October 2025)
+- **Advanced Preprocessing Methods**: 6 new research-based preprocessing methods implemented for MGUS/MM classification
+  - See [`reports_sumamry/PREPROCESSING_ENHANCEMENT_COMPLETE.md`](./reports_sumamry/PREPROCESSING_ENHANCEMENT_COMPLETE.md) for full details
+  - New methods: Quantile Normalization, Rank Transform, PQN, Peak-Ratio Features, Butterworth High-Pass, CDAE
+  - New category: Feature Engineering (dimensionality reduction)
+- **Critical Bug Fixes**: Fixed Derivative parameter empty field, enumerate bug in feature engineering, deep learning syntax
+- **UI Enhancements**: Pipeline step selection highlighting, compact layout optimizations
+
 ## 🗂️ Directory Structure
 
 ```
@@ -38,6 +46,9 @@ This directory contains all project documentation, organized by component type f
 ├── functions/                   # Function library documentation
 │   ├── PARAMETER_CONSTRAINTS.md
 │   └── README.md
+│
+├── reports_sumamry/             # Implementation reports and summaries
+│   └── PREPROCESSING_ENHANCEMENT_COMPLETE.md  # ★ October 2025: 6 new preprocessing methods
 │
 └── testing/                     # Test documentation and results
     └── (test reports by feature)

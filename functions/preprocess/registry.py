@@ -24,6 +24,16 @@ from .calibration import WavenumberCalibration, IntensityCalibration
 from .normalization import SNV, MSC, MovingAverage
 from .baseline import MultiScaleConv1D
 from .derivatives import Derivative
+from .advanced_normalization import QuantileNormalization, RankTransform, ProbabilisticQuotientNormalization
+from .feature_engineering import PeakRatioFeatures
+from .advanced_baseline import ButterworthHighPass
+
+# Try to import deep learning module (requires PyTorch)
+try:
+    from .deep_learning import ConvolutionalAutoencoder
+    DL_AVAILABLE = True
+except ImportError:
+    DL_AVAILABLE = False
 
 
 class PreprocessingStepRegistry:
@@ -373,6 +383,16 @@ class PreprocessingStepRegistry:
                         "iterations": {"type": "int", "range": [1, 10], "description": "Number of correction iterations"}
                     },
                     "description": "Multi-scale convolutional baseline correction"
+                },
+                "ButterworthHighPass": {
+                    "class": ButterworthHighPass,
+                    "default_params": {"cutoff_freq": 0.01, "filter_order": 3, "validate_peaks": True},
+                    "param_info": {
+                        "cutoff_freq": {"type": "float", "range": [0.001, 0.4], "step": 0.001, "description": "Normalized cutoff frequency (0 < fc < 0.5)"},
+                        "filter_order": {"type": "int", "range": [1, 6], "description": "Filter order (higher = steeper rolloff)"},
+                        "validate_peaks": {"type": "bool", "description": "Warn if peak areas change significantly"}
+                    },
+                    "description": "Digital Butterworth high-pass filter for baseline removal with smooth phase response"
                 }
             },
             
@@ -401,7 +421,7 @@ class PreprocessingStepRegistry:
                     "class": Derivative,
                     "default_params": {"order": 1, "window_length": 5, "polyorder": 2},
                     "param_info": {
-                        "order": {"type": "choice", "choices": [1, 2], "description": "Derivative order (1st or 2nd)"},
+                        "order": {"type": "choice", "choices": [1, 2], "default": 1, "description": "Derivative order (1st or 2nd)"},
                         "window_length": {"type": "int", "range": [3, 21], "step": 2, "description": "Savitzky-Golay window length"},
                         "polyorder": {"type": "int", "range": [1, 6], "description": "Polynomial order for fitting"}
                     },
@@ -432,6 +452,29 @@ class PreprocessingStepRegistry:
                     "default_params": {},
                     "param_info": {},
                     "description": "Multiplicative Scatter Correction for scattering effects"
+                },
+                "QuantileNormalization": {
+                    "class": QuantileNormalization,
+                    "default_params": {"method": "median"},
+                    "param_info": {
+                        "method": {"type": "choice", "choices": ["median", "mean"], "default": "median", "description": "Aggregation method for reference quantiles"}
+                    },
+                    "description": "Quantile normalization for cross-platform distribution alignment (robust to domain shift)"
+                },
+                "RankTransform": {
+                    "class": RankTransform,
+                    "default_params": {"scale_range": (0, 1), "standardize": False},
+                    "param_info": {
+                        "scale_range": {"type": "tuple", "range": [(-1, 1)], "description": "Target range for scaled ranks (min, max)"},
+                        "standardize": {"type": "bool", "description": "Standardize features after ranking"}
+                    },
+                    "description": "Rank transform for intensity-independent relative ordering (domain-shift robust)"
+                },
+                "ProbabilisticQuotientNormalization": {
+                    "class": ProbabilisticQuotientNormalization,
+                    "default_params": {},
+                    "param_info": {},
+                    "description": "Probabilistic Quotient Normalization for dilution correction in biological samples"
                 }
             },
             
@@ -443,9 +486,47 @@ class PreprocessingStepRegistry:
                         "region": {"type": "tuple", "range": [(400, 4000)], "description": "Wavenumber range to extract (start, end)"}
                     },
                     "description": "Crop the intensity values and wavenumber axis to the specified range"
+                },
+                "PeakRatioFeatures": {
+                    "class": PeakRatioFeatures,
+                    "default_params": {
+                        "peak_positions": None,  # Uses default MGUS/MM peaks
+                        "window_size": 10.0,
+                        "extraction_method": "local_max",
+                        "ratio_mode": "log",
+                        "epsilon": 1e-10
+                    },
+                    "param_info": {
+                        "window_size": {"type": "float", "range": [5.0, 50.0], "step": 1.0, "description": "Half-width of window around peak (cm⁻¹)"},
+                        "extraction_method": {"type": "choice", "choices": ["local_max", "local_integral", "gaussian_fit"], "default": "local_max", "description": "Method for extracting peak intensity"},
+                        "ratio_mode": {"type": "choice", "choices": ["simple", "log", "both"], "default": "log", "description": "Type of ratios to compute"},
+                        "epsilon": {"type": "scientific", "range": [1e-12, 1e-6], "description": "Small constant to avoid division by zero"}
+                    },
+                    "description": "Peak-ratio feature engineering: dimensionless batch-invariant descriptors for MGUS/MM classification"
                 }
-            }
+            },
         }
+        
+        # Add deep learning methods if PyTorch is available
+        if DL_AVAILABLE:
+            custom_methods["denoising"] = custom_methods.get("denoising", {})
+            custom_methods["denoising"]["ConvolutionalAutoencoder"] = {
+                "class": ConvolutionalAutoencoder,
+                "default_params": {
+                    "input_size": None,  # Auto-detected
+                    "latent_dim": 32,
+                    "kernel_sizes": (7, 11, 15),
+                    "tv_weight": 0.01,
+                    "device": None
+                },
+                "param_info": {
+                    "latent_dim": {"type": "int", "range": [8, 128], "description": "Latent space dimensionality (16-32 typical)"},
+                    "tv_weight": {"type": "float", "range": [0.0, 0.1], "step": 0.001, "description": "Total variation regularization weight"}
+                },
+                "description": "Convolutional autoencoder for unified denoising/baseline correction (requires training on clean/noisy pairs)"
+            }
+        
+        return custom_methods
     
     def get_categories(self) -> List[str]:
         """Get all available preprocessing categories."""

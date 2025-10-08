@@ -1926,6 +1926,37 @@
                 "is_preprocessed": true
             },
             "addedDate": "2025-07-24T00:40:03.758627"
+        },
+        "20211107 Mm16 B": {
+            "path": "C:\\helmi\\\u7814\u7a76\\real-time-raman-spectral-classifier-with-gui\\projects\\test\\data\\20211107_mm16_b.pkl",
+            "metadata": {
+                "sample": {
+                    "patient_id": "",
+                    "sample_id": "",
+                    "sample_source": "",
+                    "sample_prep": ""
+                },
+                "instrument": {
+                    "instrument_model": "",
+                    "laser_wavelength": "",
+                    "laser_power": "",
+                    "objective": ""
+                },
+                "measurement": {
+                    "grating": "",
+                    "integration_time": "",
+                    "accumulations": "",
+                    "map_area": "",
+                    "step_size": "",
+                    "calibration": ""
+                },
+                "notes": {
+                    "operator": "",
+                    "acquisition_date": "",
+                    "notes": ""
+                }
+            },
+            "addedDate": "2025-10-07T14:57:53.270141"
         }
     }
 }

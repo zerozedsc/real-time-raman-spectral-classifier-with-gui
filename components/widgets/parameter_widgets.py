@@ -988,8 +988,13 @@ class DynamicParameterWidget(QWidget):
             # Store original choices for value extraction
             widget.choice_mapping = choice_mapping
             
+            # Set default value - ensure it's always set even if None
             if default_value is not None:
                 widget.setCurrentText(str(default_value))
+            elif choices:
+                # If no default provided, use first choice
+                widget.setCurrentIndex(0)
+            
             widget.setStyleSheet("""
                 QComboBox {
                     padding: 6px;
