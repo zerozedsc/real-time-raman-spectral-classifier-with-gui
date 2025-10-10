@@ -23,7 +23,8 @@ class PreprocessingThread(QThread):
         """Execute the preprocessing pipeline sequentially with error handling."""
         try:
             create_logs("PreprocessingThread", "start", 
-                       f"Starting preprocessing with {len(self.input_dfs)} datasets", status='info')
+                       f"Starting preprocessing with {len(self.input_dfs)} datasets, output_name={self.output_name}", 
+                       status='info')
             
             self.status_updated.emit(LOCALIZE("PREPROCESS.STATUS.preparing_data"))
             self.progress_updated.emit(5)
@@ -204,6 +205,7 @@ class PreprocessingThread(QThread):
             # Return comprehensive results
             result_data = {
                 'processed_df': processed_df,
+                'output_name': self.output_name,  # Include output name for proper saving
                 'successful_steps': successful_steps,
                 'failed_steps': self.failed_steps,
                 'skipped_steps': skipped_steps,
@@ -217,7 +219,14 @@ class PreprocessingThread(QThread):
                        f"Processing completed. Success rate: {result_data['success_rate']:.1%}", 
                        status='info')
             
+            create_logs("PreprocessingThread", "emitting_completed", 
+                       f"Emitting processing_completed signal for output_name={self.output_name}", 
+                       status='info')
             self.processing_completed.emit(result_data)
+            
+            create_logs("PreprocessingThread", "completed_signal_emitted", 
+                       "processing_completed signal emitted successfully", 
+                       status='info')
             
         except Exception as e:
             error_msg = f"{LOCALIZE('PREPROCESS.STATUS.error')}: {str(e)}"
@@ -225,6 +234,11 @@ class PreprocessingThread(QThread):
                     f"Critical preprocessing error: {e}\n{traceback.format_exc()}", 
                     status='error')
             self.processing_error.emit(error_msg)
+        
+        finally:
+            create_logs("PreprocessingThread", "run_finished", 
+                       f"Thread run() method finished for output_name={self.output_name}", 
+                       status='info')
     
     def cancel(self):
         """Cancel the preprocessing operation."""

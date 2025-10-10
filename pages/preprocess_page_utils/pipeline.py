@@ -71,19 +71,19 @@ class PipelineConfirmationDialog(QDialog):
         content_layout.setContentsMargins(24, 24, 24, 24)
         content_layout.setSpacing(20)
         
-        # === MODERN HEADER SECTION ===
+        # === COMPACT HEADER SECTION ===
         header_frame = QFrame()
         header_frame.setObjectName("headerCard")
         header_layout = QVBoxLayout(header_frame)
-        header_layout.setContentsMargins(24, 20, 24, 20)
-        header_layout.setSpacing(16)
+        header_layout.setContentsMargins(20, 12, 20, 12)  # Further reduced vertical padding
+        header_layout.setSpacing(10)  # Reduced spacing
         
-        # Title with icon
+        # Title with icon (single row, no metrics)
         title_row = QHBoxLayout()
-        title_row.setSpacing(8)
+        title_row.setSpacing(10)
         
         icon_label = QLabel("🔬")
-        icon_label.setStyleSheet("font-size: 24px;")
+        icon_label.setStyleSheet("font-size: 22px;")
         title_row.addWidget(icon_label)
         
         title_label = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.header"))
@@ -91,42 +91,34 @@ class PipelineConfirmationDialog(QDialog):
         title_row.addWidget(title_label)
         title_row.addStretch()
         
+        # Add counts inline in title
+        counts_label = QLabel(f"{len(self.selected_datasets)} datasets • {len(self.pipeline_steps)} steps")
+        counts_label.setStyleSheet("font-size: 12px; color: #7f8c8d; font-weight: normal;")
+        title_row.addWidget(counts_label)
+        
         header_layout.addLayout(title_row)
         
-        # Divider line
-        divider = QFrame()
-        divider.setFrameShape(QFrame.HLine)
-        divider.setStyleSheet("background-color: #e1e4e8; min-height: 1px; max-height: 1px;")
-        header_layout.addWidget(divider)
+        # === COMPACT OUTPUT NAME DISPLAY ===
+        output_frame = QFrame()
+        output_frame.setObjectName("outputNameFrame")
+        output_layout = QHBoxLayout(output_frame)
+        output_layout.setContentsMargins(12, 8, 12, 8)  # Further reduced vertical padding
+        output_layout.setSpacing(10)
         
-        # Summary metrics in a clean grid layout
-        metrics_grid = QGridLayout()
-        metrics_grid.setSpacing(16)
-        metrics_grid.setContentsMargins(0, 8, 0, 0)
+        output_icon = QLabel("💾")
+        output_icon.setStyleSheet("font-size: 16px;")  # Smaller icon
+        output_layout.addWidget(output_icon)
         
-        # Input datasets metric
-        input_metric = self._create_metric_item("📊", str(len(self.selected_datasets)), 
-                                                 LOCALIZE("PREPROCESS.CONFIRM_DIALOG.datasets_label"))
-        metrics_grid.addWidget(input_metric, 0, 0)
+        output_label_text = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_label") + ":")
+        output_label_text.setObjectName("outputLabelText")
+        output_layout.addWidget(output_label_text)
         
-        # Pipeline steps metric
-        steps_metric = self._create_metric_item("⚙️", str(len(self.pipeline_steps)), 
-                                                LOCALIZE("PREPROCESS.CONFIRM_DIALOG.steps_label"))
-        metrics_grid.addWidget(steps_metric, 0, 1)
+        output_value = QLabel(self.output_name)
+        output_value.setObjectName("outputValue")
+        output_value.setWordWrap(True)
+        output_layout.addWidget(output_value, 1)
         
-        # Output name metric
-        output_display = self.output_name
-        if len(output_display) > 25:
-            output_display = output_display[:22] + "..."
-        
-        output_metric = self._create_metric_item("💾", output_display,
-                                                 LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_label"))
-        metrics_grid.addWidget(output_metric, 0, 2)
-        
-        # Add stretch column to prevent excessive stretching
-        metrics_grid.setColumnStretch(3, 1)
-        
-        header_layout.addLayout(metrics_grid)
+        header_layout.addWidget(output_frame)
         content_layout.addWidget(header_frame)
         
         # === INPUT DATASETS SECTION ===
@@ -174,16 +166,16 @@ class PipelineConfirmationDialog(QDialog):
         main_layout.addWidget(button_bar)
     
     def _create_metric_item(self, icon: str, value: str, label: str) -> QFrame:
-        """Create a modern metric display item with icon, value, and label."""
+        """Create a compact metric display item with icon, value, and label."""
         metric = QFrame()
         metric.setObjectName("metricItem")
         metric_layout = QVBoxLayout(metric)
-        metric_layout.setContentsMargins(16, 12, 16, 12)
-        metric_layout.setSpacing(6)
+        metric_layout.setContentsMargins(12, 10, 12, 10)  # Reduced from 16, 12, 16, 12
+        metric_layout.setSpacing(4)  # Reduced from 6
         
         # Icon row
         icon_label = QLabel(icon)
-        icon_label.setStyleSheet("font-size: 20px;")
+        icon_label.setStyleSheet("font-size: 18px;")  # Reduced from 20px
         icon_label.setAlignment(Qt.AlignCenter)
         metric_layout.addWidget(icon_label)
         
@@ -221,34 +213,102 @@ class PipelineConfirmationDialog(QDialog):
         return section
     
     def _create_datasets_content(self) -> QWidget:
-        """Create compact datasets list."""
+        """Create datasets list with checkboxes and output options."""
         content = QWidget()
         layout = QVBoxLayout(content)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(8)
         
-        # Show first 3 datasets, then summary
-        max_display = 3
-        for i, dataset in enumerate(self.selected_datasets[:max_display]):
+        # Add output grouping options (only if multiple datasets)
+        if len(self.selected_datasets) > 1:
+            options_frame = QFrame()
+            options_frame.setObjectName("optionsFrame")
+            options_layout = QVBoxLayout(options_frame)
+            options_layout.setContentsMargins(12, 10, 12, 10)
+            options_layout.setSpacing(10)
+            
+            options_label = QLabel("📦 " + LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_options_label"))
+            options_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #2c3e50;")
+            options_layout.addWidget(options_label)
+            
+            # Store output mode selection
+            self.output_mode_group = QButtonGroup(content)
+            
+            # Option 1: Combined output (default)
+            self.combined_radio = QRadioButton(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_combined"))
+            self.combined_radio.setChecked(True)
+            self.combined_radio.setStyleSheet("font-size: 12px; color: #495057;")
+            self.output_mode_group.addButton(self.combined_radio, 0)
+            options_layout.addWidget(self.combined_radio)
+            
+            hint_combined = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_combined_hint"))
+            hint_combined.setStyleSheet("font-size: 11px; color: #6c757d; padding-left: 24px; font-style: italic;")
+            hint_combined.setWordWrap(True)
+            options_layout.addWidget(hint_combined)
+            
+            # Option 2: Separate outputs
+            self.separate_radio = QRadioButton(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_separate"))
+            self.separate_radio.setStyleSheet("font-size: 12px; color: #495057;")
+            self.output_mode_group.addButton(self.separate_radio, 1)
+            options_layout.addWidget(self.separate_radio)
+            
+            hint_separate = QLabel(LOCALIZE("PREPROCESS.CONFIRM_DIALOG.output_separate_hint"))
+            hint_separate.setStyleSheet("font-size: 11px; color: #6c757d; padding-left: 24px; font-style: italic;")
+            hint_separate.setWordWrap(True)
+            options_layout.addWidget(hint_separate)
+            
+            layout.addWidget(options_frame)
+            
+            # Add spacing
+            layout.addSpacing(8)
+        
+        # Dataset list with checkboxes (all checked by default, read-only for now)
+        datasets_label = QLabel("📂 " + LOCALIZE("PREPROCESS.CONFIRM_DIALOG.selected_datasets_label"))
+        datasets_label.setStyleSheet("font-size: 13px; font-weight: 600; color: #2c3e50;")
+        layout.addWidget(datasets_label)
+        
+        # Show all datasets with checkboxes
+        self.dataset_checkboxes = []
+        for i, dataset in enumerate(self.selected_datasets):
             item_frame = QFrame()
             item_frame.setObjectName("listItem")
             item_layout = QHBoxLayout(item_frame)
             item_layout.setContentsMargins(10, 8, 10, 8)
+            item_layout.setSpacing(10)
             
+            # Checkbox (checked and enabled)
+            checkbox = QCheckBox()
+            checkbox.setChecked(True)
+            checkbox.setStyleSheet("font-size: 13px;")
+            self.dataset_checkboxes.append(checkbox)
+            item_layout.addWidget(checkbox)
+            
+            # Dataset name with number
             item_label = QLabel(f"{i+1}. {dataset}")
             item_label.setStyleSheet("font-size: 13px; color: #2c3e50;")
-            item_layout.addWidget(item_label)
+            item_layout.addWidget(item_label, 1)
             
             layout.addWidget(item_frame)
         
-        # If more datasets, show count
-        if len(self.selected_datasets) > max_display:
-            more_label = QLabel(f"... + {len(self.selected_datasets) - max_display} " + 
-                              LOCALIZE("PREPROCESS.CONFIRM_DIALOG.more_datasets"))
-            more_label.setStyleSheet("font-size: 12px; color: #6c757d; font-style: italic; padding-left: 10px;")
-            layout.addWidget(more_label)
-        
         return content
+    
+    def get_selected_datasets(self) -> List[str]:
+        """Get list of datasets that are checked."""
+        return [dataset for i, dataset in enumerate(self.selected_datasets) 
+                if self.dataset_checkboxes[i].isChecked()]
+    
+    def get_output_mode(self) -> str:
+        """Get the selected output mode: 'combined' or 'separate'."""
+        if len(self.selected_datasets) == 1:
+            return 'single'
+        
+        if hasattr(self, 'output_mode_group'):
+            if self.output_mode_group.checkedId() == 0:
+                return 'combined'
+            elif self.output_mode_group.checkedId() == 1:
+                return 'separate'
+        
+        return 'combined'  # Default
     
     def _create_pipeline_content(self) -> QWidget:
         """Create compact pipeline steps list."""
@@ -351,7 +411,7 @@ class PipelineConfirmationDialog(QDialog):
             }
             
             #titleLabel {
-                font-size: 20px;
+                font-size: 17px;  /* Reduced from 20px for more compact header */
                 font-weight: 600;
                 color: #1a365d;
                 letter-spacing: -0.5px;
@@ -386,6 +446,94 @@ class PipelineConfirmationDialog(QDialog):
                 color: #6c757d;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
+            }
+            
+            /* Output Name Frame - Prominent Display */
+            #outputNameFrame {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #e8f5e9, stop:1 #c8e6c9);
+                border: 2px solid #4caf50;
+                border-radius: 8px;
+                padding: 12px 16px;
+            }
+            
+            #outputLabelText {
+                font-size: 13px;
+                font-weight: 600;
+                color: #2e7d32;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            
+            #outputValue {
+                font-size: 16px;
+                font-weight: 700;
+                color: #1b5e20;
+                letter-spacing: -0.3px;
+            }
+            
+            /* Options Frame */
+            #optionsFrame {
+                background-color: #fff3e0;
+                border: 1px solid #ffb74d;
+                border-left: 4px solid #ff9800;
+                border-radius: 6px;
+                padding: 10px 12px;
+            }
+            
+            QRadioButton {
+                color: #495057;
+                font-size: 12px;
+                spacing: 8px;
+            }
+            
+            QRadioButton::indicator {
+                width: 18px;
+                height: 18px;
+                border-radius: 9px;
+                border: 2px solid #ced4da;
+                background-color: white;
+            }
+            
+            QRadioButton::indicator:hover {
+                border-color: #ff9800;
+            }
+            
+            QRadioButton::indicator:checked {
+                background-color: #ff9800;
+                border-color: #ff9800;
+            }
+            
+            QRadioButton::indicator:checked::before {
+                content: "";
+                width: 8px;
+                height: 8px;
+                border-radius: 4px;
+                background-color: white;
+            }
+            
+            QCheckBox {
+                color: #2c3e50;
+                font-size: 13px;
+                spacing: 8px;
+            }
+            
+            QCheckBox::indicator {
+                width: 20px;
+                height: 20px;
+                border: 2px solid #ced4da;
+                border-radius: 4px;
+                background-color: white;
+            }
+            
+            QCheckBox::indicator:hover {
+                border-color: #0078d4;
+            }
+            
+            QCheckBox::indicator:checked {
+                background-color: #28a745;
+                border-color: #28a745;
+                image: url(assets/icons/checkmark.svg);
             }
             
             /* Content Cards */
@@ -1078,27 +1226,27 @@ class PipelineStepWidget(QWidget):
         
         # Override with selection styling if selected
         if self.is_selected:
-            # Selected state - darker background with blue accent
+            # Selected state - darker, more prominent background with blue accent
             selected_style = """
                 QWidget {
-                    background-color: #d4e6f7;
-                    border: 2px solid #0078d4;
+                    background-color: #a8d0f0;
+                    border: 3px solid #0056b3;
                     border-radius: 6px;
                     margin: 1px;
                 }
                 QWidget:hover {
-                    background-color: #c8ddf6;
-                    border-color: #005a9e;
+                    background-color: #9bc5ed;
+                    border-color: #004085;
                 }
             """
             self.setStyleSheet(selected_style)
             
-            # Ensure text is visible on selected background
+            # Ensure text is highly visible on selected background
             selected_text_style = """
                 QLabel {
                     font-size: 13px; 
-                    color: #003d6b; 
-                    font-weight: 600;
+                    color: #002952; 
+                    font-weight: 700;
                     padding: 2px 0px;
                 }
             """

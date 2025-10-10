@@ -105,9 +105,9 @@ class WorkspacePage(QWidget):
                 elif hasattr(widget, 'reset'):
                     widget.reset()
             
-            # Reset global project state if available
-            if hasattr(PROJECT_MANAGER, 'clear_current_project'):
-                PROJECT_MANAGER.clear_current_project()
+            # Clear the current project in PROJECT_MANAGER
+            PROJECT_MANAGER.current_project_data = {}
+            RAMAN_DATA.clear()
             
             create_logs("WorkspacePage", "reset_state", "Successfully reset workspace state", status='info')
             
@@ -162,11 +162,26 @@ class WorkspacePage(QWidget):
     def load_project(self, project_path: str):
         """Load project and refresh all pages."""
         try:
-            # Update project manager state if available
-            if hasattr(PROJECT_MANAGER, 'set_current_project'):
-                PROJECT_MANAGER.set_current_project(project_path)
+            # First, clear all existing project data from all pages
+            for i in range(1, self.page_stack.count()):  # Skip home page (index 0)
+                widget = self.page_stack.widget(i)
+                if hasattr(widget, 'clear_project_data'):
+                    try:
+                        widget.clear_project_data()
+                        create_logs("WorkspacePage", "clear_before_load", 
+                                   f"Cleared page {i} data before loading new project", status='info')
+                    except Exception as e:
+                        create_logs("WorkspacePage", "clear_before_load_error", 
+                                   f"Error clearing page {i} before load: {e}", status='warning')
             
-            # Refresh all pages that have load_project_data method (skip home page)
+            # Load the project data using PROJECT_MANAGER (this populates RAMAN_DATA)
+            success = PROJECT_MANAGER.load_project(project_path)
+            if not success:
+                create_logs("WorkspacePage", "load_project_error", 
+                           f"Failed to load project from {project_path}", status='error')
+                return
+            
+            # Now refresh all pages that have load_project_data method (skip home page)
             for i in range(1, self.page_stack.count()):  # Start from 1 to skip home
                 widget = self.page_stack.widget(i)
                 if hasattr(widget, 'load_project_data'):

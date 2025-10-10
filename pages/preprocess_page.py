@@ -17,6 +17,12 @@ class PreprocessPage(QWidget):
         self.pipeline_steps: List[PipelineStep] = []
         self.current_step_widget = None
         
+        # Separate processing queue management
+        self.separate_processing_queue = []
+        self.separate_processing_count = 0
+        self.separate_processing_total = 0
+        self.current_separate_task = None  # Current task being processed
+        
         # Real-time preview attributes
         self.preview_data = None  # Current dataset for preview
         self.original_data = None  # Original unprocessed data
@@ -605,7 +611,11 @@ class PreprocessPage(QWidget):
                            f"Error previewing dataset {dataset_name}: {e}", status='error')
                 self._clear_preprocessing_history()
         else:
-            self._clear_preprocessing_history()
+            # Multiple datasets selected - keep global pipeline, just clear history display
+            self._clear_preprocessing_history_display_only()
+            # Restore global pipeline if we have it
+            if not self.pipeline_steps and self._global_pipeline_memory:
+                self._restore_global_pipeline_memory()
         
         # Show spectral data and store for preview
         all_dfs = []
@@ -721,7 +731,8 @@ class PreprocessPage(QWidget):
         # Scrollable area for parameters
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setMaximumHeight(300)
+        scroll_area.setMinimumHeight(220)  # Reduced to give more space to visualization
+        scroll_area.setMaximumHeight(320)  # Reduced to prevent taking too much space
         
         self.params_container = QWidget()
         self.params_layout = QVBoxLayout(self.params_container)
@@ -846,10 +857,10 @@ class PreprocessPage(QWidget):
         plot_layout.addLayout(preview_controls)
         
         self.plot_widget = MatplotlibWidget()
-        self.plot_widget.setMinimumHeight(300)  # Reduced from 400 for compact layout
+        self.plot_widget.setMinimumHeight(400)  # Increased from 350 for better visibility
         plot_layout.addWidget(self.plot_widget)
 
-        layout.addWidget(plot_group, 2)
+        layout.addWidget(plot_group, 3)  # Increased stretch factor from 2 to 3 for more space
 
         return right_panel
 
@@ -985,6 +996,62 @@ class PreprocessPage(QWidget):
             create_logs("PreprocessPage", "load_data_error", 
                        f"Critical error loading project data: {e}", status='error')
             self.showNotification.emit(f"Error loading data: {str(e)}", "error")   
+    
+    def clear_project_data(self):
+        """Clear all project data and reset preprocessing page state when returning to home."""
+        try:
+            # Clear global RAMAN_DATA dictionary
+            RAMAN_DATA.clear()
+            
+            # Clear all dataset lists
+            self.dataset_list_all.clear()
+            self.dataset_list_raw.clear()
+            self.dataset_list_preprocessed.clear()
+            
+            # Clear pipeline
+            self.pipeline_list.clear()
+            self.pipeline_steps = []
+            
+            # Clear original and processed data
+            self.original_data = None
+            self.processed_data = None
+            
+            # Clear selected datasets list
+            self.selected_datasets = []
+            
+            # Clear parameter widget
+            self._clear_parameter_widget()
+            self.current_step_widget = None
+            
+            # Clear output name
+            self.output_name_input.clear()
+            
+            # Clear visualization
+            self.plot_widget.clear_plot()
+            
+            # Reset preview state
+            if hasattr(self, 'preview_toggle_btn'):
+                self.preview_toggle_btn.setChecked(False)
+            
+            # Clear global pipeline memory
+            self._clear_global_memory()
+            
+            # Cancel any running processing
+            if self.processing_thread and self.processing_thread.isRunning():
+                self.processing_thread.cancel()
+                self.processing_thread.wait(1000)  # Wait up to 1 second
+            
+            # Reset UI state
+            self._reset_ui_state()
+            
+            # Disable lists until new project is loaded
+            self.dataset_list_all.setEnabled(False)
+            self.dataset_list_raw.setEnabled(False)
+            self.dataset_list_preprocessed.setEnabled(False)
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "clear_data_error", 
+                       f"Error clearing preprocessing page data: {e}", status='error')
     
     def export_dataset(self):
         """Export selected dataset(s) to file with format selection and metadata export."""
@@ -1558,10 +1625,6 @@ class PreprocessPage(QWidget):
         
         # Trigger automatic preview update
         self._schedule_preview_update()
-        
-        create_logs("PreprocessPage", "step_toggled", 
-                   f"Step {actual_step_index} ({step.method}) {'enabled' if enabled else 'disabled'}", 
-                   status='info')
 
     def toggle_all_existing_steps(self):
         """Toggle all existing steps on/off."""
@@ -1663,9 +1726,10 @@ class PreprocessPage(QWidget):
         # Connect parameter signals for automatic preview updates
         self._connect_parameter_signals(self.current_step_widget)
         
-        # Update group title
+        # Update group title with category and method name
+        category_display = step.category.replace('_', ' ').title()
         self.params_group.setTitle(
-            LOCALIZE("PREPROCESS.parameters_for_step", step=step.method)
+            f"{LOCALIZE('PREPROCESS.parameters_title')} - {category_display}: {step.method}"
         )
 
     def _clear_parameter_widget(self):
@@ -1772,6 +1836,26 @@ class PreprocessPage(QWidget):
             dialog = PipelineConfirmationDialog(enabled_pipeline_steps, output_name, selected_datasets, self)
             if dialog.exec() != QDialog.DialogCode.Accepted:
                 return
+            
+            # Get the actual selected datasets from dialog (user may have unchecked some)
+            confirmed_datasets = dialog.get_selected_datasets()
+            if not confirmed_datasets:
+                self.showNotification.emit(LOCALIZE("PREPROCESS.no_datasets_selected"), "error")
+                return
+            
+            # Get output mode (combined, separate, or single)
+            output_mode = dialog.get_output_mode()
+            
+            # Filter input_dfs to only include confirmed datasets
+            confirmed_input_dfs = []
+            for dataset_name in confirmed_datasets:
+                if dataset_name in RAMAN_DATA:
+                    confirmed_input_dfs.append(RAMAN_DATA[dataset_name])
+            
+            if not confirmed_input_dfs:
+                self.showNotification.emit(LOCALIZE("PREPROCESS.no_valid_datasets"), "error")
+                return
+                
         except Exception as e:
             create_logs("PreprocessPage", "dialog_error", 
                        f"Error showing confirmation dialog: {e}", status='error')
@@ -1785,31 +1869,76 @@ class PreprocessPage(QWidget):
             # Filter to only enabled steps for processing
             enabled_steps = [step for step in self.pipeline_steps if step.enabled]
             
-            # Create and start processing thread
-            self.processing_thread = PreprocessingThread(
-                enabled_steps,  # Pass only enabled steps
-                input_dfs, 
-                output_name, 
-                self
-            )
-            
-            # Connect signals with enhanced error handling
-            self.processing_thread.progress_updated.connect(self.on_progress_updated)
-            self.processing_thread.status_updated.connect(self.on_status_updated)
-            self.processing_thread.step_completed.connect(self.on_step_completed)
-            self.processing_thread.step_failed.connect(self.on_step_failed)
-            self.processing_thread.processing_completed.connect(self.on_processing_completed)
-            self.processing_thread.processing_error.connect(self.on_processing_error)
-            self.processing_thread.finished.connect(self._on_thread_finished)
-            
-            # Start the thread
-            self.processing_thread.start()
-            
-            create_logs("PreprocessPage", "processing_started", 
-                       f"Started preprocessing with {len(input_dfs)} datasets and {len(enabled_steps)} enabled steps", 
-                       status='info')
-            
-            self.showNotification.emit(LOCALIZE("PREPROCESS.processing_started"), "info")
+            # Handle different output modes
+            if output_mode == 'separate':
+                # Initialize separate processing state
+                self.separate_processing_queue = []
+                self.separate_processing_count = 0
+                self.separate_processing_total = len(confirmed_datasets)
+                
+                # Prepare all processing tasks
+                for dataset_name, df in zip(confirmed_datasets, confirmed_input_dfs):
+                    separate_output_name = f"{dataset_name}_processed"
+                    
+                    # Check if output name already exists
+                    if separate_output_name in RAMAN_DATA:
+                        reply = QMessageBox.question(
+                            self, 
+                            LOCALIZE("PREPROCESS.overwrite_title"),
+                            LOCALIZE("PREPROCESS.overwrite_message", name=separate_output_name),
+                            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                            QMessageBox.StandardButton.No
+                        )
+                        if reply == QMessageBox.StandardButton.No:
+                            continue
+                    
+                    # Add task to queue with pipeline steps for metadata
+                    self.separate_processing_queue.append({
+                        'dataset_name': dataset_name,
+                        'df': df,
+                        'output_name': separate_output_name,
+                        'enabled_steps': enabled_steps,
+                        'pipeline_steps': self.pipeline_steps.copy()  # Copy pipeline for metadata
+                    })
+                
+                # Start processing first dataset
+                if self.separate_processing_queue:
+                    self._process_next_separate_dataset()
+                    self.showNotification.emit(
+                        LOCALIZE("PREPROCESS.processing_started") + f" ({self.separate_processing_total} datasets separately)", 
+                        "info"
+                    )
+                else:
+                    self._reset_ui_state()
+                    self.showNotification.emit(LOCALIZE("PREPROCESS.no_valid_datasets"), "error")
+                
+            else:
+                # Combined or single mode - use original logic
+                # Create and start processing thread
+                self.processing_thread = PreprocessingThread(
+                    enabled_steps,  # Pass only enabled steps
+                    confirmed_input_dfs,  # Use confirmed datasets
+                    output_name, 
+                    self
+                )
+                
+                # Connect signals with enhanced error handling
+                self.processing_thread.progress_updated.connect(self.on_progress_updated)
+                self.processing_thread.status_updated.connect(self.on_status_updated)
+                self.processing_thread.step_completed.connect(self.on_step_completed)
+                self.processing_thread.step_failed.connect(self.on_step_failed)
+                self.processing_thread.processing_completed.connect(self.on_processing_completed)
+                self.processing_thread.processing_error.connect(self.on_processing_error)
+                self.processing_thread.finished.connect(self._on_thread_finished)
+                
+                # Start the thread
+                self.processing_thread.start()
+                
+                create_logs("PreprocessPage", "processing_started", 
+                           f"Started preprocessing with {len(confirmed_input_dfs)} datasets and {len(enabled_steps)} enabled steps", 
+                           status='info')
+                
+                self.showNotification.emit(LOCALIZE("PREPROCESS.processing_started"), "info")
             
         except Exception as e:
             create_logs("PreprocessPage", "thread_creation_error", 
@@ -1817,11 +1946,162 @@ class PreprocessPage(QWidget):
             self.showNotification.emit(f"Processing error: {str(e)}", "error")
             self._reset_ui_state()
 
+    def _process_next_separate_dataset(self):
+        """Process the next dataset in the separate processing queue."""
+        try:
+            create_logs("PreprocessPage", "_process_next_called", 
+                       f"Processing next dataset. Queue size: {len(self.separate_processing_queue)}, Completed: {self.separate_processing_count}/{self.separate_processing_total}", 
+                       status='info')
+            
+            if not self.separate_processing_queue:
+                # All datasets processed - show completion notification
+                create_logs("PreprocessPage", "separate_processing_complete", 
+                           f"All {self.separate_processing_count}/{self.separate_processing_total} datasets processed successfully", 
+                           status='info')
+                
+                # Reset counters
+                self.separate_processing_count = 0
+                self.separate_processing_total = 0
+                
+                self._reset_ui_state()
+                self.showNotification.emit(
+                    f"Successfully processed all datasets separately", 
+                    "success"
+                )
+                return
+            
+            # Check if thread is still running (safety check)
+            if self.processing_thread and self.processing_thread.isRunning():
+                create_logs("PreprocessPage", "thread_still_running", 
+                           "WARNING: Previous thread still running, waiting...", 
+                           status='warning')
+                # Retry after delay
+                QTimer.singleShot(200, self._process_next_separate_dataset)
+                return
+            
+            # Get next task
+            task = self.separate_processing_queue.pop(0)
+            self.separate_processing_count += 1
+            
+            # Store current task for handler to access
+            self.current_separate_task = task
+            
+            create_logs("PreprocessPage", "starting_dataset", 
+                       f"Starting dataset {self.separate_processing_count}/{self.separate_processing_total}: {task['dataset_name']}", 
+                       status='info')
+            
+            # Create thread for this dataset
+            self.processing_thread = PreprocessingThread(
+                task['enabled_steps'],
+                [task['df']],
+                task['output_name'],
+                self
+            )
+            
+            # Connect signals
+            self.processing_thread.progress_updated.connect(self.on_progress_updated)
+            self.processing_thread.status_updated.connect(self.on_status_updated)
+            self.processing_thread.step_completed.connect(self.on_step_completed)
+            self.processing_thread.step_failed.connect(self.on_step_failed)
+            self.processing_thread.processing_completed.connect(self._on_separate_processing_completed)
+            self.processing_thread.processing_error.connect(self._on_separate_processing_error)
+            self.processing_thread.finished.connect(self._on_separate_thread_finished)
+            
+            # Start processing
+            self.processing_thread.start()
+            
+            create_logs("PreprocessPage", "separate_processing_started", 
+                       f"Thread started for {task['dataset_name']} -> {task['output_name']}", 
+                       status='info')
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "_process_next_error", 
+                       f"Error processing next dataset: {e}\n{traceback.format_exc()}", 
+                       status='error')
+            self.showNotification.emit(f"Error: {str(e)}", "error")
+            # Try to continue with next dataset
+            QTimer.singleShot(100, self._process_next_separate_dataset)
+
+    def _on_separate_processing_completed(self, result_data):
+        """Handle completion of one dataset in separate processing mode."""
+        try:
+            create_logs("PreprocessPage", "separate_processing_result", 
+                       f"Dataset {self.separate_processing_count}/{self.separate_processing_total} completed successfully", 
+                       status='info')
+            
+            # Process result using standard handler
+            self.on_processing_completed(result_data)
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "separate_processing_result_error", 
+                       f"Error handling result: {e}\n{traceback.format_exc()}", 
+                       status='error')
+            self.showNotification.emit(f"Error processing result: {str(e)}", "error")
+
+    def _on_separate_processing_error(self, error_msg):
+        """Handle error during separate processing."""
+        try:
+            create_logs("PreprocessPage", "separate_processing_error", 
+                       f"Dataset {self.separate_processing_count}/{self.separate_processing_total} failed: {error_msg}", 
+                       status='error')
+            self.showNotification.emit(error_msg, "error")
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "separate_error_handler_error", 
+                       f"Error in error handler: {e}\n{traceback.format_exc()}", 
+                       status='error')
+
+    def _on_separate_thread_finished(self):
+        """Clean up thread after separate processing (don't reset UI yet)."""
+        try:
+            create_logs("PreprocessPage", "separate_thread_finished", 
+                       f"Thread finished for dataset {self.separate_processing_count}/{self.separate_processing_total}", 
+                       status='info')
+            
+            if self.processing_thread:
+                # Disconnect all signals
+                try:
+                    self.processing_thread.progress_updated.disconnect()
+                    self.processing_thread.status_updated.disconnect()
+                    self.processing_thread.step_completed.disconnect()
+                    self.processing_thread.step_failed.disconnect()
+                    self.processing_thread.processing_completed.disconnect()
+                    self.processing_thread.processing_error.disconnect()
+                    self.processing_thread.finished.disconnect()
+                    
+                    create_logs("PreprocessPage", "signals_disconnected", 
+                               "All signals disconnected successfully", status='info')
+                except Exception as e:
+                    create_logs("PreprocessPage", "signal_disconnect_error", 
+                               f"Error disconnecting signals: {e}\n{traceback.format_exc()}", 
+                               status='warning')
+                
+                # Wait for thread to fully finish
+                if self.processing_thread.isRunning():
+                    create_logs("PreprocessPage", "waiting_for_thread", 
+                               "Thread still running, waiting...", status='info')
+                    self.processing_thread.wait(1000)  # Wait up to 1 second
+                
+                # Clean up thread reference
+                self.processing_thread.deleteLater()
+                self.processing_thread = None
+                
+                create_logs("PreprocessPage", "thread_cleanup_complete", 
+                           "Thread cleanup completed", status='info')
+            
+            # Use QTimer to delay next processing (allows thread cleanup to complete)
+            QTimer.singleShot(100, self._process_next_separate_dataset)
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "separate_thread_cleanup_error", 
+                        f"Error during separate thread cleanup: {e}\n{traceback.format_exc()}", 
+                        status='error')
+            # Still try to continue with next dataset
+            QTimer.singleShot(100, self._process_next_separate_dataset)
+
     def _on_thread_finished(self):
         """Handle thread completion (success or failure) with proper cleanup."""
         try:
-            create_logs("PreprocessPage", "thread_finished", "Processing thread finished", status='info')
-            
             # Ensure thread is properly cleaned up
             if self.processing_thread:
                 # Disconnect all signals to prevent memory leaks
@@ -1843,14 +2123,11 @@ class PreprocessPage(QWidget):
                 # Clean up thread reference
                 self.processing_thread.deleteLater()
                 self.processing_thread = None
-                
-                create_logs("PreprocessPage", "thread_cleanup", "Processing thread cleaned up successfully", status='info')
             
             # Only reset UI if it wasn't already reset by completion handlers
             # This handles cases where the thread finished due to cancellation or error
             if self.progress_bar.isVisible():
                 self._reset_ui_state()
-                create_logs("PreprocessPage", "ui_reset", "UI state reset after thread completion", status='info')
                 
         except Exception as e:
             create_logs("PreprocessPage", "thread_cleanup_error", 
@@ -1908,13 +2185,22 @@ class PreprocessPage(QWidget):
     def on_processing_completed(self, result_data):
         """Handle completion of preprocessing with detailed feedback."""
         try:
+            create_logs("PreprocessPage", "on_processing_completed_called", 
+                       f"Handler called with result_data keys: {result_data.keys()}", 
+                       status='info')
+            
             processed_df = result_data['processed_df']
             successful_steps = result_data['successful_steps']
             failed_steps = result_data['failed_steps']
             total_steps = result_data['total_steps']
             success_rate = result_data['success_rate']
             
-            output_name = self.output_name_edit.text().strip()
+            # Use output_name from result_data (important for separate processing mode)
+            output_name = result_data.get('output_name', self.output_name_edit.text().strip())
+            
+            create_logs("PreprocessPage", "processing_completed_data", 
+                       f"Processing completed for '{output_name}': {len(successful_steps)}/{total_steps} steps successful", 
+                       status='info')
             
             # Show failed steps dialog if there are failures
             if failed_steps:
@@ -1924,9 +2210,19 @@ class PreprocessPage(QWidget):
             # Create comprehensive metadata including preprocessing history
             selected_items = self.dataset_list.selectedItems()
             
+            # For separate processing, use pipeline from current task
+            # For combined/single mode, use self.pipeline_steps
+            if hasattr(self, 'current_separate_task') and self.current_separate_task:
+                pipeline_steps_for_metadata = self.current_separate_task.get('pipeline_steps', self.pipeline_steps)
+                create_logs("PreprocessPage", "using_task_pipeline", 
+                           f"Using pipeline from separate task with {len(pipeline_steps_for_metadata)} steps", 
+                           status='info')
+            else:
+                pipeline_steps_for_metadata = self.pipeline_steps
+            
             # Save pipeline steps data for future reference
             pipeline_data = []
-            for step in self.pipeline_steps:
+            for step in pipeline_steps_for_metadata:
                 pipeline_data.append({
                     "category": step.category,
                     "method": step.method,
@@ -1954,9 +2250,16 @@ class PreprocessPage(QWidget):
             }
             
             # Save to project
+            create_logs("PreprocessPage", "saving_to_project", 
+                       f"Attempting to save '{output_name}' with shape {processed_df.shape}", 
+                       status='info')
             success = PROJECT_MANAGER.add_dataframe_to_project(output_name, processed_df, metadata)
             
             if success:
+                create_logs("PreprocessPage", "save_success", 
+                           f"Successfully saved '{output_name}' to project", 
+                           status='info')
+                
                 # Show success message with summary
                 if failed_steps:
                     message = LOCALIZE("PREPROCESS.processing_success_with_failures", 
@@ -1987,9 +2290,10 @@ class PreprocessPage(QWidget):
                 )
                 self.plot_widget.update_plot(fig)
                 
-                # Clear form
-                self.clear_pipeline()
-                self.output_name_edit.clear()
+                # Clear form only if not in separate processing mode
+                if not self.separate_processing_queue and self.separate_processing_count == 0:
+                    self.clear_pipeline()
+                    self.output_name_edit.clear()
                 
             else:
                 self.showNotification.emit(LOCALIZE("PREPROCESS.save_error"), "error")
@@ -2001,7 +2305,15 @@ class PreprocessPage(QWidget):
                     f"Error processing results: {e}\n{traceback.format_exc()}", 
                     status='error')
         finally:
-            self._reset_ui_state()
+            # Only reset UI if not in separate processing mode
+            if not self.separate_processing_queue and self.separate_processing_count == 0:
+                create_logs("PreprocessPage", "resetting_ui_single_mode", 
+                           "Single mode complete, resetting UI", status='info')
+                self._reset_ui_state()
+            else:
+                create_logs("PreprocessPage", "separate_mode_continue", 
+                           f"Separate mode: {len(self.separate_processing_queue)} remaining, not resetting UI", 
+                           status='info')
 
     def on_processing_error(self, error_msg):
         """Handle processing errors."""
@@ -2120,8 +2432,8 @@ class PreprocessPage(QWidget):
                                                 default_disabled=True, 
                                                 source_dataset=dataset_name)
         elif clicked_button == cancel_btn:
-            # TODO: Need to revert dataset selection to previous one
-            # For now, just keep the current pipeline and don't switch datasets
+            # User cancelled the switch - keep current dataset and pipeline
+            # This is acceptable behavior: user stays on current dataset
             return
         else:  # use_current_btn
             # Keep existing pipeline steps - just restore the backup if available
@@ -2147,12 +2459,20 @@ class PreprocessPage(QWidget):
 
     def _load_preprocessing_pipeline(self, pipeline_data: List[Dict], default_disabled: bool = False, source_dataset: str = None):
         """Load existing preprocessing pipeline for editing/extension."""
+        create_logs("PreprocessPage", "_load_preprocessing_pipeline_called", 
+                   f"Loading pipeline: {len(pipeline_data)} steps, default_disabled={default_disabled}, source={source_dataset}", 
+                   status='info')
+        
         self.pipeline_steps.clear()
         self.pipeline_list.clear()
         
         has_existing_steps = False
         
         for i, step_data in enumerate(pipeline_data):
+            create_logs("PreprocessPage", "loading_step", 
+                       f"Step {i+1}: {step_data['category']}.{step_data['method']}", 
+                       status='info')
+            
             step = PipelineStep(
                 step_data['category'],
                 step_data['method'], 
@@ -2181,6 +2501,10 @@ class PreprocessPage(QWidget):
             step_widget.toggled.connect(self.on_step_toggled)
             item.setSizeHint(step_widget.sizeHint())
             self.pipeline_list.setItemWidget(item, step_widget)
+        
+        create_logs("PreprocessPage", "_load_preprocessing_pipeline_complete", 
+                   f"Loaded {len(self.pipeline_steps)} steps successfully", 
+                   status='info')
         
         # Show toggle all button if there are existing steps
         if has_existing_steps:
@@ -2390,11 +2714,14 @@ class PreprocessPage(QWidget):
             
             # Update current step parameters from widget before applying pipeline
             current_row = self.pipeline_list.currentRow()
-            if current_row >= 0 and self.current_step_widget:
-                current_step = steps[current_row]
-                current_params = self.current_step_widget.get_parameters()
-                if current_params:
-                    current_step.params = current_params
+            if current_row >= 0 and self.current_step_widget and current_row < len(self.pipeline_steps):
+                # Get the actual step from the full pipeline list (not the filtered enabled steps)
+                current_step = self.pipeline_steps[current_row]
+                # Only update if this step is in the steps list being processed
+                if current_step in steps:
+                    current_params = self.current_step_widget.get_parameters()
+                    if current_params:
+                        current_step.params = current_params
             
             # Apply each enabled step
             for i, step in enumerate(steps):
@@ -2455,12 +2782,8 @@ class PreprocessPage(QWidget):
             # Work directly with DataFrame (original approach)
             processed_data = data.copy()
             
-            # Update current step parameters from widget before applying pipeline
-            current_row = self.pipeline_list.currentRow()
-            if current_row >= 0 and self.current_step_widget:
-                current_step = steps[current_row]
-                current_params = self.current_step_widget.get_parameters()
-                current_step.params = current_params
+            # DO NOT update parameters from current widget - each step has its own params
+            # The current_step_widget might be showing different step's parameters
             
             # Apply each enabled step
             for step in steps:
@@ -2470,7 +2793,7 @@ class PreprocessPage(QWidget):
                     
                 try:
                     
-                    # Get preprocessing method instance
+                    # Get preprocessing method instance with step's own parameters
                     method_info = PREPROCESSING_REGISTRY.get_method_info(step.category, step.method)
                     
                     if not method_info:
@@ -2478,6 +2801,7 @@ class PreprocessPage(QWidget):
                                    f"Method {step.category}.{step.method} not found in registry", status='warning')
                         continue
                     
+                    # Use step.params directly - don't contaminate with current widget params
                     method_instance = PREPROCESSING_REGISTRY.create_method_instance(
                         step.category, step.method, step.params
                     )
@@ -2532,7 +2856,7 @@ class PreprocessPage(QWidget):
                 except Exception as e:
                     # Log the error but continue with next step
                     create_logs("preview_method_error", "PreprocessPage", 
-                               f"Error applying {step.method}: {str(e)}", status='error')
+                               f"[{step.category}] Error applying {step.method} step_method: {str(e)}", status='error')
                     continue
             
 

@@ -229,7 +229,13 @@
             "method": "手法",
             "parameters": "パラメータ",
             "no_params": "デフォルトパラメータ",
-            "start_processing": "前処理を開始"
+            "start_processing": "前処理を開始",
+            "output_options_label": "出力グループ化オプション",
+            "output_combined": "すべてのデータセットを1つの出力に結合",
+            "output_combined_hint": "選択されたすべてのデータセットが統合され、指定した出力名で1つのデータセットとして保存されます。",
+            "output_separate": "各データセットを個別に処理",
+            "output_separate_hint": "各データセットが個別に処理され、元の名前に「_processed」サフィックスを付けて保存されます。",
+            "selected_datasets_label": "入力データセット（チェックして選択）"
         },
         "FAILED_STEPS_DIALOG": {
             "title": "前処理エラー詳細",

@@ -27,6 +27,8 @@ from .derivatives import Derivative
 from .advanced_normalization import QuantileNormalization, RankTransform, ProbabilisticQuotientNormalization
 from .feature_engineering import PeakRatioFeatures
 from .advanced_baseline import ButterworthHighPass
+from .kernel_denoise import Kernel
+from .background_subtraction import BackgroundSubtractor
 
 # Try to import deep learning module (requires PyTorch)
 try:
@@ -80,7 +82,7 @@ class PreprocessingStepRegistry:
                     "description": "Crop the intensity values and wavenumber axis to the specified range"
                 },
                 "BackgroundSubtractor": {
-                    "class": rp.preprocessing.misc.BackgroundSubtractor,
+                    "class": BackgroundSubtractor,
                     "default_params": {"background": None},
                     "param_info": {
                         "background": {"type": "optional", "description": "Fixed reference background to subtract"}
@@ -109,7 +111,7 @@ class PreprocessingStepRegistry:
                     "description": "Denoising based on Discrete Penalised Least Squares (Whittaker−Henderson smoothing)"
                 },
                 "Kernel": {
-                    "class": rp.preprocessing.denoise.Kernel,
+                    "class": Kernel,
                     "default_params": {"kernel_type": "uniform", "kernel_size": 7},
                     "param_info": {
                         "kernel_type": {"type": "choice", "choices": ["uniform", "gaussian", "triangular"], "description": "Type of kernel"},
@@ -549,7 +551,41 @@ class PreprocessingStepRegistry:
         method_class = method_info["class"]
         final_params = method_info["default_params"].copy()
         if params:
-            final_params.update(params)
+            # Convert parameter types based on param_info
+            param_info = method_info.get("param_info", {})
+            converted_params = {}
+            for key, value in params.items():
+                if key in param_info:
+                    param_type = param_info[key].get("type")
+                    if param_type == "int":
+                        converted_params[key] = int(value) if not isinstance(value, int) else value
+                    elif param_type in ("float", "scientific"):
+                        # scientific notation parameters are also floats
+                        converted_params[key] = float(value) if not isinstance(value, (int, float)) else value
+                    elif param_type == "list":
+                        # Convert string representation to list of integers
+                        if isinstance(value, str):
+                            import ast
+                            try:
+                                converted_params[key] = ast.literal_eval(value)
+                            except (ValueError, SyntaxError):
+                                converted_params[key] = value
+                        else:
+                            converted_params[key] = value
+                    elif param_type == "choice":
+                        # For choice parameters, try to convert to the appropriate type
+                        choices = param_info[key].get("choices", [])
+                        if choices and isinstance(choices[0], int):
+                            converted_params[key] = int(value) if not isinstance(value, int) else value
+                        elif choices and isinstance(choices[0], float):
+                            converted_params[key] = float(value) if not isinstance(value, float) else value
+                        else:
+                            converted_params[key] = value
+                    else:
+                        converted_params[key] = value
+                else:
+                    converted_params[key] = value
+            final_params.update(converted_params)
         
         try:
             return method_class(**final_params)

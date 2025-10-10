@@ -7,6 +7,13 @@
 This directory contains all project documentation, organized by component type for easy navigation and maintenance. All development work should reference and update these documents as appropriate.
 
 ### 🆕 Recent Major Updates (October 2025)
+- **October 8 UI/UX Polish** ✨
+  - See [`OCTOBER_8_2025_UI_IMPROVEMENTS.md`](./OCTOBER_8_2025_UI_IMPROVEMENTS.md) for complete details
+  - Fixed critical bug: Pipeline steps disappearing when selecting multiple datasets
+  - Enhanced confirmation dialog: Prominent output name, dataset checkboxes, output grouping options
+  - Optimized layout proportions: Better parameter/visualization section balance
+  - Simplified dialog header: 30% more compact while maintaining clarity
+  - Cleaned debug logging: Production-ready, error-focused logging
 - **Advanced Preprocessing Methods**: 6 new research-based preprocessing methods implemented for MGUS/MM classification
   - See [`reports_sumamry/PREPROCESSING_ENHANCEMENT_COMPLETE.md`](./reports_sumamry/PREPROCESSING_ENHANCEMENT_COMPLETE.md) for full details
   - New methods: Quantile Normalization, Rank Transform, PQN, Peak-Ratio Features, Butterworth High-Pass, CDAE

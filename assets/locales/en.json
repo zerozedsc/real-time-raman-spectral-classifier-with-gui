@@ -234,7 +234,13 @@
             "method": "Method",
             "parameters": "Parameters",
             "no_params": "Default parameters",
-            "start_processing": "Start Preprocessing"
+            "start_processing": "Start Preprocessing",
+            "output_options_label": "Output Grouping Options",
+            "output_combined": "Combine all datasets into one output",
+            "output_combined_hint": "All selected datasets will be merged and saved as a single dataset with the specified output name.",
+            "output_separate": "Process each dataset separately",
+            "output_separate_hint": "Each dataset will be processed individually and saved with its original name plus '_processed' suffix.",
+            "selected_datasets_label": "Input Datasets (check to include)"
         },
         "spectra_preview_title": "Spectra Preview",
         "processed_spectra_title": "{name} - Processed Spectra",

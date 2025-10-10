@@ -402,6 +402,58 @@ Refer to existing code for examples of proper documentation style.
 - Keep commits focused
 - Regular pushes to backup work
 
+## ⚠️ CRITICAL: Project Loading & Memory Management (Oct 8, 2025)
+
+### Project Loading Flow
+**ALWAYS follow this exact sequence:**
+```python
+# In workspace_page.py load_project():
+1. Clear all pages → clear_project_data() on each page
+2. Load project → PROJECT_MANAGER.load_project(project_path)  # ← CRITICAL
+3. Refresh pages → load_project_data() on each page
+```
+
+### Common Mistakes to Avoid
+❌ **WRONG**: Calling non-existent `set_current_project()`
+❌ **WRONG**: Not calling `PROJECT_MANAGER.load_project()` before `load_project_data()`
+❌ **WRONG**: Forgetting to clear `RAMAN_DATA` in `clear_project_data()`
+
+✅ **CORRECT**: `PROJECT_MANAGER.load_project(project_path)` populates `RAMAN_DATA`
+✅ **CORRECT**: Clear pages → Load project → Refresh pages
+✅ **CORRECT**: `RAMAN_DATA.clear()` in every `clear_project_data()` method
+
+### Global State Management
+- **RAMAN_DATA**: Dict[str, pd.DataFrame] in `utils.py` (line 16)
+- **PROJECT_MANAGER**: Singleton instance in `utils.py` (line 219)
+- **load_project()**: Reads pickle files, populates RAMAN_DATA (utils.py line 156)
+- **clear_project_data()**: Must clear RAMAN_DATA explicitly
+
+### Pipeline Index Safety
+**ALWAYS access full pipeline list, then check if in filtered list:**
+```python
+# ❌ WRONG (causes index out of range):
+current_step = steps[current_row]  # steps = enabled only
+
+# ✅ CORRECT:
+if current_row < len(self.pipeline_steps):
+    current_step = self.pipeline_steps[current_row]  # Full list
+    if current_step in steps:  # Check if enabled
+        # Update parameters...
+```
+
+### Parameter Type Conversion
+**Registry handles these types automatically:**
+- `int` → int(value)
+- `float` → float(value)
+- `scientific` → float(value)  # 1e6 → 1000000.0
+- `list` → ast.literal_eval(value)  # "[5,11,21]" → [5,11,21]
+- `choice` → type detection from choices[0]
+
+### Ramanspy Library Wrappers
+**Created wrappers for buggy ramanspy methods:**
+- `functions/preprocess/kernel_denoise.py` - Fixes numpy.uniform → numpy.random.uniform
+- `functions/preprocess/background_subtraction.py` - Fixes array comparison issues
+
 ## 🆘 Troubleshooting
 
 ### Common Issues
@@ -409,21 +461,29 @@ Refer to existing code for examples of proper documentation style.
 2. **Locale Missing**: Add keys to both en.json and ja.json
 3. **UI Not Updating**: Check signal/slot connections
 4. **Preview Issues**: Verify global memory persistence
+5. **Project Won't Load**: Check PROJECT_MANAGER.load_project() is called
+6. **Memory Persists**: Ensure RAMAN_DATA.clear() in clear_project_data()
+7. **Pipeline Errors**: Validate index access patterns (see above)
+8. **Parameter Errors**: Check param_info type definitions in registry
 
 ### Where to Look
 - **UI Issues**: `.docs/pages/` documentation
 - **Data Issues**: `.docs/functions/` and `data_loader.py`
 - **Widget Issues**: `.docs/widgets/` documentation
 - **Style Issues**: `configs/style/stylesheets.py`
+- **Project Loading**: `utils.py` (ProjectManager class)
+- **Pipeline Issues**: `pages/preprocess_page.py`, `pages/preprocess_page_utils/pipeline.py`
+- **Type Conversion**: `functions/preprocess/registry.py`
 
 ---
 
-**Version**: 1.0  
-**Last Updated**: October 1, 2025  
-**Next Review**: After export functionality implementation
+**Version**: 1.1  
+**Last Updated**: October 8, 2025  
+**Next Review**: After full system testing
 
 **Quick Links**:
 - [TODOS](./../.docs/TODOS.md)
 - [Project Overview](./PROJECT_OVERVIEW.md)
 - [Recent Changes](./RECENT_CHANGES.md)
 - [File Structure](./FILE_STRUCTURE.md)
+- [Bug Fixes Report](../FINAL_BUG_FIX_REPORT.md)

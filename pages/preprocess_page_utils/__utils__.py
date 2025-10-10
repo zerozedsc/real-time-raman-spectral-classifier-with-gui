@@ -11,7 +11,8 @@ from PySide6.QtWidgets import (
     QStackedWidget, QComboBox, QDoubleSpinBox, QSpinBox, QMessageBox,
     QCheckBox, QSlider, QTextEdit, QScrollArea, QFrame, QSplitter,
     QProgressBar, QApplication, QDialog, QDialogButtonBox, QTreeWidget,
-    QTreeWidgetItem, QFormLayout, QTabWidget, QSizePolicy
+    QTreeWidgetItem, QFormLayout, QTabWidget, QSizePolicy, QRadioButton,
+    QButtonGroup
 )
 from PySide6.QtCore import Signal, Qt, QSize, QThread, QTimer
 from PySide6.QtGui import QIcon

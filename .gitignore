@@ -211,5 +211,4 @@ logs/*
 *.*.pyc
 *.cpython-312.pyc
 __pycache__/
-.AGI-BANKS/
 .github/
