@@ -2,6 +2,651 @@
 
 ## Code Architecture Patterns
 
+### 0.0. Standardized Section Title Bar Pattern (October 14, 2025) 🆕⭐
+**PURPOSE**: Maintain visual consistency across all pages with standardized title bars  
+**GUIDELINE**: See `.AGI-BANKS/UI_TITLE_BAR_STANDARD.md` for comprehensive documentation
+
+**Quick Pattern**:
+```python
+def _create_section_with_standard_title(self, title_key: str, buttons: list = None) -> QGroupBox:
+    """Create section group with standardized title bar."""
+    section_group = QGroupBox()
+    section_group.setObjectName("modernSectionGroup")
+    
+    layout = QVBoxLayout(section_group)
+    layout.setContentsMargins(12, 4, 12, 12)
+    layout.setSpacing(10)
+    
+    # === STANDARDIZED TITLE BAR ===
+    title_widget = QWidget()
+    title_layout = QHBoxLayout(title_widget)
+    title_layout.setContentsMargins(0, 0, 0, 0)
+    title_layout.setSpacing(8)
+    
+    # Title label (always first)
+    title_label = QLabel(LOCALIZE(title_key))
+    title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+    title_layout.addWidget(title_label)
+    
+    # Stretch to push buttons right
+    title_layout.addStretch()
+    
+    # Add optional buttons (hint, action, save, toggle)
+    if buttons:
+        for button in buttons:
+            title_layout.addWidget(button)
+    
+    layout.addWidget(title_widget)
+    
+    # Add section content below
+    # ... your content here ...
+    
+    return section_group
+
+# Button Patterns
+def _create_hint_button(self, tooltip: str) -> QPushButton:
+    """Create standardized hint button (20x20px blue)."""
+    hint_btn = QPushButton("?")
+    hint_btn.setObjectName("hintButton")
+    hint_btn.setFixedSize(20, 20)
+    hint_btn.setToolTip(tooltip)
+    hint_btn.setCursor(Qt.PointingHandCursor)
+    hint_btn.setStyleSheet("""
+        QPushButton#hintButton {
+            background-color: #e7f3ff;
+            color: #0078d4;
+            border: 1px solid #90caf9;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        QPushButton#hintButton:hover {
+            background-color: #0078d4;
+            color: white;
+        }
+    """)
+    return hint_btn
+
+def _create_action_icon_button(self, icon_name: str, color: str, tooltip: str) -> QPushButton:
+    """Create standardized action icon button (24x24px with 14x14px icon)."""
+    btn = QPushButton()
+    btn.setObjectName("titleBarButton")
+    icon = load_svg_icon(get_icon_path(icon_name), color, QSize(14, 14))
+    btn.setIcon(icon)
+    btn.setIconSize(QSize(14, 14))
+    btn.setFixedSize(24, 24)
+    btn.setToolTip(tooltip)
+    btn.setCursor(Qt.PointingHandCursor)
+    btn.setStyleSheet("""
+        QPushButton#titleBarButton {
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            padding: 2px;
+        }
+        QPushButton#titleBarButton:hover {
+            background-color: #e7f3ff;
+            border-color: #0078d4;
+        }
+    """)
+    return btn
+
+def _create_save_icon_button(self, tooltip: str) -> QPushButton:
+    """Create standardized save icon button (24x24px green theme)."""
+    btn = QPushButton()
+    btn.setObjectName("titleBarButtonGreen")
+    icon = load_svg_icon(get_icon_path("save"), "#28a745", QSize(14, 14))
+    btn.setIcon(icon)
+    btn.setIconSize(QSize(14, 14))
+    btn.setFixedSize(24, 24)
+    btn.setToolTip(tooltip)
+    btn.setCursor(Qt.PointingHandCursor)
+    btn.setStyleSheet("""
+        QPushButton#titleBarButtonGreen {
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            padding: 2px;
+        }
+        QPushButton#titleBarButtonGreen:hover {
+            background-color: #d4edda;
+            border-color: #28a745;
+        }
+    """)
+    return btn
+
+def _create_delete_icon_button(self, tooltip: str) -> QPushButton:
+    """Create standardized delete icon button (24x24px red theme)."""
+    btn = QPushButton()
+    btn.setObjectName("titleBarButtonRed")
+    icon = load_svg_icon(get_icon_path("delete_all"), "#dc3545", QSize(14, 14))
+    btn.setIcon(icon)
+    btn.setIconSize(QSize(14, 14))
+    btn.setFixedSize(24, 24)
+    btn.setToolTip(tooltip)
+    btn.setCursor(Qt.PointingHandCursor)
+    btn.setStyleSheet("""
+        QPushButton#titleBarButtonRed {
+            background-color: transparent;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            padding: 2px;
+        }
+        QPushButton#titleBarButtonRed:hover {
+            background-color: #f8d7da;
+            border-color: #dc3545;
+        }
+        QPushButton#titleBarButtonRed:pressed {
+            background-color: #f5c6cb;
+        }
+    """)
+    return btn
+```
+
+**Design Specs**:
+- **Title**: 13px, font-weight 600, color #2c3e50
+- **Margins**: (12, 4, 12, 12)
+- **Spacing**: 8px between title elements
+- **Button Order**: [Title] [Stretch] [Hint] [Toggle] [Action] [Save] [Delete]
+- **Icon Sizes**: Hint 20x20px (no icon), Action/Save/Delete 24x24px (14x14px icon)
+- **Colors**: Blue #0078d4 (primary), Green #28a745 (save), Red #dc3545 (delete), Gray #6c757d (disabled)
+
+**Pages Compliant**:
+- ✅ Preprocessing Page (5 sections)
+- ✅ Data Package Page (4 sections)
+- 📋 ML/Analysis/Visualization/Real-Time pages (need update)
+
+**Reference**: `.AGI-BANKS/UI_TITLE_BAR_STANDARD.md` - Full specification and examples
+
+---
+
+### 0.1. Batch Import with Progress Dialog Pattern (October 14, 2025) 🆕
+**PURPOSE**: Import multiple datasets without freezing UI  
+**SOLUTION**: Modal progress dialog with real-time updates
+
+```python
+class BatchImportProgressDialog(QDialog):
+    """Progress dialog for batch import operations."""
+    def __init__(self, parent=None, total=0):
+        super().__init__(parent)
+        self.setWindowTitle(LOCALIZE("DATA_PACKAGE_PAGE.batch_import_progress_title"))
+        self.setModal(True)
+        self.setFixedSize(400, 150)
+        
+        layout = QVBoxLayout(self)
+        
+        # Message label
+        message_label = QLabel(LOCALIZE("DATA_PACKAGE_PAGE.batch_import_progress_message"))
+        layout.addWidget(message_label)
+        
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, total)
+        self.progress_bar.setValue(0)
+        layout.addWidget(self.progress_bar)
+        
+        # Current folder label
+        folder_layout = QHBoxLayout()
+        folder_layout.addWidget(QLabel(LOCALIZE("DATA_PACKAGE_PAGE.processing_folder")))
+        self.current_folder_label = QLabel("")
+        self.current_folder_label.setStyleSheet("font-weight: bold;")
+        folder_layout.addWidget(self.current_folder_label)
+        folder_layout.addStretch()
+        layout.addLayout(folder_layout)
+        
+        # Status label (✓ X | ✗ Y format)
+        status_layout = QHBoxLayout()
+        status_layout.addWidget(QLabel(LOCALIZE("DATA_PACKAGE_PAGE.import_status")))
+        self.status_label = QLabel("✓ 0 | ✗ 0")
+        self.status_label.setStyleSheet("font-weight: bold;")
+        status_layout.addWidget(self.status_label)
+        status_layout.addStretch()
+        layout.addLayout(status_layout)
+    
+    def update_progress(self, current: int, folder_name: str, success_count: int, fail_count: int):
+        """Update progress with real-time info."""
+        self.progress_bar.setValue(current)
+        self.current_folder_label.setText(folder_name)
+        self.status_label.setText(f"✓ {success_count} | ✗ {fail_count}")
+        QApplication.processEvents()  # CRITICAL: Keep UI responsive
+
+# Usage in batch import
+def _handle_batch_import(self, parent_path: str, subfolders: list):
+    """Handle batch import with progress dialog."""
+    # Create and show progress dialog
+    progress_dialog = BatchImportProgressDialog(self, total=len(subfolders))
+    progress_dialog.show()
+    
+    self.pending_datasets = {}
+    success_count = 0
+    failed_count = 0
+    
+    for i, folder_name in enumerate(subfolders):
+        # Update progress dialog
+        progress_dialog.update_progress(i + 1, folder_name, success_count, failed_count)
+        
+        folder_path = os.path.join(parent_path, folder_name)
+        
+        try:
+            # Load data (your existing loading logic)
+            df = load_data_from_path(folder_path)
+            if isinstance(df, str):
+                failed_count += 1
+                continue
+            
+            # Store dataset
+            self.pending_datasets[folder_name] = {
+                'df': df,
+                'metadata': {},
+                'path': folder_path
+            }
+            success_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    # Close progress dialog
+    progress_dialog.close()
+    
+    # Show results
+    if success_count > 0:
+        self.showNotification.emit(
+            LOCALIZE("batch_import_success", count=success_count),
+            "success"
+        )
+```
+
+**Key Points**:
+- **Modal Dialog**: Prevents user interaction during import
+- **Real-time Updates**: Shows current folder being processed
+- **Success/Fail Counter**: Visual feedback on import results
+- **QApplication.processEvents()**: CRITICAL for keeping UI responsive
+- **Fixed Size**: Prevents dialog resize during updates
+
+---
+
+### 0.2. Delete All with Confirmation Pattern (October 14, 2025) 🆕
+**PURPOSE**: Safely delete all items with user confirmation  
+**USE CASE**: Bulk operations that are destructive and irreversible
+
+```python
+def _handle_delete_all_datasets(self):
+    """Delete all datasets from project with confirmation dialog."""
+    # Check if there's anything to delete
+    if not RAMAN_DATA:
+        self.showNotification.emit(
+            LOCALIZE("DATA_PACKAGE_PAGE.no_datasets_to_delete"),
+            "warning"
+        )
+        return
+    
+    # Count items for confirmation message
+    count = len(RAMAN_DATA)
+    
+    # Show confirmation dialog
+    reply = QMessageBox.question(
+        self,
+        LOCALIZE("DATA_PACKAGE_PAGE.delete_all_confirm_title"),
+        LOCALIZE("DATA_PACKAGE_PAGE.delete_all_confirm_text", count=count),
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        QMessageBox.StandardButton.No  # Default to No for safety
+    )
+    
+    if reply == QMessageBox.StandardButton.Yes:
+        # Delete all items
+        success_count = 0
+        for name in list(RAMAN_DATA.keys()):  # Use list() to avoid dict size change during iteration
+            if PROJECT_MANAGER.remove_dataframe_from_project(name):
+                success_count += 1
+        
+        # Show success notification
+        self.showNotification.emit(
+            LOCALIZE("DATA_PACKAGE_PAGE.delete_all_success", count=success_count),
+            "success"
+        )
+        
+        # Refresh UI
+        self.load_project_data()
+
+# Button in title bar (red theme)
+delete_all_btn = QPushButton()
+delete_all_btn.setObjectName("titleBarButtonRed")
+delete_all_icon = load_svg_icon(get_icon_path("delete_all"), "#dc3545", QSize(14, 14))
+delete_all_btn.setIcon(delete_all_icon)
+delete_all_btn.setFixedSize(24, 24)
+delete_all_btn.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.delete_all_tooltip"))
+delete_all_btn.clicked.connect(self._handle_delete_all_datasets)
+```
+
+**Key Points**:
+- **Safety Check**: Verify items exist before showing dialog
+- **Count Display**: Show number of items in confirmation message
+- **Default to No**: Safe default prevents accidental deletion
+- **List Conversion**: `list(dict.keys())` prevents iteration errors
+- **Success Feedback**: Notify user of operation result
+- **UI Refresh**: Update interface after deletion
+
+**Localization Required**:
+- `no_datasets_to_delete`: "No datasets to delete"
+- `delete_all_confirm_title`: "Confirm Delete All"
+- `delete_all_confirm_text`: "Are you sure you want to delete all {count} datasets?"
+- `delete_all_success`: "Successfully deleted {count} dataset(s)"
+- `delete_all_tooltip`: "Delete all datasets from project"
+
+---
+
+### 0.3. Optimized Preview Layout Pattern (October 14, 2025) 🆕
+**PURPOSE**: Maximize graph visibility by removing unnecessary wrappers  
+**ANTI-PATTERN**: Wrapping plot widget in QFrame reduces available space
+
+```python
+# ❌ ANTI-PATTERN: QFrame wrapper shrinks graph
+def _create_preview_group_bad(self) -> QGroupBox:
+    preview_layout = QVBoxLayout()
+    
+    # Wrapper frame reduces space
+    preview_frame = QFrame()
+    preview_frame.setFrameShape(QFrame.StyledPanel)
+    preview_layout.addWidget(preview_frame)  # No stretch factor
+    
+    plot_layout = QVBoxLayout(preview_frame)
+    plot_layout.addWidget(self.plot_widget)  # Graph constrained by wrapper
+    
+    return preview_group
+
+# ✅ CORRECT PATTERN: Direct widget placement with stretch factor
+def _create_preview_group_good(self) -> QGroupBox:
+    preview_group = QGroupBox()
+    preview_layout = QVBoxLayout(preview_group)
+    preview_layout.setContentsMargins(12, 4, 12, 12)
+    preview_layout.setSpacing(10)
+    
+    # Add standardized title bar
+    # ... title bar code ...
+    
+    # Add plot widget directly with stretch factor
+    preview_layout.addWidget(self.plot_widget, 1)  # Stretch factor 1
+    self.plot_widget.setMinimumHeight(300)  # Ensure readable minimum
+    
+    return preview_group
+```
+
+**Benefits**:
+- Graph uses all available vertical space
+- No unnecessary frame styling
+- Better readability for data analysis
+- Maintains minimum readable size
+
+---
+
+### 0.4. Smart Drag-Drop Detection Pattern (October 14, 2025) 🆕
+**PURPOSE**: Auto-detect whether dropped file is metadata or data  
+**USE CASE**: Enable drag-drop on entire groupbox, not just specific labels
+
+```python
+def _on_drag_enter(self, event):
+    """Handle drag enter for groupbox."""
+    if event.mimeData().hasUrls():
+        event.acceptProposedAction()
+
+def _on_drop(self, event):
+    """Handle drop with smart detection."""
+    urls = event.mimeData().urls()
+    if not urls:
+        return
+    
+    path = urls[0].toLocalFile()
+    
+    # Smart detection: metadata.json vs data
+    if os.path.basename(path).lower() == "metadata.json":
+        # It's metadata
+        self.meta_path_input.setText(path)
+        self.showNotification.emit(
+            LOCALIZE("metadata_loaded"),
+            "success"
+        )
+    else:
+        # It's data (file or folder)
+        self.data_path_input.setText(path)
+        self.showNotification.emit(
+            LOCALIZE("data_path_loaded"),
+            "success"
+        )
+    
+    event.acceptProposedAction()
+
+# Enable drag-drop on groupbox
+importer_group.setAcceptDrops(True)
+importer_group.dragEnterEvent = self._on_drag_enter
+importer_group.dropEvent = self._on_drop
+```
+
+**Benefits**:
+- No need for separate drag-drop areas
+- User can drop anywhere in section
+- Automatic detection of file type
+- Better UX with visual feedback
+
+---
+
+### 0.5. Batch Import Detection Pattern (October 14, 2025) 🆕
+Pattern for detecting and importing multiple datasets from parent folder containing subfolders.
+
+```python
+# Detection Pattern
+def _check_if_batch_import(self, parent_path: str, subfolders: list) -> bool:
+    """Check if selected path is batch import scenario."""
+    # Sample first few subfolders (min 3, avoid checking all for performance)
+    check_count = min(3, len(subfolders))
+    folders_with_data = 0
+    
+    for folder in subfolders[:check_count]:
+        folder_path = os.path.join(parent_path, folder)
+        # Check for supported data file extensions
+        has_data = any(
+            any(f.endswith(ext) for ext in ['.txt', '.asc', '.csv', '.pkl'])
+            for f in os.listdir(folder_path)
+            if os.path.isfile(os.path.join(folder_path, f))
+        )
+        if has_data:
+            folders_with_data += 1
+    
+    # If majority of sampled folders contain data, treat as batch import
+    return folders_with_data >= check_count * 0.5
+
+# Batch Loading Pattern
+def _handle_batch_import(self, parent_path: str, subfolders: list):
+    """Handle batch import of multiple datasets."""
+    self.pending_datasets = {}  # Store pending imports
+    success_count = 0
+    failed_count = 0
+    
+    for folder_name in subfolders:
+        folder_path = os.path.join(parent_path, folder_name)
+        
+        try:
+            # Load data from subfolder using existing loader
+            df = load_data_from_path(folder_path)
+            if isinstance(df, str):  # Error returned as string
+                failed_count += 1
+                continue
+            
+            # Check for metadata.json in subfolder
+            metadata = {}
+            metadata_path = os.path.join(folder_path, "metadata.json")
+            if os.path.exists(metadata_path):
+                meta = load_metadata_from_json(metadata_path)
+                if not isinstance(meta, str):
+                    metadata = meta
+            
+            # Store in pending datasets dictionary
+            self.pending_datasets[folder_name] = {
+                'df': df,
+                'metadata': metadata,
+                'path': folder_path
+            }
+            success_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    if success_count > 0:
+        # Populate dataset selector for preview
+        self.dataset_selector.clear()
+        self.dataset_selector.addItems(sorted(self.pending_datasets.keys()))
+        self.dataset_selector.setVisible(True)
+        
+        # Show first dataset preview
+        first_dataset = self.dataset_selector.currentText()
+        dataset_info = self.pending_datasets[first_dataset]
+        self.update_preview_display(dataset_info['df'], dataset_info.get('metadata', {}))
+        
+        # Notify user
+        self.showNotification.emit(
+            LOCALIZE("batch_import_info", count=success_count),
+            "success"
+        )
+
+# Batch Add to Project Pattern
+def _handle_batch_add_to_project(self):
+    """Add all pending datasets to project."""
+    success_count = 0
+    
+    for dataset_name, dataset_info in self.pending_datasets.items():
+        df = dataset_info.get('df')
+        metadata = dataset_info.get('metadata', {})
+        
+        # Handle name conflicts with auto-suffix
+        if dataset_name in RAMAN_DATA:
+            base_name = dataset_name
+            counter = 1
+            while f"{base_name}_{counter}" in RAMAN_DATA:
+                counter += 1
+            dataset_name = f"{base_name}_{counter}"
+        
+        # Add to project
+        if PROJECT_MANAGER.add_dataframe_to_project(dataset_name, df, metadata):
+            success_count += 1
+    
+    # Notify and refresh
+    if success_count > 0:
+        self.showNotification.emit(
+            LOCALIZE("batch_import_success", count=success_count),
+            "success"
+        )
+        self.load_project_data()
+        self.clear_importer_fields()
+```
+
+**Key Principles:**
+1. **Sampling for Performance:** Check only first 3 folders instead of all
+2. **Graceful Degradation:** Count successes/failures, continue on errors
+3. **Auto-Conflict Resolution:** Add suffix for duplicate names
+4. **Metadata Preservation:** Auto-load metadata.json from each folder
+5. **User Feedback:** Show clear notifications with counts
+
+**Use Cases:**
+- Medical imaging datasets (100+ patient folders)
+- Multi-sample experiments (many measurement runs)
+- Time-series data (daily/weekly folders)
+- Multi-instrument data (folder per device)
+
+### 0.2. Auto-Preview Pattern (October 14, 2025) 🆕
+Pattern for automatic data preview with user control toggle.
+
+```python
+# Toggle State Management
+class DataPage(QWidget):
+    def __init__(self):
+        self.auto_preview_enabled = True  # Feature flag
+        
+    def _toggle_auto_preview(self):
+        """Toggle auto-preview on/off."""
+        self.auto_preview_enabled = not self.auto_preview_enabled
+        self._update_auto_preview_icon()
+    
+    def _update_auto_preview_icon(self):
+        """Update icon based on state."""
+        if self.auto_preview_enabled:
+            icon = load_svg_icon(get_icon_path("eye_open"), "#0078d4", QSize(14, 14))
+            tooltip = LOCALIZE("auto_preview_enabled")
+        else:
+            icon = load_svg_icon(get_icon_path("eye_close"), "#6c757d", QSize(14, 14))
+            tooltip = LOCALIZE("auto_preview_disabled")
+        self.auto_preview_btn.setIcon(icon)
+        self.auto_preview_btn.setToolTip(tooltip)
+
+# Auto-Trigger Pattern
+def _set_data_path(self, path: str):
+    """Set path and auto-preview if enabled."""
+    self.data_path_edit.setText(path)
+    
+    # Trigger auto-preview conditionally
+    if self.auto_preview_enabled and path:
+        self.handle_preview_data()
+
+# Manual Fallback
+self.preview_button.clicked.connect(self.handle_preview_data)  # Always available
+```
+
+**Key Principles:**
+1. **User Control:** Toggle button for enabling/disabling
+2. **Visual Feedback:** Eye icon changes (open/closed)
+3. **Manual Fallback:** Preview button always works regardless of toggle
+4. **State Persistence:** Flag stored in instance attribute
+5. **Clear Indication:** Tooltip shows current state
+
+### 0.3. Metadata Auto-Fill Pattern (October 14, 2025) 🆕
+Pattern for automatic metadata detection and loading from JSON files.
+
+```python
+# Auto-Detection Pattern
+def _handle_single_import(self, data_path: str):
+    """Import with auto-metadata detection."""
+    df = load_data_from_path(data_path)
+    
+    # Check for metadata.json in same folder as data
+    if os.path.isdir(data_path):
+        auto_meta_path = os.path.join(data_path, "metadata.json")
+        if os.path.exists(auto_meta_path):
+            meta = load_metadata_from_json(auto_meta_path)
+            if not isinstance(meta, str):  # Success (not error string)
+                self.preview_metadata = meta
+                self.meta_path_edit.setText(auto_meta_path)
+                self.showNotification.emit(
+                    LOCALIZE("metadata_autofilled"),
+                    "info"
+                )
+                # Auto-fill editor fields
+                self._set_metadata_in_editor(meta)
+            else:
+                self.preview_metadata = {}
+        else:
+            self.showNotification.emit(
+                LOCALIZE("no_metadata_found"),
+                "info"
+            )
+            self.preview_metadata = {}
+
+# Manual Override Pattern
+# User can still manually select different metadata file
+browse_meta_btn.clicked.connect(self.browse_for_metadata)
+
+# Editor Update Pattern
+if self.meta_editor_group.isChecked():
+    # User edited metadata takes precedence
+    self.preview_metadata = self._get_metadata_from_editor()
+```
+
+**Key Principles:**
+1. **Non-Intrusive:** Only auto-fills if metadata.json exists
+2. **Clear Notification:** Tell user when metadata was auto-filled
+3. **Manual Override:** User can browse for different metadata file
+4. **Editor Priority:** Manual edits take precedence over auto-filled
+5. **Graceful Fallback:** Empty dict if no metadata found
+
 ### 0. Dynamic Section Title Pattern (October 10, 2025) 🆕
 Dynamic updating of section titles to reflect current context/state.
 

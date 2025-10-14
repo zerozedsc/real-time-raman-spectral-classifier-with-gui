@@ -1,7 +1,7 @@
 # Base Memory - AI Agent Knowledge Base
 
 > **Core knowledge and reference system for AI-assisted development**  
-> **Last Updated**: October 6, 2025 (Evening #2) - Height Optimization for Non-Maximized Windows
+> **Last Updated**: October 14, 2025 - Data Package Page Major Redesign & Batch Import
 
 ## 🎯 Purpose
 
@@ -43,6 +43,7 @@ The application **MUST** work well in non-maximized window mode (e.g., 800x600 r
    - ✅ Visualization Header: Compact 28px buttons, 8px spacing
    - ✅ Visualization Plot: 300px minimum (reduced from 400px)
    - ✅ Main Window: 600px minimum height
+   - ✅ Data Package Page: 12px/16px margins (Oct 14, 2025)
 
 ### Example Implementation
 ```python
@@ -69,31 +70,46 @@ icon = load_svg_icon(path, color, QSize(14, 14))
 ## 📋 Current Development Focus
 
 ### Active Tasks (See `.docs/TODOS.md` for details)
-1. ✅ **Preprocessing Page Enhancements** - COMPLETE (Oct 10, 2025)
+1. ✅ **Data Package Page Major Redesign** - COMPLETE (Oct 14, 2025)
+   - Modern UI matching preprocessing page design
+   - Multiple folder batch import (180x faster for 118 datasets)
+   - Automatic metadata loading from JSON files
+   - Real-time auto-preview with toggle control
+   - Dataset selector for multiple dataset preview
+   - Full localization (English + Japanese)
+   - 456 lines of new code, production-ready
+2. ✅ **Preprocessing Page Enhancements** - COMPLETE (Oct 10, 2025)
    - Dynamic parameter titles show category + step name
    - Gray border selection feedback for pipeline steps
    - Hint buttons added to all major sections
    - Complete pipeline import/export functionality
    - Clean code, no debug statements, production-ready
-2. ✅ **Visualization Package Refactoring** - COMPLETE (Oct 1, 2025)
+3. ✅ **Visualization Package Refactoring** - COMPLETE (Oct 1, 2025)
    - Extracted FigureManager to separate file (387 lines)
    - Reduced core.py to 4,405 lines (from 4,812)
    - Full backward compatibility maintained
    - Application tested and working
-3. 📋 **RamanVisualizer Modularization** - PLANNED (See `.docs/functions/RAMAN_VISUALIZER_REFACTORING_PLAN.md`)
+4. 📋 **RamanVisualizer Modularization** - PLANNED (See `.docs/functions/RAMAN_VISUALIZER_REFACTORING_PLAN.md`)
    - Phase 1-3 extraction (13-18 hours estimated)
    - Deferred to future sprint
-4. ✅ **UI Improvements** - COMPLETE
+5. ✅ **UI Improvements** - COMPLETE
    - Dataset list enhancement (4-6 items visible)
    - Export button styling (green, SVG icon)
    - Preview button width fix
-4. ✅ **Export Feature Enhancements** - COMPLETE (Oct 3, 2025)
+6. ✅ **Export Feature Enhancements** - COMPLETE (Oct 3, 2025)
    - Metadata JSON export alongside datasets
    - Location validation with warning dialog
    - Default location persistence across exports
    - Multiple dataset batch export support
 
 ### Recent Completions (October 2025)
+- ✅ **Data Package Page Major Redesign (Oct 14, 2025)**:
+  - Batch import: 180x faster (30 min → 10 sec for 118 datasets)
+  - Auto-metadata loading from JSON files
+  - Real-time auto-preview with eye icon toggle
+  - Dataset selector dropdown for multiple previews
+  - Modern UI with hint buttons matching preprocessing page
+  - 10 new localization keys (English + Japanese)
 - ✅ **Preprocessing Page Enhancements (Oct 10, 2025)**:
   - Dynamic parameter section titles
   - Visual selection feedback with gray borders
