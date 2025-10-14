@@ -110,7 +110,87 @@ class PreprocessPage(QWidget):
         title_label = QLabel(LOCALIZE("PREPROCESS.pipeline_building_title"))
         title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
         title_layout.addWidget(title_label)
+        
+        # Add hint button for pipeline building
+        pipeline_hint_btn = QPushButton("?")
+        pipeline_hint_btn.setObjectName("hintButton")
+        pipeline_hint_btn.setFixedSize(20, 20)
+        pipeline_hint_btn.setToolTip(LOCALIZE("PREPROCESS.pipeline_building_hint"))
+        pipeline_hint_btn.setCursor(Qt.PointingHandCursor)
+        pipeline_hint_btn.setStyleSheet("""
+            QPushButton#hintButton {
+                background-color: #e7f3ff;
+                color: #0078d4;
+                border: 1px solid #90caf9;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 0px;
+            }
+            QPushButton#hintButton:hover {
+                background-color: #0078d4;
+                color: white;
+                border-color: #0078d4;
+            }
+        """)
+        title_layout.addWidget(pipeline_hint_btn)
+        
         title_layout.addStretch()
+        
+        # Import pipeline button - small icon button matching input dataset style
+        import_btn = QPushButton()
+        import_btn.setObjectName("titleBarButtonGreen")
+        import_icon = load_svg_icon(get_icon_path("load_project"), "#28a745", QSize(14, 14))
+        import_btn.setIcon(import_icon)
+        import_btn.setIconSize(QSize(14, 14))
+        import_btn.setFixedSize(24, 24)
+        import_btn.setToolTip(LOCALIZE("PREPROCESS.import_pipeline_tooltip"))
+        import_btn.setCursor(Qt.PointingHandCursor)
+        import_btn.setStyleSheet("""
+            QPushButton#titleBarButtonGreen {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px;
+            }
+            QPushButton#titleBarButtonGreen:hover {
+                background-color: #d4edda;
+                border-color: #28a745;
+            }
+            QPushButton#titleBarButtonGreen:pressed {
+                background-color: #c3e6cb;
+            }
+        """)
+        import_btn.clicked.connect(self.import_pipeline)
+        title_layout.addWidget(import_btn)
+        
+        # Export pipeline button - small icon button matching input dataset style
+        export_btn = QPushButton()
+        export_btn.setObjectName("titleBarButton")
+        export_icon = load_svg_icon(get_icon_path("export"), "#0078d4", QSize(14, 14))
+        export_btn.setIcon(export_icon)
+        export_btn.setIconSize(QSize(14, 14))
+        export_btn.setFixedSize(24, 24)
+        export_btn.setToolTip(LOCALIZE("PREPROCESS.export_pipeline_tooltip"))
+        export_btn.setCursor(Qt.PointingHandCursor)
+        export_btn.setStyleSheet("""
+            QPushButton#titleBarButton {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px;
+            }
+            QPushButton#titleBarButton:hover {
+                background-color: #e7f3ff;
+                border-color: #0078d4;
+            }
+            QPushButton#titleBarButton:pressed {
+                background-color: #d0e7ff;
+            }
+        """)
+        export_btn.clicked.connect(self.export_pipeline)
+        title_layout.addWidget(export_btn)
+        
         # Apply stylesheet
         from configs.style.stylesheets import PREPROCESS_PAGE_STYLES
         if 'modern_pipeline_group' in PREPROCESS_PAGE_STYLES:
@@ -654,6 +734,31 @@ class PreprocessPage(QWidget):
         title_label = QLabel(LOCALIZE("PREPROCESS.output_config_title"))
         title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
         title_layout.addWidget(title_label)
+        
+        # Add hint button
+        output_hint_btn = QPushButton("?")
+        output_hint_btn.setObjectName("hintButton")
+        output_hint_btn.setFixedSize(20, 20)
+        output_hint_btn.setToolTip(LOCALIZE("PREPROCESS.output_config_hint"))
+        output_hint_btn.setCursor(Qt.PointingHandCursor)
+        output_hint_btn.setStyleSheet("""
+            QPushButton#hintButton {
+                background-color: #e7f3ff;
+                color: #0078d4;
+                border: 1px solid #90caf9;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 0px;
+            }
+            QPushButton#hintButton:hover {
+                background-color: #0078d4;
+                color: white;
+                border-color: #0078d4;
+            }
+        """)
+        title_layout.addWidget(output_hint_btn)
+        
         title_layout.addStretch()
         
         layout = QVBoxLayout(output_group)
@@ -716,10 +821,52 @@ class PreprocessPage(QWidget):
         params_title_layout.setContentsMargins(0, 0, 0, 0)
         params_title_layout.setSpacing(8)
         
-        params_title_label = QLabel(LOCALIZE("PREPROCESS.parameters_title"))
-        params_title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
-        params_title_layout.addWidget(params_title_label)
+        # Store reference to title label for dynamic updates
+        self.params_title_label = QLabel(LOCALIZE("PREPROCESS.parameters_title"))
+        self.params_title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+        params_title_layout.addWidget(self.params_title_label)
+        
+        # Add hint button
+        params_hint_btn = QPushButton("?")
+        params_hint_btn.setObjectName("hintButton")
+        params_hint_btn.setFixedSize(20, 20)
+        params_hint_btn.setToolTip(LOCALIZE("PREPROCESS.parameters_hint"))
+        params_hint_btn.setCursor(Qt.PointingHandCursor)
+        params_hint_btn.setStyleSheet("""
+            QPushButton#hintButton {
+                background-color: #e7f3ff;
+                color: #0078d4;
+                border: 1px solid #90caf9;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 0px;
+            }
+            QPushButton#hintButton:hover {
+                background-color: #0078d4;
+                color: white;
+                border-color: #0078d4;
+            }
+        """)
+        params_title_layout.addWidget(params_hint_btn)
+        
         params_title_layout.addStretch()
+        
+        # Add step info badge on the right side
+        self.params_step_badge = QLabel("")
+        self.params_step_badge.setStyleSheet("""
+            QLabel {
+                background-color: #e7f3ff;
+                color: #0078d4;
+                border: 1px solid #90caf9;
+                border-radius: 3px;
+                padding: 4px 8px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+        """)
+        self.params_step_badge.setVisible(False)  # Hidden by default
+        params_title_layout.addWidget(self.params_step_badge)
         
         params_layout = QVBoxLayout(self.params_group)
         params_layout.setContentsMargins(12, 4, 12, 12)
@@ -736,12 +883,6 @@ class PreprocessPage(QWidget):
         
         self.params_container = QWidget()
         self.params_layout = QVBoxLayout(self.params_container)
-        
-        # Default message
-        default_label = QLabel(LOCALIZE("PREPROCESS.set_step_params"))
-        default_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        default_label.setFixedHeight(30)
-        self.params_layout.addWidget(default_label)
         
         scroll_area.setWidget(self.params_container)
         params_layout.addWidget(scroll_area)
@@ -760,6 +901,31 @@ class PreprocessPage(QWidget):
         viz_title_label = QLabel(LOCALIZE("PREPROCESS.visualization_title"))
         viz_title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
         viz_title_layout.addWidget(viz_title_label)
+        
+        # Add hint button
+        viz_hint_btn = QPushButton("?")
+        viz_hint_btn.setObjectName("hintButton")
+        viz_hint_btn.setFixedSize(20, 20)
+        viz_hint_btn.setToolTip(LOCALIZE("PREPROCESS.visualization_hint"))
+        viz_hint_btn.setCursor(Qt.PointingHandCursor)
+        viz_hint_btn.setStyleSheet("""
+            QPushButton#hintButton {
+                background-color: #e7f3ff;
+                color: #0078d4;
+                border: 1px solid #90caf9;
+                border-radius: 10px;
+                font-weight: bold;
+                font-size: 11px;
+                padding: 0px;
+            }
+            QPushButton#hintButton:hover {
+                background-color: #0078d4;
+                color: white;
+                border-color: #0078d4;
+            }
+        """)
+        viz_title_layout.addWidget(viz_hint_btn)
+        
         viz_title_layout.addStretch()
         
         plot_layout = QVBoxLayout(plot_group)
@@ -1023,8 +1189,9 @@ class PreprocessPage(QWidget):
             self._clear_parameter_widget()
             self.current_step_widget = None
             
-            # Clear output name
-            self.output_name_input.clear()
+            # Clear output name if it exists
+            if hasattr(self, 'output_name_input'):
+                self.output_name_input.clear()
             
             # Clear visualization
             self.plot_widget.clear_plot()
@@ -1668,6 +1835,368 @@ class PreprocessPage(QWidget):
         else:
             self.toggle_all_btn.setText(LOCALIZE("PREPROCESS.enable_all_existing"))
     
+    def export_pipeline(self):
+        """Export current pipeline configuration to JSON file."""
+        # Check if pipeline has steps
+        if not self.pipeline_steps:
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_no_steps"),
+                "warning"
+            )
+            return
+        
+        # Create export dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle(LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_title"))
+        dialog.setModal(True)
+        dialog.setMinimumWidth(500)
+        
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(16)
+        
+        # Pipeline name input
+        name_label = QLabel(LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_name_label"))
+        name_label.setStyleSheet("font-weight: 600;")
+        layout.addWidget(name_label)
+        
+        name_edit = QLineEdit()
+        name_edit.setPlaceholderText(LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_name_placeholder"))
+        layout.addWidget(name_edit)
+        
+        # Description input
+        desc_label = QLabel(LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_description_label"))
+        desc_label.setStyleSheet("font-weight: 600;")
+        layout.addWidget(desc_label)
+        
+        desc_edit = QTextEdit()
+        desc_edit.setPlaceholderText(LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_description_placeholder"))
+        desc_edit.setMaximumHeight(100)
+        layout.addWidget(desc_edit)
+        
+        # Pipeline info
+        info_label = QLabel(f"📊 {len(self.pipeline_steps)} steps in current pipeline")
+        info_label.setStyleSheet("color: #6c757d; font-size: 12px; padding: 8px; background-color: #f8f9fa; border-radius: 4px;")
+        layout.addWidget(info_label)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        
+        cancel_btn = QPushButton(LOCALIZE("COMMON.cancel"))
+        cancel_btn.clicked.connect(dialog.reject)
+        button_layout.addWidget(cancel_btn)
+        
+        export_btn = QPushButton(LOCALIZE("PREPROCESS.export_button"))
+        export_btn.setObjectName("ctaButton")
+        export_btn.clicked.connect(dialog.accept)
+        export_btn.setDefault(True)
+        button_layout.addWidget(export_btn)
+        
+        layout.addLayout(button_layout)
+        
+        # Show dialog
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        
+        # Get input values
+        pipeline_name = name_edit.text().strip()
+        pipeline_description = desc_edit.toPlainText().strip()
+        
+        if not pipeline_name:
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_no_name"),
+                "warning"
+            )
+            return
+        
+        try:
+            # Get project directory
+            if not PROJECT_MANAGER.current_project_data:
+                self.showNotification.emit("No project loaded", "error")
+                return
+            
+            project_name = PROJECT_MANAGER.current_project_data.get("projectName", "").replace(' ', '_').lower()
+            project_root = os.path.join(PROJECT_MANAGER.projects_dir, project_name)
+            pipelines_dir = os.path.join(project_root, "pipelines")
+            os.makedirs(pipelines_dir, exist_ok=True)
+            
+            # Create pipeline data
+            pipeline_data = {
+                "name": pipeline_name,
+                "description": pipeline_description,
+                "created_date": datetime.datetime.now().isoformat(),
+                "step_count": len(self.pipeline_steps),
+                "steps": []
+            }
+            
+            # Add steps to pipeline data
+            for step in self.pipeline_steps:
+                step_data = {
+                    "category": step.category,
+                    "method": step.method,
+                    "params": step.params,
+                    "enabled": step.enabled
+                }
+                pipeline_data["steps"].append(step_data)
+            
+            # Save to file
+            filename = f"{pipeline_name.replace(' ', '_').lower()}.json"
+            filepath = os.path.join(pipelines_dir, filename)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(pipeline_data, f, indent=2, ensure_ascii=False)
+            
+            create_logs("PreprocessPage", "export_pipeline",
+                       f"Exported pipeline '{pipeline_name}' to {filepath}", status='info')
+            
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_success", name=pipeline_name),
+                "success"
+            )
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "export_pipeline_error",
+                       f"Error exporting pipeline: {e}", status='error')
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.export_pipeline_error", error=str(e)),
+                "error"
+            )
+    
+    def import_pipeline(self):
+        """Import pipeline configuration from saved file."""
+        try:
+            # Get project directory
+            if not PROJECT_MANAGER.current_project_data:
+                self.showNotification.emit("No project loaded", "error")
+                return
+            
+            project_name = PROJECT_MANAGER.current_project_data.get("projectName", "").replace(' ', '_').lower()
+            project_root = os.path.join(PROJECT_MANAGER.projects_dir, project_name)
+            pipelines_dir = os.path.join(project_root, "pipelines")
+            
+            # Get list of saved pipelines
+            saved_pipelines = []
+            if os.path.exists(pipelines_dir):
+                for filename in os.listdir(pipelines_dir):
+                    if filename.endswith('.json'):
+                        filepath = os.path.join(pipelines_dir, filename)
+                        try:
+                            with open(filepath, 'r', encoding='utf-8') as f:
+                                pipeline_data = json.load(f)
+                                saved_pipelines.append({
+                                    'name': pipeline_data.get('name', filename),
+                                    'description': pipeline_data.get('description', ''),
+                                    'step_count': pipeline_data.get('step_count', 0),
+                                    'created_date': pipeline_data.get('created_date', ''),
+                                    'filepath': filepath,
+                                    'data': pipeline_data
+                                })
+                        except Exception as e:
+                            create_logs("PreprocessPage", "import_pipeline_read_error",
+                                       f"Error reading {filename}: {e}", status='warning')
+            
+            # Create import dialog
+            dialog = QDialog(self)
+            dialog.setWindowTitle(LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_title"))
+            dialog.setModal(True)
+            dialog.setMinimumWidth(600)
+            dialog.setMinimumHeight(400)
+            
+            layout = QVBoxLayout(dialog)
+            layout.setContentsMargins(20, 20, 20, 20)
+            layout.setSpacing(16)
+            
+            # Saved pipelines list
+            list_label = QLabel(LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_saved_label"))
+            list_label.setStyleSheet("font-weight: 600;")
+            layout.addWidget(list_label)
+            
+            pipeline_list = QListWidget()
+            pipeline_list.setMinimumHeight(250)
+            
+            if saved_pipelines:
+                for pipeline in saved_pipelines:
+                    item = QListWidgetItem()
+                    widget = QWidget()
+                    widget_layout = QVBoxLayout(widget)
+                    widget_layout.setContentsMargins(12, 8, 12, 8)
+                    widget_layout.setSpacing(4)
+                    
+                    name_label = QLabel(f"<b>{pipeline['name']}</b>")
+                    widget_layout.addWidget(name_label)
+                    
+                    info_label = QLabel(f"📊 {pipeline['step_count']} steps | 📅 {pipeline['created_date'][:10]}")
+                    info_label.setStyleSheet("color: #6c757d; font-size: 11px;")
+                    widget_layout.addWidget(info_label)
+                    
+                    if pipeline['description']:
+                        desc_label = QLabel(pipeline['description'][:100])
+                        desc_label.setStyleSheet("color: #495057; font-size: 11px; font-style: italic;")
+                        desc_label.setWordWrap(True)
+                        widget_layout.addWidget(desc_label)
+                    
+                    item.setSizeHint(widget.sizeHint())
+                    item.setData(Qt.ItemDataRole.UserRole, pipeline)
+                    pipeline_list.addItem(item)
+                    pipeline_list.setItemWidget(item, widget)
+            else:
+                no_pipelines_label = QLabel(LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_no_pipelines"))
+                no_pipelines_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                no_pipelines_label.setStyleSheet("color: #6c757d; padding: 20px;")
+                layout.addWidget(no_pipelines_label)
+            
+            layout.addWidget(pipeline_list)
+            
+            # External file button
+            external_btn = QPushButton(LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_external_button"))
+            external_btn.clicked.connect(lambda: self._import_external_pipeline(dialog))
+            layout.addWidget(external_btn)
+            
+            # Buttons
+            button_layout = QHBoxLayout()
+            button_layout.addStretch()
+            
+            cancel_btn = QPushButton(LOCALIZE("COMMON.cancel"))
+            cancel_btn.clicked.connect(dialog.reject)
+            button_layout.addWidget(cancel_btn)
+            
+            import_btn = QPushButton(LOCALIZE("PREPROCESS.import_pipeline_button"))
+            import_btn.setObjectName("ctaButton")
+            import_btn.clicked.connect(dialog.accept)
+            import_btn.setDefault(True)
+            button_layout.addWidget(import_btn)
+            
+            layout.addLayout(button_layout)
+            
+            # Show dialog
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+            
+            # Get selected pipeline
+            current_item = pipeline_list.currentItem()
+            if not current_item:
+                return
+            
+            selected_pipeline = current_item.data(Qt.ItemDataRole.UserRole)
+            
+            # Confirm replacement if current pipeline exists
+            if self.pipeline_steps:
+                confirm = QMessageBox.question(
+                    self,
+                    LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_confirm_replace_title"),
+                    LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_confirm_replace_message", 
+                            count=len(self.pipeline_steps)),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                if confirm != QMessageBox.StandardButton.Yes:
+                    return
+            
+            # Load pipeline
+            self._load_pipeline_from_data(selected_pipeline['data'])
+            
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_success",
+                        name=selected_pipeline['name'],
+                        steps=selected_pipeline['step_count']),
+                "success"
+            )
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "import_pipeline_error",
+                       f"Error importing pipeline: {e}", status='error')
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_error", error=str(e)),
+                "error"
+            )
+    
+    def _import_external_pipeline(self, parent_dialog):
+        """Import pipeline from external file."""
+        from PySide6.QtWidgets import QFileDialog
+        
+        filepath, _ = QFileDialog.getOpenFileName(
+            parent_dialog,
+            LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_select_file"),
+            "",
+            "JSON Files (*.json)"
+        )
+        
+        if not filepath:
+            return
+        
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                pipeline_data = json.load(f)
+            
+            # Validate pipeline data
+            if 'steps' not in pipeline_data:
+                raise ValueError("Invalid pipeline file: missing 'steps' field")
+            
+            # Confirm replacement if current pipeline exists
+            if self.pipeline_steps:
+                confirm = QMessageBox.question(
+                    parent_dialog,
+                    LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_confirm_replace_title"),
+                    LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_confirm_replace_message",
+                            count=len(self.pipeline_steps)),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+                )
+                if confirm != QMessageBox.StandardButton.Yes:
+                    return
+            
+            # Load pipeline
+            self._load_pipeline_from_data(pipeline_data)
+            
+            parent_dialog.accept()  # Close the import dialog
+            
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_success",
+                        name=pipeline_data.get('name', 'External Pipeline'),
+                        steps=len(pipeline_data['steps'])),
+                "success"
+            )
+            
+        except Exception as e:
+            create_logs("PreprocessPage", "import_external_error",
+                       f"Error importing external pipeline: {e}", status='error')
+            self.showNotification.emit(
+                LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_error", error=str(e)),
+                "error"
+            )
+    
+    def _load_pipeline_from_data(self, pipeline_data):
+        """Load pipeline steps from pipeline data dictionary."""
+        # Clear current pipeline
+        self.clear_pipeline()
+        
+        # Load steps
+        for step_data in pipeline_data.get('steps', []):
+            step = PipelineStep(
+                step_data['category'],
+                step_data['method'],
+                step_data.get('params', {})
+            )
+            step.enabled = step_data.get('enabled', True)
+            step.is_existing = False
+            
+            self.pipeline_steps.append(step)
+            
+            # Add to UI
+            item = QListWidgetItem()
+            item.setData(Qt.ItemDataRole.UserRole, len(self.pipeline_steps) - 1)
+            self.pipeline_list.addItem(item)
+            
+            step_widget = PipelineStepWidget(step, len(self.pipeline_steps) - 1)
+            step_widget.toggled.connect(self.on_step_toggled)
+            item.setSizeHint(step_widget.sizeHint())
+            self.pipeline_list.setItemWidget(item, step_widget)
+        
+        # Update global memory
+        self._save_to_global_memory()
+        
+        # Trigger preview update
+        self._schedule_preview_update()
+    
     def on_pipeline_step_selected(self, current, previous):
         """Handle pipeline step selection to show appropriate parameters."""
         # Update visual selection state for all widgets
@@ -1726,11 +2255,13 @@ class PreprocessPage(QWidget):
         # Connect parameter signals for automatic preview updates
         self._connect_parameter_signals(self.current_step_widget)
         
-        # Update group title with category and method name
+        # Update title label with category and method name
         category_display = step.category.replace('_', ' ').title()
-        self.params_group.setTitle(
-            f"{LOCALIZE('PREPROCESS.parameters_title')} - {category_display}: {step.method}"
-        )
+        
+        # Update and show step badge
+        if hasattr(self, 'params_step_badge'):
+            self.params_step_badge.setText(f"{LOCALIZE(f'PREPROCESS.CATEGORY.{category_display.upper()}')}: {step.method}")
+            self.params_step_badge.setVisible(True)
 
     def _clear_parameter_widget(self):
         """Clear the parameter widget completely."""
@@ -1745,12 +2276,36 @@ class PreprocessPage(QWidget):
             self.current_step_widget.deleteLater()
             self.current_step_widget = None
         
-        # Reset to default message
-        default_label = QLabel(LOCALIZE("PREPROCESS.set_step_params"))
-        default_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.params_layout.addWidget(default_label)
         
-        self.params_group.setTitle(LOCALIZE("PREPROCESS.parameters_title"))
+        # Reset title label to default
+        self.params_title_label.setText(LOCALIZE("PREPROCESS.parameters_title"))
+        
+        # Hide step badge
+        if hasattr(self, 'params_step_badge'):
+            self.params_step_badge.setVisible(False)
+
+    def _connect_parameter_signals(self, param_widget):
+        """Connect parameter widget signals for automatic preview updates."""
+        if not param_widget:
+            return
+        
+        # Connect all parameter widget signals to trigger preview updates
+        for widget in param_widget.param_widgets.values():
+            # Connect custom parameter widgets with parametersChanged signal
+            if hasattr(widget, 'parametersChanged'):
+                widget.parametersChanged.connect(lambda: self._schedule_preview_update())
+                # Connect real-time updates for sliders with immediate response
+                if hasattr(widget, 'realTimeUpdate'):
+                    widget.realTimeUpdate.connect(lambda: self._schedule_preview_update(delay_ms=50))
+            # Connect standard Qt widgets
+            elif hasattr(widget, 'valueChanged'):
+                widget.valueChanged.connect(lambda: self._schedule_preview_update())
+            elif hasattr(widget, 'textChanged'):
+                widget.textChanged.connect(lambda: self._schedule_preview_update())
+            elif hasattr(widget, 'currentTextChanged'):
+                widget.currentTextChanged.connect(lambda: self._schedule_preview_update())
+            elif hasattr(widget, 'toggled'):
+                widget.toggled.connect(lambda: self._schedule_preview_update())
 
     def _update_step_parameters(self):
         """Update parameters for the currently selected step."""
@@ -2357,7 +2912,6 @@ class PreprocessPage(QWidget):
         # Clear existing parameter widget and show history
         self._clear_parameter_widget()
         self.params_layout.addWidget(history_label)
-        self.params_group.setTitle(LOCALIZE("PREPROCESS.preprocessing_history_title"))
 
     def _pipelines_differ(self, current_steps: List, target_pipeline: List[Dict]) -> bool:
         """Compare current pipeline with target pipeline to check if they differ."""
@@ -3295,104 +3849,6 @@ class PreprocessPage(QWidget):
         dynamic_width = max(min_width, total_width)
         
         self.preview_toggle_btn.setFixedWidth(dynamic_width)
-    
-    def on_pipeline_step_selected(self, current, previous):
-        """Handle pipeline step selection change."""
-        if current is None:
-            self._clear_parameter_widget()
-            return
-        
-        step_index = current.data(Qt.ItemDataRole.UserRole)
-        if step_index is not None and 0 <= step_index < len(self.pipeline_steps):
-            step = self.pipeline_steps[step_index]
-            self._show_parameter_widget(step)
-            
-            # Trigger preview update when step is selected
-            self._schedule_preview_update()
-    
-    def _clear_parameter_widget(self):
-        """Clear the parameter widget area."""
-        for i in reversed(range(self.params_layout.count())):
-            child = self.params_layout.itemAt(i).widget()
-            if child:
-                child.setParent(None)
-        
-        # Show default message
-        default_label = QLabel(LOCALIZE("PREPROCESS.set_step_params"))
-        default_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        default_label.setFixedHeight(30)
-        self.params_layout.addWidget(default_label)
-        
-        self.current_step_widget = None
-    
-    def _show_parameter_widget(self, step: PipelineStep):
-        """Show parameter widget for the given step."""
-        # Clear existing widget
-        self._clear_parameter_widget()
-        
-        # Get method info
-        method_info = PREPROCESSING_REGISTRY.get_method_info(step.category, step.method)
-        if not method_info:
-            return
-        
-        # Create parameter widget with proper data range
-        data_range = self._get_data_wavenumber_range()
-        param_widget = DynamicParameterWidget(method_info, step.params, data_range, self)
-        
-        # Remove default message and add parameter widget
-        for i in reversed(range(self.params_layout.count())):
-            child = self.params_layout.itemAt(i).widget()
-            if child:
-                child.setParent(None)
-        
-        self.params_layout.addWidget(param_widget)
-        self.current_step_widget = param_widget
-        
-        # Connect parameter changes to preview updates
-        self._connect_parameter_signals(param_widget)
-    
-    def _on_pipeline_reordered(self, parent, start, end, destination, row):
-        """Handle pipeline reordering via drag and drop."""
-        # Reconstruct pipeline_steps list in new order
-        new_order = []
-        for i in range(self.pipeline_list.count()):
-            item = self.pipeline_list.item(i)
-            old_index = item.data(Qt.ItemDataRole.UserRole)
-            if old_index is not None and old_index < len(self.pipeline_steps):
-                new_order.append(self.pipeline_steps[old_index])
-        
-        self.pipeline_steps = new_order
-        
-        # Update item data to reflect new order
-        for i in range(self.pipeline_list.count()):
-            item = self.pipeline_list.item(i)
-            item.setData(Qt.ItemDataRole.UserRole, i)
-        
-        # Trigger preview update
-        self._schedule_preview_update()
-    
-    def _connect_parameter_signals(self, param_widget):
-        """Connect parameter widget signals for automatic preview updates."""
-        if not param_widget:
-            return
-        
-        # Connect all parameter widget signals to trigger preview updates
-        for widget in param_widget.param_widgets.values():
-            # Connect custom parameter widgets with parametersChanged signal
-            if hasattr(widget, 'parametersChanged'):
-                widget.parametersChanged.connect(lambda: self._schedule_preview_update())
-                # Connect real-time updates for sliders with immediate response
-                if hasattr(widget, 'realTimeUpdate'):
-                    widget.realTimeUpdate.connect(lambda: self._schedule_preview_update(delay_ms=50))
-            # Connect standard Qt widgets
-            elif hasattr(widget, 'valueChanged'):
-                widget.valueChanged.connect(lambda: self._schedule_preview_update())
-            elif hasattr(widget, 'textChanged'):
-                widget.textChanged.connect(lambda: self._schedule_preview_update())
-            elif hasattr(widget, 'currentTextChanged'):
-                widget.currentTextChanged.connect(lambda: self._schedule_preview_update())
-            elif hasattr(widget, 'toggled'):
-                widget.toggled.connect(lambda: self._schedule_preview_update())
 
     # ============== GLOBAL PIPELINE MEMORY MANAGEMENT ==============
     

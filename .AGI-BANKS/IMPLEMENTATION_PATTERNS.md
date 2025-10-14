@@ -2,11 +2,169 @@
 
 ## Code Architecture Patterns
 
-# Implementation Patterns and Best Practices
+### 0. Dynamic Section Title Pattern (October 10, 2025) 🆕
+Dynamic updating of section titles to reflect current context/state.
 
-## Code Architecture Patterns
+```python
+# Store reference to title label during UI setup
+self.params_title_label = QLabel(LOCALIZE("PREPROCESS.parameters_title"))
+self.params_title_label.setStyleSheet("font-weight: 600; font-size: 13px; color: #2c3e50;")
+params_title_layout.addWidget(self.params_title_label)
 
-### 0. Title Bar Action Buttons Pattern (October 7, 2025) 🆕
+# Update title dynamically when state changes
+def _show_parameter_widget(self, step: PipelineStep):
+    # ... create parameter widget ...
+    
+    # Update title with context
+    category_display = step.category.replace('_', ' ').title()
+    self.params_title_label.setText(
+        f"{LOCALIZE('PREPROCESS.parameters_title')} - {category_display}: {step.method}"
+    )
+
+# Reset title when clearing
+def _clear_parameter_widget(self):
+    # ... clear widget ...
+    self.params_title_label.setText(LOCALIZE("PREPROCESS.parameters_title"))
+```
+
+### 1. Pipeline Import/Export Pattern (October 10, 2025) 🆕
+Complete workflow for saving and loading complex configuration data.
+
+```python
+# Export Pattern
+def export_pipeline(self):
+    # 1. Validate data exists
+    if not self.pipeline_steps:
+        self.showNotification.emit("No pipeline to export", "warning")
+        return
+    
+    # 2. Show user-friendly dialog
+    dialog = QDialog(self)
+    name_edit = QLineEdit()
+    desc_edit = QTextEdit()
+    # ... build dialog UI ...
+    
+    if dialog.exec() != QDialog.DialogCode.Accepted:
+        return
+    
+    # 3. Get project directory
+    project_name = PROJECT_MANAGER.current_project_data.get("projectName", "").replace(' ', '_').lower()
+    project_root = os.path.join(PROJECT_MANAGER.projects_dir, project_name)
+    pipelines_dir = os.path.join(project_root, "pipelines")
+    os.makedirs(pipelines_dir, exist_ok=True)
+    
+    # 4. Build data structure
+    pipeline_data = {
+        "name": pipeline_name,
+        "description": pipeline_description,
+        "created_date": datetime.datetime.now().isoformat(),
+        "step_count": len(self.pipeline_steps),
+        "steps": []
+    }
+    
+    for step in self.pipeline_steps:
+        pipeline_data["steps"].append({
+            "category": step.category,
+            "method": step.method,
+            "params": step.params,
+            "enabled": step.enabled
+        })
+    
+    # 5. Save to file
+    filename = f"{pipeline_name.replace(' ', '_').lower()}.json"
+    filepath = os.path.join(pipelines_dir, filename)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(pipeline_data, f, indent=2, ensure_ascii=False)
+    
+    # 6. Provide feedback
+    self.showNotification.emit(f"Pipeline '{pipeline_name}' exported successfully", "success")
+
+# Import Pattern
+def import_pipeline(self):
+    # 1. Load saved pipelines
+    pipelines_dir = os.path.join(project_root, "pipelines")
+    saved_pipelines = []
+    
+    for filename in os.listdir(pipelines_dir):
+        if filename.endswith('.json'):
+            with open(filepath, 'r', encoding='utf-8') as f:
+                pipeline_data = json.load(f)
+                saved_pipelines.append({
+                    'name': pipeline_data.get('name'),
+                    'filepath': filepath,
+                    'data': pipeline_data
+                })
+    
+    # 2. Show selection dialog with rich preview
+    dialog = QDialog(self)
+    pipeline_list = QListWidget()
+    
+    for pipeline in saved_pipelines:
+        item = QListWidgetItem()
+        # Create custom widget with name, step count, description
+        widget = create_pipeline_preview_widget(pipeline)
+        item.setData(Qt.ItemDataRole.UserRole, pipeline)
+        pipeline_list.addItem(item)
+        pipeline_list.setItemWidget(item, widget)
+    
+    # 3. Confirm replacement if needed
+    if self.pipeline_steps:
+        confirm = QMessageBox.question(self, "Replace Pipeline?", 
+                                      f"Replace {len(self.pipeline_steps)} steps?")
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+    
+    # 4. Load selected pipeline
+    selected_pipeline = pipeline_list.currentItem().data(Qt.ItemDataRole.UserRole)
+    self._load_pipeline_from_data(selected_pipeline['data'])
+    
+    self.showNotification.emit(f"Pipeline imported successfully", "success")
+
+# External import support
+def _import_external_pipeline(self, parent_dialog):
+    from PySide6.QtWidgets import QFileDialog
+    
+    filepath, _ = QFileDialog.getOpenFileName(
+        parent_dialog, "Select Pipeline File", "", "JSON Files (*.json)"
+    )
+    
+    if filepath:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            pipeline_data = json.load(f)
+        self._load_pipeline_from_data(pipeline_data)
+        parent_dialog.accept()
+```
+
+### 2. Gray Border Selection Pattern (October 10, 2025) 🆕
+Subtle selection indicator that preserves item's original appearance.
+
+```python
+def _update_appearance(self):
+    """Update visual appearance with selection support."""
+    # Determine background based on step state
+    if not self.step.enabled:
+        bg_color = "#f8f9fa"  # Disabled
+    elif self.step.is_existing:
+        bg_color = "#e3f2fd"  # Existing
+    else:
+        bg_color = "white"  # New
+    
+    # Apply normal styling
+    self.setStyleSheet(f"background-color: {bg_color}; border: 1px solid #dee2e6;")
+    
+    # Override with selection if selected (gray border, keep background)
+    if self.is_selected:
+        selected_style = f"""
+            QWidget {{
+                background-color: {bg_color};
+                border: 2px solid #6c757d;  /* Gray selection border */
+                border-radius: 6px;
+            }}
+        """
+        self.setStyleSheet(selected_style)
+```
+
+### 3. Title Bar Action Buttons Pattern (October 7, 2025)
 Compact action buttons integrated into section title bars for space-efficient UI design.
 
 ```python

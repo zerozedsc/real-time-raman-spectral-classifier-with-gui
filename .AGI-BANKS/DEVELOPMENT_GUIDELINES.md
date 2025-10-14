@@ -2,6 +2,27 @@
 
 ## Code Quality Standards
 
+## Date Format Standard
+**Always use ISO 8601 date format**: `yyyy-mm-dd` (e.g., 2025-10-10)
+- Used in all documentation
+- Used in file naming
+- Used in metadata and JSON exports
+- Used in git commit messages
+- Used in changelog entries
+
+## Documentation Organization Standard
+**Documentation Structure**: All `.docs` content must be organized by category
+- Check existing folder structure in `.docs/`
+- Save documentation in relevant subdirectory:
+  - `pages/` - Page-specific documentation
+  - `functions/` - Function library documentation
+  - `widgets/` - Widget system documentation
+  - `components/` - Component documentation
+  - `testing/` - Test results and plans
+  - `reports_summary/` - Implementation reports
+- Create new folders if needed for new categories
+- Never save documentation in `.docs/` root unless it's a general index file
+
 ## Prerequisites
 
 Before running any scripts in this project, ensure the following setup steps are completed to maintain a consistent and isolated development environment.

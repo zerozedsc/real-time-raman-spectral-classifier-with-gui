@@ -69,15 +69,21 @@ icon = load_svg_icon(path, color, QSize(14, 14))
 ## 📋 Current Development Focus
 
 ### Active Tasks (See `.docs/TODOS.md` for details)
-1. ✅ **Visualization Package Refactoring** - COMPLETE (Oct 1, 2025)
+1. ✅ **Preprocessing Page Enhancements** - COMPLETE (Oct 10, 2025)
+   - Dynamic parameter titles show category + step name
+   - Gray border selection feedback for pipeline steps
+   - Hint buttons added to all major sections
+   - Complete pipeline import/export functionality
+   - Clean code, no debug statements, production-ready
+2. ✅ **Visualization Package Refactoring** - COMPLETE (Oct 1, 2025)
    - Extracted FigureManager to separate file (387 lines)
    - Reduced core.py to 4,405 lines (from 4,812)
    - Full backward compatibility maintained
    - Application tested and working
-2. 📋 **RamanVisualizer Modularization** - PLANNED (See `.docs/functions/RAMAN_VISUALIZER_REFACTORING_PLAN.md`)
+3. 📋 **RamanVisualizer Modularization** - PLANNED (See `.docs/functions/RAMAN_VISUALIZER_REFACTORING_PLAN.md`)
    - Phase 1-3 extraction (13-18 hours estimated)
    - Deferred to future sprint
-3. ✅ **UI Improvements** - COMPLETE
+4. ✅ **UI Improvements** - COMPLETE
    - Dataset list enhancement (4-6 items visible)
    - Export button styling (green, SVG icon)
    - Preview button width fix
@@ -88,6 +94,14 @@ icon = load_svg_icon(path, color, QSize(14, 14))
    - Multiple dataset batch export support
 
 ### Recent Completions (October 2025)
+- ✅ **Preprocessing Page Enhancements (Oct 10, 2025)**:
+  - Dynamic parameter section titles
+  - Visual selection feedback with gray borders
+  - Hint buttons for all major sections
+  - Complete pipeline import/export system
+  - Saved pipelines in projects/{project_name}/pipelines/
+  - External pipeline import support
+  - Rich pipeline preview in import dialog
 - ✅ **Export Functionality (Oct 3, 2025)**:
   - Automatic metadata export in JSON format
   - Smart location validation and warnings

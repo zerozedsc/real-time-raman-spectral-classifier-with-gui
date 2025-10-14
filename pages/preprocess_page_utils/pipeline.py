@@ -1224,34 +1224,39 @@ class PipelineStepWidget(QWidget):
         else:
             self.setStyleSheet(base_widget_style)
         
-        # Override with selection styling if selected
+        # Override with selection styling if selected - subtle gray border
         if self.is_selected:
-            # Selected state - darker, more prominent background with blue accent
-            selected_style = """
-                QWidget {
-                    background-color: #a8d0f0;
-                    border: 3px solid #0056b3;
+            # Selected state - keep current background but add prominent gray border
+            # Determine base background color from step state
+            if not self.step.enabled:
+                bg_color = "#f8f9fa"  # Disabled background
+            elif hasattr(self.step, 'is_existing') and self.step.is_existing:
+                if hasattr(self, 'toggle_checkbox') and self.toggle_checkbox.isChecked():
+                    if hasattr(self.step, 'source_dataset') and self.step.source_dataset:
+                        bg_color = "#e3f2fd"  # Blue for external
+                    else:
+                        bg_color = "#e8f5e8"  # Green for current
+                else:
+                    bg_color = "#f8f9fa"  # Muted
+            else:
+                bg_color = "white"  # New step
+            
+            selected_style = f"""
+                QWidget {{
+                    background-color: {bg_color};
+                    border: 2px solid #6c757d;
                     border-radius: 6px;
                     margin: 1px;
-                }
-                QWidget:hover {
-                    background-color: #9bc5ed;
-                    border-color: #004085;
-                }
+                }}
+                QWidget:hover {{
+                    background-color: {bg_color};
+                    border-color: #495057;
+                }}
             """
             self.setStyleSheet(selected_style)
-            
-            # Ensure text is highly visible on selected background
-            selected_text_style = """
-                QLabel {
-                    font-size: 13px; 
-                    color: #002952; 
-                    font-weight: 700;
-                    padding: 2px 0px;
-                }
-            """
-            self.name_label.setStyleSheet(selected_text_style)
-        elif text_style:
+        
+        # Apply text styling
+        if text_style:
             self.name_label.setStyleSheet(text_style)
         else:
             # Default enabled style
