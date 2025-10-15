@@ -148,9 +148,39 @@ class MSC:
         """Fit MSC and transform spectra in one step."""
         return self.fit(spectra).transform(spectra)
     
-    def __call__(self, spectra: np.ndarray) -> np.ndarray:
-        """Make class callable for pipeline compatibility."""
-        return self.fit_transform(spectra)
+    def __call__(self, data):
+        """
+        Apply MSC to data.
+        
+        Handles both SpectralContainer (RamanSPy workflows) and numpy array (sklearn pipelines).
+        
+        Args:
+            data: SpectralContainer or 2D numpy array
+            
+        Returns:
+            Same type as input with MSC applied
+        """
+        # Detect input type
+        is_container = hasattr(data, 'spectral_data')
+        
+        if is_container:
+            # SpectralContainer input (RamanSPy workflow)
+            spectra = data.spectral_data
+            axis = data.spectral_axis
+        else:
+            # numpy array input (sklearn pipeline)
+            spectra = data
+            axis = None
+        
+        # Apply MSC
+        processed = self.fit_transform(spectra)
+        
+        # Return in same format as input
+        if is_container:
+            import ramanspy as rp
+            return rp.SpectralContainer(processed, axis)
+        else:
+            return processed
     
     def apply(self, spectra: 'rp.SpectralContainer') -> 'rp.SpectralContainer':
         """Apply MSC to ramanspy SpectralContainer."""

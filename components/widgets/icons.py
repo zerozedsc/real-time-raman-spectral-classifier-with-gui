@@ -22,6 +22,7 @@ ICON_PATHS = {
     "trash": "trash-xmark.svg",
     "trash_bin": "trash-bin.svg",
     "delete_all": "delete-all.svg",      # Delete all button icon
+    "export_button": "export-button.svg",  # Export button icon
     
     # Legacy icons (still used in some files - need to be migrated)
     "decrease_circle": "decrease-circle.svg",  # Used in preprocess_page_utils/widgets.py
@@ -35,6 +36,7 @@ ICON_PATHS = {
     "focus_horizontal": "focus-horizontal-round.svg",  # Manual focus button
     "export": "export-button.svg",       # Export button icon
     "save": "save.svg",                # Save button icon
+    "edit": "edit.svg",              # Edit button icon
     
     # Project management icons
     "new_project": "new-project.svg",    # Used in home_page.py, utils.py

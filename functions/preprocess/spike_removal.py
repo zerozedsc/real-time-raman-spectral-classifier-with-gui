@@ -59,22 +59,43 @@ class Gaussian:
         self.kernel = kernel
         self.threshold = threshold
 
-    def __call__(self, spectra: np.ndarray) -> np.ndarray:
+    def __call__(self, data):
         """
-        Apply Gaussian despiking to a 2D numpy array of spectra.
-        This makes the class compatible with scikit-learn pipelines.
+        Apply Gaussian despiking to data.
+        
+        Handles both SpectralContainer (RamanSPy workflows) and numpy array (sklearn pipelines).
 
         Args:
-            spectra (np.ndarray): A 2D numpy array where each row is a spectrum.
+            data: SpectralContainer or 2D numpy array where each row is a spectrum
 
         Returns:
-            np.ndarray: The despiked spectra.
+            Same type as input with spikes removed
         """
+        # Detect input type
+        is_container = hasattr(data, 'spectral_data')
+        
+        if is_container:
+            # SpectralContainer input (RamanSPy workflow)
+            spectra = data.spectral_data
+            axis = data.spectral_axis
+        else:
+            # numpy array input (sklearn pipeline)
+            spectra = data
+            axis = None
+        
+        # Validate array
         if spectra.ndim != 2:
             raise ValueError("Input spectra must be a 2D array")
         
         # Apply the despiking function along each row (each spectrum)
-        return np.apply_along_axis(self._despike_spectrum, 1, spectra)
+        processed = np.apply_along_axis(self._despike_spectrum, 1, spectra)
+        
+        # Return in same format as input
+        if is_container:
+            import ramanspy as rp
+            return rp.SpectralContainer(processed, axis)
+        else:
+            return processed
 
     def apply(self, spectra: 'rp.SpectralContainer') -> 'rp.SpectralContainer':
         """
@@ -178,12 +199,43 @@ class MedianDespike:
         self.kernel_size = kernel_size
         self.threshold = threshold
     
-    def __call__(self, spectra: np.ndarray) -> np.ndarray:
-        """Apply median despiking to numpy array format (for sklearn pipelines)."""
+    def __call__(self, data):
+        """
+        Apply median despiking to data.
+        
+        Handles both SpectralContainer (RamanSPy workflows) and numpy array (sklearn pipelines).
+        
+        Args:
+            data: SpectralContainer or 2D numpy array (n_spectra, n_wavenumbers)
+            
+        Returns:
+            Same type as input with spikes removed
+        """
+        # Detect input type
+        is_container = hasattr(data, 'spectral_data')
+        
+        if is_container:
+            # SpectralContainer input (RamanSPy workflow)
+            spectra = data.spectral_data
+            axis = data.spectral_axis
+        else:
+            # numpy array input (sklearn pipeline)
+            spectra = data
+            axis = None
+        
+        # Validate array
         if spectra.ndim != 2:
             raise ValueError("Input spectra must be a 2D array")
         
-        return np.apply_along_axis(self._despike_spectrum, 1, spectra)
+        # Process array
+        processed = np.apply_along_axis(self._despike_spectrum, 1, spectra)
+        
+        # Return in same format as input
+        if is_container:
+            import ramanspy as rp
+            return rp.SpectralContainer(processed, axis)
+        else:
+            return processed
     
     def _despike_spectrum(self, spectrum: np.ndarray) -> np.ndarray:
         """

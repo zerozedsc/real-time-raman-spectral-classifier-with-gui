@@ -28,6 +28,7 @@ from .advanced_normalization import QuantileNormalization, RankTransform, Probab
 from .feature_engineering import PeakRatioFeatures
 from .advanced_baseline import ButterworthHighPass
 from .kernel_denoise import Kernel
+from .fabc_fixed import FABCFixed  # Custom FABC to bypass ramanspy bug
 from .background_subtraction import BackgroundSubtractor
 
 # Try to import deep learning module (requires PyTorch)
@@ -158,8 +159,8 @@ class PreprocessingStepRegistry:
                     "default_params": {"pixelwise": False, "a": 0, "b": 1},
                     "param_info": {
                         "pixelwise": {"type": "bool", "description": "Apply normalisation pixelwise (True) or spectrumwise (False)"},
-                        "a": {"type": "float", "range": [-10.0, 10.0], "description": "Minimum value for scaling"},
-                        "b": {"type": "float", "range": [-10.0, 10.0], "description": "Maximum value for scaling"}
+                        "a": {"type": "float", "range": [-10.0, 10.0], "step": 0.1, "description": "Minimum value for scaling"},
+                        "b": {"type": "float", "range": [-10.0, 10.0], "step": 0.1, "description": "Maximum value for scaling"}
                     },
                     "description": "Min-max normalisation"
                 },
@@ -204,10 +205,12 @@ class PreprocessingStepRegistry:
                 "param_info": {
                     "lam": {"type": "scientific", "range": [1e2, 1e12], "description": "Smoothing parameter"},
                     "p": {"type": "float", "range": [0.001, 0.999], "step": 0.001, "description": "Asymmetry parameter"},
+                    "p_initial": {"type": "float", "range": [0.001, 0.999], "step": 0.001, "description": "Asymmetry parameter (alias for p)"},
                     "lam_1": {"type": "scientific", "range": [1e-6, 1e-2], "description": "Secondary smoothing parameter"},
                     "max_iter": {"type": "int", "range": [1, 1000], "description": "Maximum iterations"},
                     "tol": {"type": "scientific", "range": [1e-9, 1e-3], "description": "Convergence tolerance"}
                 },
+                "param_aliases": {"p_initial": "p"},  # Accept 'p_initial' as alias for 'p'
                 "description": "Baseline correction based on Improved Asymmetric Least Squares (IAsLS)"
             },
             "AIRPLS": {
@@ -256,14 +259,15 @@ class PreprocessingStepRegistry:
             },
             "ASPLS": {
                 "class": rp.preprocessing.baseline.ASPLS,
-                "default_params": {"lam": 1e6, "diff_order": 2, "max_iter": 50, "alpha": 0.95},
+                "default_params": {"lam": 1e5, "diff_order": 2, "max_iter": 100, "tol": 1e-3, "alpha": None},
                 "param_info": {
                     "lam": {"type": "scientific", "range": [1e2, 1e12], "description": "Smoothing parameter"},
                     "diff_order": {"type": "int", "range": [1, 3], "description": "Difference order"},
                     "max_iter": {"type": "int", "range": [1, 1000], "description": "Maximum iterations"},
-                    "alpha": {"type": "float", "range": [0.5, 0.99], "step": 0.01, "description": "Adaptive parameter"}
+                    "tol": {"type": "float", "range": [1e-6, 1e-1], "step": 0.0001, "description": "Exit criteria"},
+                    "alpha": {"type": "optional", "description": "Array of values controlling local lam (optional, for advanced users)"}
                 },
-                "description": "Baseline correction based on Adaptive Smoothness Penalized Least Squares (asPLS)"
+                "description": "Baseline correction based on Adaptive Smoothness Penalized Least Squares (asPLS). Note: ramanspy's wrapper does not expose all pybaselines parameters."
             },
             
             # Polynomial fitting methods
@@ -338,15 +342,28 @@ class PreprocessingStepRegistry:
                 "description": "Baseline correction based on Corner Cutting"
             },
             "FABC": {
-                "class": rp.preprocessing.baseline.FABC,
-                "default_params": {"lam": 1e6, "scale": 1.0, "num_std": 3.0, "max_iter": 50},
+                "class": FABCFixed,  # Using custom implementation to bypass ramanspy bug
+                "default_params": {
+                    "lam": 1e6,
+                    "scale": None,
+                    "num_std": 3.0,
+                    "diff_order": 2,
+                    "min_length": 2,
+                    "weights": None,
+                    "weights_as_mask": False
+                    # Note: x_data provided automatically from spectral_axis in __call__()
+                },
                 "param_info": {
                     "lam": {"type": "scientific", "range": [1e2, 1e12], "description": "Smoothing parameter"},
-                    "scale": {"type": "float", "range": [0.1, 5.0], "step": 0.1, "description": "Scale parameter"},
-                    "num_std": {"type": "float", "range": [1.0, 10.0], "step": 0.5, "description": "Number of standard deviations"},
-                    "max_iter": {"type": "int", "range": [1, 500], "description": "Maximum iterations"}
+                    "scale": {"type": "float", "range": [0.1, 5.0], "step": 0.1, "description": "Scale parameter for noise estimation", "optional": True},
+                    "num_std": {"type": "float", "range": [1.0, 10.0], "step": 0.5, "description": "Number of standard deviations for thresholding"},
+                    "diff_order": {"type": "int", "range": [1, 3], "description": "Order of differential matrix"},
+                    "min_length": {"type": "int", "range": [1, 10], "description": "Minimum length for smoothing"},
+                    "weights": {"type": "array", "description": "Optional weight array", "optional": True},
+                    "weights_as_mask": {"type": "bool", "description": "Treat weights as binary mask"},
+                    "x_data": {"type": "array", "description": "X-axis data (provided automatically from spectral_axis)", "optional": True, "internal": True}
                 },
-                "description": "Baseline correction based on Fully automatic baseline correction (FABC)"
+                "description": "Fully Automatic Baseline Correction (FABC) - Fixed implementation bypassing ramanspy bug"
             }
         }
 
@@ -481,14 +498,6 @@ class PreprocessingStepRegistry:
             },
             
             "miscellaneous": {
-                "Cropper": {
-                    "class": rp.preprocessing.misc.Cropper,
-                    "default_params": {"region": (800, 1800)},
-                    "param_info": {
-                        "region": {"type": "tuple", "range": [(400, 4000)], "description": "Wavenumber range to extract (start, end)"}
-                    },
-                    "description": "Crop the intensity values and wavenumber axis to the specified range"
-                },
                 "PeakRatioFeatures": {
                     "class": PeakRatioFeatures,
                     "default_params": {
@@ -539,8 +548,24 @@ class PreprocessingStepRegistry:
         return self._steps.get(category, {})
     
     def get_method_info(self, category: str, method: str) -> Dict[str, Any]:
-        """Get information about a specific method."""
-        return self._steps.get(category, {}).get(method, {})
+        """
+        Get information about a specific method.
+        Supports method name aliases for backward compatibility.
+        """
+        # Method name aliases for common variations
+        method_aliases = {
+            # Baseline correction aliases
+            "IAsLS": "IASLS",
+            "AirPLS": "AIRPLS",
+            "ArPLS": "ARPLS",
+            "asPLS": "ASPLS",
+            "ModifiedZScore": "Gaussian",  # For cosmic ray removal
+        }
+        
+        # Resolve alias
+        actual_method = method_aliases.get(method, method)
+        
+        return self._steps.get(category, {}).get(actual_method, {})
     
     def create_method_instance(self, category: str, method: str, params: Dict[str, Any] = None) -> Any:
         """Create an instance of a preprocessing method with given parameters."""
@@ -553,38 +578,76 @@ class PreprocessingStepRegistry:
         if params:
             # Convert parameter types based on param_info
             param_info = method_info.get("param_info", {})
+            param_aliases = method_info.get("param_aliases", {})  # Get parameter aliases
             converted_params = {}
             for key, value in params.items():
-                if key in param_info:
-                    param_type = param_info[key].get("type")
-                    if param_type == "int":
-                        converted_params[key] = int(value) if not isinstance(value, int) else value
-                    elif param_type in ("float", "scientific"):
-                        # scientific notation parameters are also floats
-                        converted_params[key] = float(value) if not isinstance(value, (int, float)) else value
-                    elif param_type == "list":
-                        # Convert string representation to list of integers
-                        if isinstance(value, str):
-                            import ast
-                            try:
-                                converted_params[key] = ast.literal_eval(value)
-                            except (ValueError, SyntaxError):
-                                converted_params[key] = value
-                        else:
-                            converted_params[key] = value
-                    elif param_type == "choice":
-                        # For choice parameters, try to convert to the appropriate type
-                        choices = param_info[key].get("choices", [])
-                        if choices and isinstance(choices[0], int):
-                            converted_params[key] = int(value) if not isinstance(value, int) else value
-                        elif choices and isinstance(choices[0], float):
-                            converted_params[key] = float(value) if not isinstance(value, float) else value
-                        else:
-                            converted_params[key] = value
+                # Handle parameter aliases (e.g., 'p' → 'p_initial' for ASPLS)
+                actual_key = param_aliases.get(key, key)
+                
+                # CRITICAL FIX: Only include parameters that are defined in param_info
+                # This prevents passing wrong parameters to methods (e.g., 'max_iter' to MinMax)
+                if actual_key not in param_info:
+                    create_logs("PreprocessingStepRegistry", "registry", 
+                               f"Skipping unknown parameter '{key}' for {method} (not in param_info)", 
+                               status='warning')
+                    continue
+                
+                param_type = param_info[actual_key].get("type")
+                
+                # ROBUST TYPE CONVERSION: Handle all cases including float→int from UI sliders
+                if param_type == "int":
+                    # CRITICAL: Convert floats to int (UI sliders may send 1.0 instead of 1)
+                    if value is None:
+                        converted_params[actual_key] = None
                     else:
-                        converted_params[key] = value
+                        converted_params[actual_key] = int(float(value))  # float() handles strings, int() converts to int
+                        
+                elif param_type in ("float", "scientific"):
+                    # scientific notation parameters are also floats
+                    # Handle None values (e.g., FABC's scale parameter)
+                    if value is None:
+                        converted_params[actual_key] = None
+                    else:
+                        converted_params[actual_key] = float(value)
+                        
+                elif param_type == "list":
+                    # Convert string representation to list of integers
+                    if isinstance(value, str):
+                        import ast
+                        try:
+                            converted_params[actual_key] = ast.literal_eval(value)
+                        except (ValueError, SyntaxError):
+                            converted_params[actual_key] = value
+                    else:
+                        converted_params[actual_key] = value
+                        
+                elif param_type == "choice":
+                    # For choice parameters, try to convert to the appropriate type
+                    choices = param_info[actual_key].get("choices", [])
+                    if choices and isinstance(choices[0], int):
+                        # CRITICAL: Convert floats to int for integer choices
+                        converted_params[actual_key] = int(float(value))
+                    elif choices and isinstance(choices[0], float):
+                        converted_params[actual_key] = float(value)
+                    else:
+                        converted_params[actual_key] = value
+                        
+                elif param_type == "bool":
+                    # Handle boolean parameters (e.g., FABC's weights_as_mask)
+                    if isinstance(value, bool):
+                        converted_params[actual_key] = value
+                    elif isinstance(value, str):
+                        converted_params[actual_key] = value.lower() in ('true', '1', 'yes')
+                    else:
+                        converted_params[actual_key] = bool(value)
+                        
+                elif param_type == "array":
+                    # Handle array parameters (e.g., FABC's weights, x_data)
+                    # Arrays can be None or numpy arrays
+                    converted_params[actual_key] = value
                 else:
-                    converted_params[key] = value
+                    converted_params[actual_key] = value
+                    
             final_params.update(converted_params)
         
         try:

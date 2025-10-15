@@ -1,9 +1,78 @@
 # Development Guidelines and Standards
 
+## Testing Standards (Added October 14, 2025)
+
+### Test Script Organization
+**MANDATORY**: All test scripts MUST be saved in `test_script/` folder structure:
+```
+test_script/
+├── test_preprocessing_comprehensive.py  # Comprehensive preprocessing tests
+├── test_results_20251014_220536.txt     # Text output
+├── test_results_20251014_220536.json    # JSON output
+└── README.md                             # Test documentation
+```
+
+### Environment and Execution
+1. **Use UV Environment**: This project uses UV package manager
+   ```bash
+   cd test_script
+   uv run python test_<name>.py
+   ```
+
+2. **Never use pip/conda directly** for running tests
+
+3. **Output Requirements**:
+   - Generate timestamped output files
+   - Save both text (.txt) and JSON (.json) reports
+   - Include summary statistics and detailed results
+
+### Test Comprehensiveness Requirements
+1. **Complete Coverage**: Test ALL implemented features, not subsets
+   - Example: If 40 preprocessing methods exist, test all 40
+2. **Deep Analysis**: Validate multiple aspects:
+   - Parameter definitions consistency
+   - Method instantiation
+   - Range validation
+   - Type conversion
+   - Error handling
+3. **Detailed Reporting**:
+   - Pass/fail status per item
+   - Warning counts
+   - Error descriptions with context
+   - Category breakdowns
+
+### Test Script Template
+```python
+"""
+Test Script Name
+================
+Purpose: <what this tests>
+Coverage: <number of items tested>
+Environment: UV Python environment
+Output: test_script/test_results_TIMESTAMP.txt
+"""
+
+import sys
+import os
+from datetime import datetime
+
+# Setup
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+# Test logic here
+
+# Save results
+output_dir = os.path.dirname(__file__)
+output_file = os.path.join(output_dir, f'test_results_{timestamp}.txt')
+with open(output_file, 'w', encoding='utf-8') as f:
+    f.write("Results here...")
+```
+
 ## Code Quality Standards
 
 ## Date Format Standard
-**Always use ISO 8601 date format**: `yyyy-mm-dd` (e.g., 2025-10-10)
+**Always use ISO 8601 date format**: `yyyy-mm-dd` (e.g., 2025-10-14)
 - Used in all documentation
 - Used in file naming
 - Used in metadata and JSON exports

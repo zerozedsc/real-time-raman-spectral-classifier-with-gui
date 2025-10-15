@@ -408,8 +408,8 @@ def plot_spectra(df: pd.DataFrame, title: str = "", auto_focus: bool = False) ->
         text.set_color('#34495e')
 
     # Customize tick colors
-    ax.tick_params(axis='x', colors='#34495e')
-    ax.tick_params(axis='y', colors='#34495e')
+    ax.tick_params(axis='x', colors='#34495e', labelsize=10)
+    ax.tick_params(axis='y', colors='#34495e', labelsize=10)
 
     # Customize spine colors
     for spine in ax.spines.values():
@@ -425,5 +425,7 @@ def plot_spectra(df: pd.DataFrame, title: str = "", auto_focus: bool = False) ->
         except Exception as e:
             pass  # Silently fall back to full range
 
-    fig.tight_layout()
+    # Adjust layout with explicit padding to ensure y-axis labels are visible
+    fig.tight_layout(pad=1.5)  # Increased padding for better visibility
+    fig.subplots_adjust(left=0.12, right=0.95, top=0.93, bottom=0.10)  # Explicit margins for y-axis labels
     return fig

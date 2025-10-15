@@ -796,7 +796,8 @@ class DynamicParameterWidget(QWidget):
             widget = CustomDoubleSpinBox()
             range_info = info.get("range", [0.0, 1.0])
             widget.setRange(range_info[0], range_info[1])
-            widget.setDecimals(3)
+            # Set default to 6 decimals for better visual appearance
+            widget.setDecimals(6)
             if "step" in info:
                 widget.setSingleStep(info["step"])
             if default_value is not None:
@@ -807,7 +808,9 @@ class DynamicParameterWidget(QWidget):
             widget = CustomDoubleSpinBox()
             range_info = info.get("range", [1e-9, 1e12])
             widget.setRange(range_info[0], range_info[1])
-            widget.setDecimals(0)
+            # Set default to 6 decimals for scientific parameters
+            # Users can still input more precision if needed
+            widget.setDecimals(6)
             if default_value is not None:
                 widget.setValue(float(default_value))
             return widget

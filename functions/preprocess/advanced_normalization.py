@@ -131,9 +131,39 @@ class QuantileNormalization:
         
         return normalized
     
-    def __call__(self, spectra: np.ndarray) -> np.ndarray:
-        """Make callable for pipeline compatibility."""
-        return self.fit_transform(spectra)
+    def __call__(self, data):
+        """
+        Apply Quantile Normalization to data.
+        
+        Handles both SpectralContainer (RamanSPy workflows) and numpy array (sklearn pipelines).
+        
+        Args:
+            data: SpectralContainer or numpy array
+            
+        Returns:
+            Same type as input with quantile normalization applied
+        """
+        # Detect input type
+        is_container = hasattr(data, 'spectral_data')
+        
+        if is_container:
+            # SpectralContainer input (RamanSPy workflow)
+            spectra = data.spectral_data
+            axis = data.spectral_axis
+        else:
+            # numpy array input (sklearn pipeline)
+            spectra = data
+            axis = None
+        
+        # Apply normalization
+        processed = self.fit_transform(spectra)
+        
+        # Return in same format as input
+        if is_container:
+            import ramanspy as rp
+            return rp.SpectralContainer(processed, axis)
+        else:
+            return processed
     
     def apply(self, spectra: 'rp.SpectralContainer') -> 'rp.SpectralContainer':
         """Apply to ramanspy SpectralContainer."""
@@ -262,12 +292,42 @@ class RankTransform:
         
         return scaled_ranks
     
-    def __call__(self, spectra: np.ndarray) -> np.ndarray:
-        """Make callable for pipeline compatibility."""
-        if spectra.ndim == 1:
-            return self._rank_spectrum(spectra)
+    def __call__(self, data):
+        """
+        Apply Rank Transform to data.
+        
+        Handles both SpectralContainer (RamanSPy workflows) and numpy array (sklearn pipelines).
+        
+        Args:
+            data: SpectralContainer or numpy array
+            
+        Returns:
+            Same type as input with rank transform applied
+        """
+        # Detect input type
+        is_container = hasattr(data, 'spectral_data')
+        
+        if is_container:
+            # SpectralContainer input (RamanSPy workflow)
+            spectra = data.spectral_data
+            axis = data.spectral_axis
         else:
-            return self.fit_transform(spectra)
+            # numpy array input (sklearn pipeline)
+            spectra = data
+            axis = None
+        
+        # Apply transform
+        if spectra.ndim == 1:
+            processed = self._rank_spectrum(spectra)
+        else:
+            processed = self.fit_transform(spectra)
+        
+        # Return in same format as input
+        if is_container:
+            import ramanspy as rp
+            return rp.SpectralContainer(processed, axis)
+        else:
+            return processed
     
     def apply(self, spectra: 'rp.SpectralContainer') -> 'rp.SpectralContainer':
         """Apply to ramanspy SpectralContainer."""
@@ -403,9 +463,39 @@ class ProbabilisticQuotientNormalization:
         
         return normalized
     
-    def __call__(self, spectra: np.ndarray) -> np.ndarray:
-        """Make callable for pipeline compatibility."""
-        return self.fit_transform(spectra)
+    def __call__(self, data):
+        """
+        Apply Probabilistic Quotient Normalization to data.
+        
+        Handles both SpectralContainer (RamanSPy workflows) and numpy array (sklearn pipelines).
+        
+        Args:
+            data: SpectralContainer or numpy array
+            
+        Returns:
+            Same type as input with PQN applied
+        """
+        # Detect input type
+        is_container = hasattr(data, 'spectral_data')
+        
+        if is_container:
+            # SpectralContainer input (RamanSPy workflow)
+            spectra = data.spectral_data
+            axis = data.spectral_axis
+        else:
+            # numpy array input (sklearn pipeline)
+            spectra = data
+            axis = None
+        
+        # Apply normalization
+        processed = self.fit_transform(spectra)
+        
+        # Return in same format as input
+        if is_container:
+            import ramanspy as rp
+            return rp.SpectralContainer(processed, axis)
+        else:
+            return processed
     
     def apply(self, spectra: 'rp.SpectralContainer') -> 'rp.SpectralContainer':
         """Apply to ramanspy SpectralContainer."""

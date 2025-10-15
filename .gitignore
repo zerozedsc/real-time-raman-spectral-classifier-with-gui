@@ -212,3 +212,5 @@ logs/*
 *.cpython-312.pyc
 __pycache__/
 .github/
+
+projects/

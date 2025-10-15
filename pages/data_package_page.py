@@ -382,6 +382,35 @@ class DataPackagePage(QWidget):
         title_layout.addWidget(title_label)
         title_layout.addStretch()
         
+        # Edit metadata button (pencil icon)
+        self.edit_meta_button = QPushButton()
+        self.edit_meta_button.setObjectName("titleBarButton")
+        edit_icon = load_svg_icon(get_icon_path("edit"), "#0078d4", QSize(14, 14))
+        self.edit_meta_button.setIcon(edit_icon)
+        self.edit_meta_button.setIconSize(QSize(14, 14))
+        self.edit_meta_button.setFixedSize(24, 24)
+        self.edit_meta_button.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.edit_meta_button"))
+        self.edit_meta_button.setCursor(Qt.PointingHandCursor)
+        self.edit_meta_button.setCheckable(True)  # Toggle button
+        self.edit_meta_button.setStyleSheet("""
+            QPushButton#titleBarButton {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px;
+            }
+            QPushButton#titleBarButton:hover {
+                background-color: #e7f3ff;
+                border-color: #0078d4;
+            }
+            QPushButton#titleBarButton:checked {
+                background-color: #0078d4;
+                border-color: #0078d4;
+            }
+        """)
+        self.edit_meta_button.clicked.connect(self._toggle_metadata_editing)
+        title_layout.addWidget(self.edit_meta_button)
+        
         # Save metadata button with icon
         self.save_meta_button = QPushButton()
         self.save_meta_button.setObjectName("titleBarButtonGreen")
@@ -406,7 +435,35 @@ class DataPackagePage(QWidget):
                 background-color: #c3e6cb;
             }
         """)
+        self.save_meta_button.setVisible(False)  # Hidden by default
         title_layout.addWidget(self.save_meta_button)
+        
+        # Export metadata button with icon (orange theme)
+        self.export_meta_button = QPushButton()
+        self.export_meta_button.setObjectName("titleBarButtonOrange")
+        export_icon = load_svg_icon(get_icon_path("export_button"), "#fd7e14", QSize(14, 14))
+        self.export_meta_button.setIcon(export_icon)
+        self.export_meta_button.setIconSize(QSize(14, 14))
+        self.export_meta_button.setFixedSize(24, 24)
+        self.export_meta_button.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.export_meta_button"))
+        self.export_meta_button.setCursor(Qt.PointingHandCursor)
+        self.export_meta_button.setStyleSheet("""
+            QPushButton#titleBarButtonOrange {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px;
+            }
+            QPushButton#titleBarButtonOrange:hover {
+                background-color: #fff3e0;
+                border-color: #fd7e14;
+            }
+            QPushButton#titleBarButtonOrange:pressed {
+                background-color: #ffe0b2;
+            }
+        """)
+        self.export_meta_button.clicked.connect(self.save_metadata_as_json)
+        title_layout.addWidget(self.export_meta_button)
         
         layout.addWidget(title_widget)
         
@@ -416,6 +473,7 @@ class DataPackagePage(QWidget):
         layout.addWidget(self.meta_tabs)
         
         self.meta_editor_group = meta_editor_group
+        self.current_editing_dataset = None  # Track which dataset is being edited
         return meta_editor_group
 
     def _create_preview_group_modern(self) -> QGroupBox:
@@ -479,7 +537,7 @@ class DataPackagePage(QWidget):
         # === PLOT WIDGET (maximum space with high stretch factor) ===
         # Dataset selector moved to import section
         self.plot_widget = MatplotlibWidget()
-        self.plot_widget.setMinimumHeight(400)  # Increased minimum height for better visibility
+        self.plot_widget.setMinimumHeight(350)  # Increased minimum height for better visibility
         preview_layout.addWidget(self.plot_widget, 10)  # High stretch factor for maximum space
         
         # Info label moved to title bar (no longer overlaying graph)
@@ -547,8 +605,7 @@ class DataPackagePage(QWidget):
     def _connect_signals(self):
         self.preview_button.clicked.connect(self.handle_preview_data)
         self.add_to_project_button.clicked.connect(self.handle_add_to_project)
-        self.save_meta_button.clicked.connect(self.save_metadata_as_json)
-        self.meta_editor_group.toggled.connect(self.toggle_metadata_editing)
+        self.save_meta_button.clicked.connect(self.save_metadata_for_dataset)
 
     def _set_data_path(self, path: str):
         """Set data path and trigger auto-preview if enabled."""
@@ -593,11 +650,16 @@ class DataPackagePage(QWidget):
             elif self.loaded_data_list.count() > 0: self.loaded_data_list.setCurrentRow(0)
 
     def display_selected_dataset(self, current_item: QListWidgetItem, previous_item: QListWidgetItem):
-        if not current_item or not self.loaded_data_list.isEnabled(): self.update_preview_display(None, {}); return
+        if not current_item or not self.loaded_data_list.isEnabled(): 
+            self.update_preview_display(None, {})
+            self._update_preview_title(None)  # Clear title when no selection
+            return
         dataset_name = current_item.data(Qt.UserRole)
         if not dataset_name: return
         df = RAMAN_DATA.get(dataset_name)
         metadata = PROJECT_MANAGER.current_project_data.get("dataPackages", {}).get(dataset_name, {}).get("metadata", {})
+        # Update preview title with selected dataset name
+        self._update_preview_title(dataset_name)
         self.update_preview_display(df, metadata, is_preview=False)
 
     def browse_for_data(self):
@@ -826,7 +888,7 @@ class DataPackagePage(QWidget):
                 preview_name = os.path.basename(data_path)
             else:
                 preview_name, _ = os.path.splitext(os.path.basename(data_path))
-            self._update_preview_title(f"Preview: {preview_name}")
+            self._update_preview_title(preview_name)  # Remove "Preview:" prefix
         
         # Handle metadata
         meta_path = self.meta_path_edit.text()
@@ -1003,8 +1065,23 @@ class DataPackagePage(QWidget):
         if df is not None and not df.empty:
             info_text = (f"<b>{LOCALIZE('DATA_PACKAGE_PAGE.info_num_spectra')}:</b> {df.shape[1]} | " f"<b>{LOCALIZE('DATA_PACKAGE_PAGE.info_wavenumber_range')}:</b> {df.index.min():.2f} - {df.index.max():.2f} cm⁻¹ | " f"<b>{LOCALIZE('DATA_PACKAGE_PAGE.info_data_points')}:</b> {df.shape[0]}")
             self.info_label.setText(info_text)
-        else: self.info_label.setText(LOCALIZE("DATA_PACKAGE_PAGE.no_data_preview"))
-        self._set_metadata_in_editor(metadata); self.meta_editor_group.setChecked(bool(metadata) or is_preview); self.toggle_metadata_editing(self.meta_editor_group.isChecked(), read_only=not is_preview)
+        else: 
+            self.info_label.setText(LOCALIZE("DATA_PACKAGE_PAGE.no_data_preview"))
+        
+        # Display metadata
+        self._set_metadata_in_editor(metadata)
+        
+        # For loaded datasets, enable viewing but not editing by default
+        if not is_preview:
+            self._set_metadata_read_only(True)
+            self.edit_meta_button.setChecked(False)
+            self.edit_meta_button.setVisible(True)
+            self.save_meta_button.setVisible(False)
+        else:
+            # For previews, enable editing
+            self._set_metadata_read_only(False)
+            self.edit_meta_button.setVisible(False)
+            self.save_meta_button.setVisible(False)
 
     def _get_metadata_from_editor(self) -> dict:
         metadata = {};
@@ -1020,24 +1097,100 @@ class DataPackagePage(QWidget):
                 if isinstance(widget, QTextEdit): widget.setPlainText(str(value))
                 else: widget.setText(str(value))
 
-    def toggle_metadata_editing(self, checked, read_only=False):
-        self.meta_editor_group.setEnabled(checked)
+    def _set_metadata_read_only(self, read_only: bool):
+        """Set all metadata fields to read-only or editable."""
         for tab in self.metadata_widgets.values():
-            for widget in tab.values(): widget.setReadOnly(read_only)
-        self.save_meta_button.setVisible(checked and not read_only)
+            for widget in tab.values():
+                widget.setReadOnly(read_only)
+    
+    def _toggle_metadata_editing(self):
+        """Toggle metadata editing mode."""
+        is_editing = self.edit_meta_button.isChecked()
+        self._set_metadata_read_only(not is_editing)
+        self.save_meta_button.setVisible(is_editing)
+        
+        # Update button icon color based on state
+        if is_editing:
+            edit_icon = load_svg_icon(get_icon_path("edit"), "#ffffff", QSize(14, 14))
+            self.edit_meta_button.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.view_mode_button"))
+        else:
+            edit_icon = load_svg_icon(get_icon_path("edit"), "#0078d4", QSize(14, 14))
+            self.edit_meta_button.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.edit_meta_button"))
+        self.edit_meta_button.setIcon(edit_icon)
+
+    def save_metadata_for_dataset(self):
+        """Save metadata for the currently selected dataset."""
+        # Get the currently selected dataset
+        current_item = self.loaded_data_list.currentItem()
+        if not current_item:
+            self.showNotification.emit(LOCALIZE("DATA_PACKAGE_PAGE.no_dataset_selected"), "error")
+            return
+        
+        dataset_name = current_item.data(Qt.UserRole)
+        if not dataset_name:
+            return
+        
+        # Get metadata from editor
+        metadata = self._get_metadata_from_editor()
+        
+        # Update metadata in PROJECT_MANAGER
+        if PROJECT_MANAGER.update_dataframe_metadata(dataset_name, metadata):
+            self.showNotification.emit(
+                LOCALIZE("DATA_PACKAGE_PAGE.metadata_save_success", name=dataset_name),
+                "success"
+            )
+            # Exit edit mode
+            self.edit_meta_button.setChecked(False)
+            self._toggle_metadata_editing()
+        else:
+            self.showNotification.emit(
+                LOCALIZE("DATA_PACKAGE_PAGE.metadata_save_error"),
+                "error"
+            )
+
+    def toggle_metadata_editing(self, checked, read_only=False):
+        """Legacy method for compatibility."""
+        pass  # No longer needed, replaced by _toggle_metadata_editing
 
     def save_metadata_as_json(self):
+        """Export metadata to JSON file (legacy method, kept for compatibility)."""
+        # Get the currently selected dataset
+        current_item = self.loaded_data_list.currentItem()
+        if not current_item:
+            self.showNotification.emit(LOCALIZE("DATA_PACKAGE_PAGE.no_dataset_selected"), "error")
+            return
+        
+        dataset_name = current_item.data(Qt.UserRole)
+        if not dataset_name:
+            return
+        
         data_dir = PROJECT_MANAGER._get_project_data_dir()
-        if not data_dir: self.showNotification.emit(LOCALIZE("NOTIFICATIONS.no_project_loaded_for_save"), "error"); return
-        dataset_name = self.dataset_name_edit.text().strip()
-        default_filename = f"{dataset_name}_metadata.json" if dataset_name else "metadata.json"
-        path, _ = QFileDialog.getSaveFileName(self, LOCALIZE("DATA_PACKAGE_PAGE.save_meta_dialog_title"), os.path.join(data_dir, default_filename), f"JSON Files (*.json)")
+        if not data_dir: 
+            self.showNotification.emit(LOCALIZE("NOTIFICATIONS.no_project_loaded_for_save"), "error")
+            return
+        
+        default_filename = f"{dataset_name.replace(' ', '_').lower()}_metadata.json"
+        path, _ = QFileDialog.getSaveFileName(
+            self, 
+            LOCALIZE("DATA_PACKAGE_PAGE.save_meta_dialog_title"), 
+            os.path.join(data_dir, default_filename), 
+            f"JSON Files (*.json)"
+        )
+        
         if path:
             manual_meta = self._get_metadata_from_editor()
             try:
-                with open(path, 'w', encoding='utf-8') as f: json.dump(manual_meta, f, indent=4)
-                self.showNotification.emit(LOCALIZE("NOTIFICATIONS.meta_save_success"), "success"); self.meta_path_edit.setText(path); self.preview_metadata = manual_meta
-            except Exception as e: self.showNotification.emit(LOCALIZE("NOTIFICATIONS.meta_save_error", error=e), "error")
+                with open(path, 'w', encoding='utf-8') as f: 
+                    json.dump(manual_meta, f, indent=4, ensure_ascii=False)
+                self.showNotification.emit(
+                    LOCALIZE("NOTIFICATIONS.meta_save_success"), 
+                    "success"
+                )
+            except Exception as e: 
+                self.showNotification.emit(
+                    LOCALIZE("NOTIFICATIONS.meta_save_error", error=str(e)), 
+                    "error"
+                )
 
     def clear_importer_fields(self):
         """Clear all importer fields and reset state."""

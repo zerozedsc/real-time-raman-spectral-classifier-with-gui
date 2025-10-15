@@ -1792,6 +1792,334 @@ class MethodRegistry:
 - Easy addition of new methods
 - Automatic parameter handling
 
+### 2.1. Custom Wrapper Pattern for Broken Library Methods (pybaselines.api Pattern)
+**WHEN TO USE**: When ramanspy wrapper has bugs that cannot be fixed by parameter adjustments.
+
+**Pattern**: Bypass ramanspy wrapper, call pybaselines.api directly while maintaining Container compatibility.
+
+**Example**: FABC wrapper (ramanspy bug on line 33)
+
+```python
+# functions/preprocess/fabc_fixed.py
+from pybaselines import api
+import numpy as np
+import ramanspy as rp
+
+class FABCFixed:
+    """
+    Custom FABC implementation bypassing ramanspy wrapper bug.
+    
+    Problem: ramanspy.FABC passes x_data incorrectly in apply_along_axis call.
+    Solution: Call pybaselines.api.Baseline directly with correct initialization.
+    """
+    
+    def __init__(self, lam=1e5, scale=0.5, num_std=3, diff_order=2, min_length=2, 
+                 weights=None, weights_as_mask=False):
+        """Initialize with pybaselines.fabc parameters."""
+        self.lam = lam
+        self.scale = scale
+        self.num_std = num_std
+        self.diff_order = diff_order
+        self.min_length = min_length
+        self.weights = weights
+        self.weights_as_mask = weights_as_mask
+    
+    def _get_baseline_fitter(self, x_data: np.ndarray):
+        """Create baseline fitter with x_data (CORRECT approach)."""
+        return api.Baseline(x_data=x_data)
+    
+    def _process_spectrum(self, spectrum, x_data):
+        """Process single spectrum (no x_data in method call)."""
+        fitter = self._get_baseline_fitter(x_data)
+        baseline, params = fitter.fabc(
+            data=spectrum,
+            lam=self.lam,
+            scale=self.scale,
+            num_std=self.num_std,
+            diff_order=self.diff_order,
+            min_length=self.min_length,
+            weights=self.weights,
+            weights_as_mask=self.weights_as_mask
+        )
+        return spectrum - baseline
+    
+    def __call__(self, data, spectral_axis=None):
+        """
+        Container-aware wrapper maintaining ramanspy interface.
+        
+        Handles both:
+        - ramanspy.SpectralContainer (returns Container)
+        - numpy arrays (returns array)
+        """
+        is_container = hasattr(data, 'spectral_data')
+        
+        if is_container:
+            spectral_data = data.spectral_data
+            x_data = data.spectral_axis if hasattr(data, 'spectral_axis') else spectral_axis
+        else:
+            spectral_data = data
+            x_data = spectral_axis
+        
+        if x_data is None:
+            raise ValueError("spectral_axis required")
+        
+        # Process
+        if spectral_data.ndim == 1:
+            corrected = self._process_spectrum(spectral_data, x_data)
+        else:
+            corrected = np.array([
+                self._process_spectrum(spectrum, x_data)
+                for spectrum in spectral_data
+            ])
+        
+        # Return same type as input
+        if is_container:
+            return rp.SpectralContainer(corrected, x_data)
+        return corrected
+    
+    def apply(self, container):
+        """ramanspy compatibility: apply() method."""
+        return self(container)
+```
+
+**Registry Integration**:
+```python
+# functions/preprocess/registry.py
+from .fabc_fixed import FABCFixed
+
+"FABC": {
+    "class": FABCFixed,  # Custom wrapper, not ramanspy.FABC
+    "description": "Fixed FABC implementation (bypassing ramanspy bug)",
+    "category": "baseline_correction",
+    "param_info": {
+        "lam": {"type": "float", "min": 1e3, "max": 1e7, "default": 1e5},
+        "scale": {"type": "float", "min": 0.1, "max": 2.0, "default": 0.5},
+        "num_std": {"type": "float", "min": 1.0, "max": 10.0, "default": 3.0},
+        "diff_order": {"type": "int", "min": 1, "max": 3, "default": 2},
+        "min_length": {"type": "int", "min": 1, "max": 100, "default": 2}
+    },
+    "default_params": {
+        "lam": 1e5, "scale": 0.5, "num_std": 3.0,
+        "diff_order": 2, "min_length": 2
+    }
+}
+```
+
+**Testing Requirements**:
+```python
+# test_script/test_fabc_fix.py
+def test_fabc_custom_implementation():
+    """Test custom FABC wrapper."""
+    # 1. Registry instantiation
+    registry = PreprocessingStepRegistry()
+    method = registry.create_method_instance('baseline_correction', 'FABC', {})
+    
+    # 2. Synthetic data (fluorescence + peaks)
+    wavenumbers = np.linspace(400, 1800, 1000)
+    spectrum = generate_tissue_spectrum()  # With baseline
+    
+    # 3. Apply FABC
+    corrected = method(spectrum, wavenumbers)
+    
+    # 4. Validate baseline reduction (should be >95%)
+    original_mean = np.mean(spectrum)
+    corrected_mean = np.mean(corrected)
+    baseline_reduction = (original_mean - corrected_mean) / original_mean
+    assert baseline_reduction > 0.95, f"Expected >95% reduction, got {baseline_reduction:.1%}"
+    
+    # 5. Container compatibility
+    container = rp.SpectralContainer(spectrum.reshape(1, -1), wavenumbers)
+    corrected_container = method.apply(container)
+    assert isinstance(corrected_container, rp.SpectralContainer)
+```
+
+**Key Principles**:
+1. **x_data in initialization**: `api.Baseline(x_data=x)`, NOT in method call
+2. **Container awareness**: Detect input type, return same type
+3. **Interface compatibility**: Implement both `__call__()` and `apply()`
+4. **Functional testing**: Test with realistic synthetic data, verify >95% baseline reduction
+5. **Type preservation**: numpy in → numpy out, Container in → Container out
+
+### 2.2. Robust Parameter Type Validation Pattern (October 15, 2025) 🔒⭐
+**CRITICAL**: ALL preprocessing methods MUST implement robust parameter type conversion.
+
+**Problem**: UI frameworks send unexpected types:
+- Qt sliders emit floats (2.0) when integers expected (2)
+- Text fields return strings ("2") instead of numbers
+- Decimal adjustments create problematic values (1.2, 2.7)
+
+**Solution**: Two-layer type validation system
+
+#### Layer 1: Registry Type Conversion (Universal)
+
+**Location**: `functions/preprocess/registry.py` → `create_method_instance()`
+
+```python
+def create_method_instance(self, category: str, method: str, params: Dict[str, Any] = None):
+    """Create instance with robust type conversion."""
+    
+    param_type = param_info[actual_key].get("type")
+    
+    # INTEGER CONVERSION (Critical for pybaselines)
+    if param_type == "int":
+        if value is None:
+            converted_params[actual_key] = None
+        else:
+            # CRITICAL: Two-stage conversion handles strings and decimals
+            converted_params[actual_key] = int(float(value))
+            # Step 1: float("2") handles strings → 2.0
+            # Step 2: int(2.0) converts to integer → 2
+            # Works for: "2", 2.0, 1.2 (truncates to 1)
+    
+    # FLOAT CONVERSION
+    elif param_type in ("float", "scientific"):
+        if value is None:
+            converted_params[actual_key] = None
+        else:
+            converted_params[actual_key] = float(value)
+    
+    # CHOICE CONVERSION (Type-aware based on choices)
+    elif param_type == "choice":
+        choices = param_info[actual_key].get("choices", [])
+        if choices and isinstance(choices[0], int):
+            # Integer choices: convert float→int
+            converted_params[actual_key] = int(float(value))
+        elif choices and isinstance(choices[0], float):
+            converted_params[actual_key] = float(value)
+        else:
+            converted_params[actual_key] = value
+    
+    # BOOLEAN CONVERSION
+    elif param_type == "bool":
+        if isinstance(value, bool):
+            converted_params[actual_key] = value
+        elif isinstance(value, str):
+            # Handle string booleans from text input
+            converted_params[actual_key] = value.lower() in ('true', '1', 'yes')
+        else:
+            converted_params[actual_key] = bool(value)
+    
+    # ARRAY CONVERSION (None or ndarray pass-through)
+    elif param_type == "array":
+        converted_params[actual_key] = value
+```
+
+**Why Two-Stage Int Conversion?**
+```python
+# ❌ Bad: Fails on string decimals
+int("1.2")  # ValueError: invalid literal for int()
+
+# ✅ Good: Handles all cases
+int(float("1.2"))  # 1 (works!)
+int(float("2"))    # 2
+int(float(2.0))    # 2
+int(float(1.2))    # 1 (truncation)
+```
+
+#### Layer 2: Defensive Type Conversion (Class-Level)
+
+**When to Use**: Methods with strict type requirements (especially pybaselines wrappers)
+
+```python
+class FABCFixed:
+    """Custom FABC with defensive type conversion."""
+    
+    def __init__(self, lam=1e6, scale=None, num_std=3.0, diff_order=2, min_length=2,
+                 weights=None, weights_as_mask=False):
+        """Initialize with explicit type conversion."""
+        
+        # CRITICAL: Explicit type enforcement
+        self.lam = float(lam)  # Ensure float
+        self.scale = None if scale is None else float(scale)  # None-safe
+        self.num_std = float(num_std)  # Ensure float
+        self.diff_order = int(diff_order)  # MUST be int, not float!
+        self.min_length = int(min_length)  # MUST be int, not float!
+        self.weights = weights  # Can be None or ndarray
+        self.weights_as_mask = bool(weights_as_mask)  # Ensure bool
+```
+
+**Benefits of Two Layers**:
+1. **Registry Layer**: Universal protection for all methods
+2. **Class Layer**: Defensive programming for critical methods
+3. **Redundancy**: Protection even if registry is bypassed
+4. **Documentation**: Makes type requirements explicit in code
+
+#### Testing Requirements
+
+```python
+# Test 1: Default parameters (baseline)
+method = registry.create_method_instance("category", "Method", {})
+assert isinstance(method.int_param, int)
+
+# Test 2: Float from UI slider
+params = {"int_param": 2.0, "float_param": 3.5}
+method = registry.create_method_instance("category", "Method", params)
+assert isinstance(method.int_param, int)  # 2.0 → 2
+
+# Test 3: Decimal float (worst case)
+params = {"int_param": 1.2}
+method = registry.create_method_instance("category", "Method", params)
+assert method.int_param == 1  # Truncation is intentional
+
+# Test 4: String from text field
+params = {"int_param": "2", "float_param": "3.5"}
+method = registry.create_method_instance("category", "Method", params)
+assert isinstance(method.int_param, int)  # "2" → 2
+
+# Test 5: None for optional parameter
+params = {"optional_param": None}
+method = registry.create_method_instance("category", "Method", params)
+assert method.optional_param is None  # None preserved
+```
+
+#### Common Type Issues and Solutions
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| UI slider float | `got '2.0', expected int` | `int(float(value))` |
+| Decimal adjustment | `got '1.2', expected int` | `int(float(value))` → 1 |
+| String input | `got '2', expected int` | `int(float(value))` |
+| None optional | NoneType error | `None if val is None else type(val)` |
+| Boolean string | `got 'true', expected bool` | `val.lower() in ('true', '1', 'yes')` |
+
+#### Edge Cases Covered
+
+```python
+# Case 1: UI Slider Floats
+# Input: diff_order=2.0
+# Registry: int(float(2.0)) → 2 ✅
+# Class: int(2) → 2 ✅
+
+# Case 2: Decimal Float Adjustments
+# Input: diff_order=1.2
+# Registry: int(float(1.2)) → 1 ✅ (truncation)
+# Class: int(1) → 1 ✅
+
+# Case 3: String Input
+# Input: diff_order="2"
+# Registry: int(float("2")) → 2 ✅
+# Class: int(2) → 2 ✅
+
+# Case 4: None Optional
+# Input: scale=None
+# Registry: None (preserved) ✅
+# Class: None if None else float() ✅
+
+# Case 5: Boolean String
+# Input: enabled="true"
+# Registry: "true".lower() in (...) → True ✅
+# Class: bool(True) → True ✅
+```
+
+**Best Practices**:
+- Always use `int(float(value))` for integer parameters
+- Always handle None for optional parameters
+- Always implement type conversion at both layers (registry + class)
+- Always test with all input types (int, float, string, None)
+- Never assume parameter types from UI match method signatures
+
+---
+
 ### 3. Pipeline Step Pattern
 Used for preprocessing pipeline management with enable/disable functionality.
 

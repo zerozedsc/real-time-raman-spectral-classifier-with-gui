@@ -1,11 +1,343 @@
 # Base Memory - AI Agent Knowledge Base
 
 > **Core knowledge and reference system for AI-assisted development**  
-> **Last Updated**: October 14, 2025 - Data Package Page Major Redesign & Batch Import
+> **Last Updated**: October 14, 2025 - Preprocessing System Fixes & Robust Testing Standards
 
 ## 🎯 Purpose
 
 This document serves as the foundational knowledge base for AI agents working on the Raman Spectroscopy Analysis Application. It provides quick access to essential information and references to detailed documentation.
+
+## 🧪 Testing Standards (Updated October 15, 2025)
+
+### Critical Testing Principles
+
+#### 0. ALWAYS Implement Robust Parameter Type Validation (NEW - October 15, 2025) 🔒
+**MANDATORY**: ALL preprocessing methods MUST handle parameter type conversions robustly.
+
+**Why This Matters**:
+- UI sliders send FLOATS (1.0, 1.2) but libraries may expect INTEGERS
+- User input may come as STRINGS from text fields
+- Optional parameters may be None but need proper handling
+- Type mismatches cause RuntimeWarnings and failures
+
+**Critical Pattern - Two-Layer Type Validation**:
+
+```python
+# Layer 1: Registry Level (functions/preprocess/registry.py)
+def create_method_instance(self, category: str, method: str, params: Dict[str, Any] = None):
+    """Create instance with robust type conversion."""
+    if param_type == "int":
+        # CRITICAL: Two-stage conversion handles all cases
+        if value is None:
+            converted_params[actual_key] = None
+        else:
+            converted_params[actual_key] = int(float(value))  # float() handles strings, int() converts
+    
+    elif param_type in ("float", "scientific"):
+        if value is None:
+            converted_params[actual_key] = None
+        else:
+            converted_params[actual_key] = float(value)
+    
+    elif param_type == "choice":
+        choices = param_info[actual_key].get("choices", [])
+        if choices and isinstance(choices[0], int):
+            converted_params[actual_key] = int(float(value))  # Type-aware conversion
+        elif choices and isinstance(choices[0], float):
+            converted_params[actual_key] = float(value)
+        else:
+            converted_params[actual_key] = value
+    
+    elif param_type == "bool":
+        if isinstance(value, bool):
+            converted_params[actual_key] = value
+        elif isinstance(value, str):
+            converted_params[actual_key] = value.lower() in ('true', '1', 'yes')
+        else:
+            converted_params[actual_key] = bool(value)
+
+# Layer 2: Class Level (defensive programming)
+class FABCFixed:
+    def __init__(self, lam=1e6, scale=None, num_std=3.0, diff_order=2, min_length=2, ...):
+        # CRITICAL: Explicit type conversion at class level
+        self.lam = float(lam)  # Ensure float
+        self.scale = None if scale is None else float(scale)  # None-safe
+        self.num_std = float(num_std)
+        self.diff_order = int(diff_order)  # MUST be int!
+        self.min_length = int(min_length)  # MUST be int!
+        self.weights_as_mask = bool(weights_as_mask)
+```
+
+**Testing Requirements**:
+1. Test with default parameters
+2. Test with float parameters (UI slider case): 1.0, 2.0
+3. Test with decimal floats (worst case): 1.2, 2.7
+4. Test with string parameters: "1", "2.0"
+5. Test with None for optional parameters
+6. Test actual execution with synthetic data
+
+**Common Failure Patterns**:
+- `expected a sequence of integers or a single integer, got '1.0'` → Need int() conversion
+- `extrapolate_window must be greater than 0` → Parameter passed as wrong type
+- Type conversion only at one layer → Need defensive programming at both layers
+
+#### 1. ALWAYS Verify Library Signatures Before Registry Updates
+**MANDATORY PROCESS**: When adding/updating preprocessing methods in registry, MUST verify actual library signatures:
+
+```python
+# Example: Verify ASPLS parameters
+import inspect
+from ramanspy.preprocessing.baseline import ASPLS
+sig = inspect.signature(ASPLS.__init__)
+print('ASPLS parameters:', list(sig.parameters.keys()))
+```
+
+**Why This Matters**:
+- ramanspy wrappers may NOT expose all pybaselines parameters
+- Documentation can be misleading or outdated
+- ASPLS issue: registry had `p_initial` and `asymmetric_coef`, but ramanspy only accepts `lam, diff_order, max_iter, tol, weights, alpha`
+- Result: 50% of methods were broken due to incorrect parameter definitions
+
+**Process**:
+1. Import the actual class from ramanspy/pybaselines
+2. Use `inspect.signature()` to get real parameters
+3. Update registry to match EXACT library signature
+4. Add parameter aliases ONLY for backward compatibility
+5. Test with functional data, not just instantiation
+
+#### 1.1 Bypassing Broken ramanspy Wrappers (FABC Pattern)
+**WHEN TO USE**: If ramanspy wrapper has bugs that cannot be fixed by parameter adjustments
+
+**FABC Case Study**: ramanspy.FABC has upstream bug (line 33 passes x_data incorrectly)
+- **Problem**: `np.apply_along_axis(self.method, axis, data.spectral_data, x_data)` 
+  - Passes x_data to function call, but pybaselines.fabc doesn't accept it in call signature
+  - x_data should be in Baseline initialization, not method call
+- **Solution**: Create custom wrapper calling pybaselines.api directly
+
+**Pattern**:
+```python
+# functions/preprocess/fabc_fixed.py
+from pybaselines import api
+import numpy as np
+
+class FABCFixed:
+    """Custom FABC bypassing ramanspy wrapper bug."""
+    
+    def __init__(self, lam=1e5, scale=0.5, num_std=3, diff_order=2, min_length=2):
+        self.lam = lam
+        self.scale = scale
+        self.num_std = num_std
+        self.diff_order = diff_order
+        self.min_length = min_length
+    
+    def _get_baseline_fitter(self, x_data: np.ndarray):
+        # CORRECT: x_data in initialization
+        return api.Baseline(x_data=x_data)
+    
+    def _process_spectrum(self, spectrum, x_data):
+        fitter = self._get_baseline_fitter(x_data)
+        # CORRECT: No x_data in method call
+        baseline, params = fitter.fabc(
+            data=spectrum,
+            lam=self.lam,
+            scale=self.scale,
+            num_std=self.num_std,
+            diff_order=self.diff_order,
+            min_length=self.min_length
+        )
+        return spectrum - baseline
+    
+    def __call__(self, data, spectral_axis=None):
+        # Container-aware wrapper
+        # Handles both SpectralContainer and numpy arrays
+        # Returns same type as input
+```
+
+**Registry Integration**:
+```python
+# functions/preprocess/registry.py
+from .fabc_fixed import FABCFixed
+
+"FABC": {
+    "class": FABCFixed,  # Use custom wrapper, not ramanspy.FABC
+    "description": "Fixed FABC implementation (bypassing ramanspy bug)",
+    # ... parameters
+}
+```
+
+**Testing Requirements**:
+- Test baseline reduction (should be >95% for fluorescence)
+- Test with SpectralContainer and numpy arrays
+- Verify container type preserved
+- Compare with pybaselines direct call (should match exactly)
+
+#### 2. Testing Documentation Location
+**CRITICAL**: Documentation location rules:
+- **Test summaries/reports (.md)**: Save in `.docs/testing/` folder
+- **Test scripts (.py)**: Save in `test_script/` folder
+- **Test results (.txt, .json)**: Save in `test_script/results/` folder
+
+**Directory Structure**:
+```
+.docs/
+└── testing/
+    ├── session2_comprehensive_testing.md
+    ├── session3_functional_testing.md
+    └── priority_fixes_progress.md
+
+test_script/
+├── test_preprocessing_comprehensive.py
+├── test_preprocessing_functional.py
+├── results/
+│   ├── comprehensive_test_results_20251014_220536.txt
+│   └── functional_test_results_20251014_224048.json
+└── README.md
+```
+
+### Test Script Location
+**CRITICAL**: ALL test scripts MUST be saved in the `test_script/` folder with their output results organized in subdirectories.
+
+### Environment Requirements
+1. **Always check the Python environment**: This project uses **UV** (not pip, conda, or poetry)
+2. **Run scripts with UV**: Use `uv run python <script_name>` to ensure correct environment
+3. **Example**:
+   ```bash
+   cd test_script
+   uv run python test_preprocessing_comprehensive.py
+   ```
+
+## Testing Standards
+
+### Test Script Organization
+- **Scripts Location**: All test scripts MUST be in `test_script/` folder
+- **Results Location**: Timestamped outputs in `test_script/results/` subfolder
+- **Documentation Location**: Test summaries/reports in `.docs/testing/` folder
+- **Environment**: ALWAYS use UV package manager (`uv run python test_script.py`)
+- **Outputs**: Save timestamped results with format `test_results_YYYYMMDD_HHMMSS.txt`
+
+### Test Coverage Requirements
+
+#### 1. Structural Testing (Necessary but NOT Sufficient)
+- ✓ Method exists in registry
+- ✓ Parameters defined correctly
+- ✓ Can instantiate class
+- ✗ Does NOT guarantee functionality
+
+#### 2. Functional Testing (REQUIRED for Production)
+- ✓ Apply methods to realistic synthetic data
+- ✓ Validate expected transformations
+- ✓ Check output quality (no NaN/Inf)
+- ✓ Test complete workflows (pipelines)
+- ✓ Measure domain-appropriate metrics
+
+**Key Principle**: "If it instantiates but doesn't work on real data, it's still broken!"
+
+#### 3. Library Signature Verification (MANDATORY for Registry Updates)
+- ✓ Use `inspect.signature()` to verify actual parameters
+- ✓ Compare with ramanspy wrapper (may differ from pybaselines)
+- ✓ Test with actual data after registry updates
+- ✓ Document any wrapper limitations
+
+### Current Test Scripts
+
+1. **test_preprocessing_comprehensive.py** (Session 2)
+   - Structural validation
+   - 40/40 methods pass instantiation
+   - Does NOT test functionality
+
+2. **test_preprocessing_functional.py** (Session 3) ⭐ CRITICAL
+   - Functional validation with synthetic Raman spectra
+   - Tests tissue-realistic data
+   - **FOUND**: 50% of methods have functional issues
+   - **CRITICAL**: ASPLS parameter bug blocks ALL medical pipelines
+
+### Test Data Generation Standards
+
+For Raman preprocessing tests:
+```python
+# REQUIRED: Generate realistic synthetic spectra
+- Fluorescence baseline (tissue autofluorescence)
+- Gaussian peaks at biomolecular positions
+- Realistic noise levels
+- Occasional cosmic ray spikes
+- Multiple tissue types (normal, cancer, inflammation)
+```
+
+### Validation Metrics (Category-Specific)
+
+**DO NOT use universal metrics for all methods!**
+
+```python
+# Baseline Correction:
+✓ Check residual variance reduction
+✓ Validate baseline removed
+✗ Don't expect SNR increase (removes mean!)
+
+# Normalization:
+✓ Check appropriate scaling (SNV: mean=0, std=1)
+✓ Validate data range
+✗ Don't use vector norm for all types!
+
+# Denoising:
+✓ Check high-frequency noise reduction
+✓ Measure signal smoothing
+✓ SNR improvement valid here
+
+# Cosmic Ray Removal:
+✓ Check spike elimination
+✓ Validate outlier reduction
+✓ SNR improvement expected
+
+# Derivatives:
+✓ Check zero-crossings
+✓ Validate peak enhancement
+✗ Don't expect positive SNR (emphasizes differences!)
+```
+
+### Medical Pipeline Testing
+
+**REQUIRED for all medical diagnostic applications**:
+
+1. Test complete workflows end-to-end
+2. Use multiple tissue types
+3. Validate tissue separability after preprocessing
+4. Check each step for cascading failures
+5. Document expected outcomes
+
+**Critical Lesson**: One broken step blocks entire medical workflow!
+
+### Known Critical Issues (October 2025)
+
+**BLOCKER BUGS**:
+1. **ASPLS Parameter Naming** 🚨
+   - Registry uses 'p_initial', users expect 'p'
+   - Blocks 3/6 medical pipelines
+   - FIX: Accept both parameter names
+
+2. **Method Name Inconsistencies**:
+   - IAsLS vs IASLS
+   - AirPLS vs AIRPLS
+   - ArPLS vs ARPLS
+   - FIX: Add aliases
+
+3. **Calibration Methods**:
+   - Need optional runtime inputs for testing
+   - Cannot use in automated pipelines currently
+
+### Test Execution Standards
+1. **Comprehensive Coverage**: Test ALL implemented methods/features, not just a subset
+2. **Deep Analysis**: Perform thorough validation including:
+   - Parameter definitions and consistency
+   - Method instantiation
+   - Range validation
+   - Error handling
+3. **Output Reports**: Generate both text and JSON reports with timestamps
+4. **Results Tracking**: Save results to `test_script/test_results_TIMESTAMP.txt`
+
+### Current Test Scripts
+- `test_preprocessing_comprehensive.py`: Tests all 40 preprocessing methods
+  - Last run: 2025-10-14, Result: 40/40 passed (100%)
+  - Output: `test_results_20251014_220536.txt`
 
 ## ⚠️ CRITICAL: Non-Maximized Window Design Constraint
 
