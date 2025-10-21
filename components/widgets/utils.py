@@ -20,7 +20,7 @@ from PySide6.QtSvg import QSvgRenderer
 
 # Import utils functions
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from utils import load_svg_icon, create_logs, LOCALIZE
+from utils import create_logs, LOCALIZE
 from PySide6.QtCore import Qt, Signal, QThread, QTimer, QSize
 from PySide6.QtGui import QFont, QIcon
 

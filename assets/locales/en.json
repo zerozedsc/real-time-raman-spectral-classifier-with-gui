@@ -218,6 +218,7 @@
         "cancel_button": "Cancel",
         "processing": "Processing",
         "refresh_datasets_tooltip": "Reload project datasets",
+        "select_all_tooltip": "Select/deselect all datasets in current tab",
         "export_button": "Export",
         "export_button_tooltip": "Export selected dataset(s) to file",
         "export_dialog_title": "Export Dataset",

@@ -22,8 +22,7 @@ class CustomSpinBox(QWidget):
         # Minus button with SVG icon
         self.minus_btn = QPushButton()
         self.minus_btn.setFixedSize(24, 24)
-        decrease_icon_path = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "minus.svg")
-        self.minus_btn.setIcon(load_svg_icon(decrease_icon_path, None, QSize(16, 16)))
+        self.minus_btn.setIcon(load_icon("minus", QSize(16, 16), None))
         self.minus_btn.setStyleSheet("""
             QPushButton {
                 background-color: #f8f9fa;
@@ -66,8 +65,7 @@ class CustomSpinBox(QWidget):
         # Plus button with SVG icon
         self.plus_btn = QPushButton()
         self.plus_btn.setFixedSize(24, 24)
-        plus_icon_path = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "plus.svg")
-        self.plus_btn.setIcon(load_svg_icon(plus_icon_path, "#27ae60", QSize(16, 16)))
+        self.plus_btn.setIcon(load_icon("plus", QSize(16, 16), "#27ae60"))
         self.plus_btn.setStyleSheet("""
             QPushButton {
                 background-color: #f8f9fa;
@@ -165,8 +163,7 @@ class CustomDoubleSpinBox(QWidget):
         # Minus button with SVG icon
         self.minus_btn = QPushButton()
         self.minus_btn.setFixedSize(24, 24)
-        decrease_icon_path = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "minus.svg")
-        self.minus_btn.setIcon(load_svg_icon(decrease_icon_path, "#e74c3c", QSize(16, 16)))
+        self.minus_btn.setIcon(load_icon("minus", QSize(16, 16), "#e74c3c"))
         self.minus_btn.setStyleSheet("""
             QPushButton {
                 background-color: #f8f9fa;
@@ -209,8 +206,7 @@ class CustomDoubleSpinBox(QWidget):
         # Plus button with SVG icon
         self.plus_btn = QPushButton()
         self.plus_btn.setFixedSize(24, 24)
-        plus_icon_path = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons", "plus.svg")
-        self.plus_btn.setIcon(load_svg_icon(plus_icon_path, "#27ae60", QSize(16, 16)))
+        self.plus_btn.setIcon(load_icon("plus", QSize(16, 16), "#27ae60"))
         self.plus_btn.setStyleSheet("""
             QPushButton {
                 background-color: #f8f9fa;

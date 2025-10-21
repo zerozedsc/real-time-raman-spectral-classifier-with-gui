@@ -140,7 +140,7 @@ class PreprocessPage(QWidget):
         # Import pipeline button - small icon button matching input dataset style
         import_btn = QPushButton()
         import_btn.setObjectName("titleBarButtonGreen")
-        import_icon = load_svg_icon(get_icon_path("load_project"), "#28a745", QSize(14, 14))
+        import_icon = load_icon("load_project", QSize(14, 14), "#28a745")
         import_btn.setIcon(import_icon)
         import_btn.setIconSize(QSize(14, 14))
         import_btn.setFixedSize(24, 24)
@@ -167,7 +167,7 @@ class PreprocessPage(QWidget):
         # Export pipeline button - small icon button matching input dataset style
         export_btn = QPushButton()
         export_btn.setObjectName("titleBarButton")
-        export_icon = load_svg_icon(get_icon_path("export"), "#0078d4", QSize(14, 14))
+        export_icon = load_icon("export", QSize(14, 14), "#0078d4")
         export_btn.setIcon(export_icon)
         export_btn.setIconSize(QSize(14, 14))
         export_btn.setFixedSize(24, 24)
@@ -277,7 +277,7 @@ class PreprocessPage(QWidget):
         add_step_btn = QPushButton()
         add_step_btn.setObjectName("addStepButton")
         add_step_btn.setFixedSize(60, 50)  # Tall enough to match the two-row height
-        plus_icon = load_svg_icon(get_icon_path("plus"), "white", QSize(24, 24))
+        plus_icon = load_icon("plus", QSize(24, 24), "white")
         add_step_btn.setIcon(plus_icon)
         add_step_btn.setIconSize(QSize(24, 24))
         add_step_btn.setStyleSheet("""
@@ -347,7 +347,7 @@ class PreprocessPage(QWidget):
         remove_btn = QPushButton()
         remove_btn.setObjectName("compactButton")
         remove_btn.setFixedHeight(28)
-        trash_icon = load_svg_icon(get_icon_path("trash_bin"), "#dc3545", QSize(14, 14))
+        trash_icon = load_icon("trash_bin", QSize(14, 14), "#dc3545")
         remove_btn.setIcon(trash_icon)
         remove_btn.setIconSize(QSize(14, 14))
         remove_btn.setStyleSheet("""
@@ -479,10 +479,38 @@ class PreprocessPage(QWidget):
         # Add stretch to push buttons to the right
         title_layout.addStretch()
         
+        # Select All button - tab-aware selection toggle
+        self.select_all_btn = QPushButton()
+        self.select_all_btn.setObjectName("titleBarButton")
+        self.select_all_btn.setFixedSize(24, 24)
+        self.select_all_btn.setToolTip(LOCALIZE("PREPROCESS.select_all_tooltip"))
+        self.select_all_btn.setCursor(Qt.PointingHandCursor)
+        # Use checkmark icon for select all
+        checkmark_icon = load_icon("checkmark", QSize(14, 14), "#0078d4")
+        self.select_all_btn.setIcon(checkmark_icon)
+        self.select_all_btn.setIconSize(QSize(14, 14))
+        self.select_all_btn.setStyleSheet("""
+            QPushButton#titleBarButton {
+                background-color: transparent;
+                border: 1px solid transparent;
+                border-radius: 3px;
+                padding: 2px;
+            }
+            QPushButton#titleBarButton:hover {
+                background-color: #e7f3ff;
+                border-color: #0078d4;
+            }
+            QPushButton#titleBarButton:pressed {
+                background-color: #d0e7ff;
+            }
+        """)
+        self.select_all_btn.clicked.connect(self._toggle_select_all_datasets)
+        title_layout.addWidget(self.select_all_btn)
+        
         # Refresh button - compact icon in title bar
         refresh_btn = QPushButton()
         refresh_btn.setObjectName("titleBarButton")
-        reload_icon = load_svg_icon(get_icon_path("reload"), "#0078d4", QSize(14, 14))
+        reload_icon = load_icon("reload", QSize(14, 14), "#0078d4")
         refresh_btn.setIcon(reload_icon)
         refresh_btn.setIconSize(QSize(14, 14))
         refresh_btn.setFixedSize(24, 24)
@@ -509,7 +537,7 @@ class PreprocessPage(QWidget):
         # Export button - compact icon in title bar
         export_btn = QPushButton()
         export_btn.setObjectName("titleBarButtonGreen")
-        export_icon = load_svg_icon(get_icon_path("export"), "#28a745", QSize(14, 14))
+        export_icon = load_icon("export", QSize(14, 14), "#28a745")
         export_btn.setIcon(export_icon)
         export_btn.setIconSize(QSize(14, 14))
         export_btn.setFixedSize(24, 24)
@@ -638,8 +666,45 @@ class PreprocessPage(QWidget):
         elif index == 2:
             self.dataset_list = self.dataset_list_preprocessed
         
+        # Update preview toggle based on tab type
+        # Raw datasets (tabs 0 & 1) should have preview ON by default
+        # Preprocessed datasets (tab 2) should have preview OFF by default
+        if index in [0, 1]:  # All or Raw datasets
+            if not self.preview_toggle_btn.isChecked():
+                self.preview_toggle_btn.blockSignals(True)
+                self.preview_toggle_btn.setChecked(True)
+                self.preview_toggle_btn.blockSignals(False)
+                self._update_preview_button_state(True)
+                self.preview_enabled = True
+        elif index == 2:  # Preprocessed datasets
+            if self.preview_toggle_btn.isChecked():
+                self.preview_toggle_btn.blockSignals(True)
+                self.preview_toggle_btn.setChecked(False)
+                self.preview_toggle_btn.blockSignals(False)
+                self._update_preview_button_state(False)
+                self.preview_enabled = False
+        
         # Trigger selection changed event for the newly active tab
         self._on_dataset_selection_changed()
+    
+    def _toggle_select_all_datasets(self):
+        """Toggle select all/deselect all for datasets in current tab."""
+        current_list = self.dataset_list
+        
+        # Check if all items are currently selected
+        total_items = current_list.count()
+        if total_items == 0:
+            return
+        
+        selected_items = current_list.selectedItems()
+        all_selected = len(selected_items) == total_items
+        
+        if all_selected:
+            # Deselect all
+            current_list.clearSelection()
+        else:
+            # Select all items in current tab
+            current_list.selectAll()
     
     def _on_dataset_selection_changed(self):
         """Handle dataset selection changes across all tabs - syncs selection and updates visualization."""
@@ -672,14 +737,31 @@ class PreprocessPage(QWidget):
                     # Load existing pipeline with steps DISABLED by default
                     self._load_preprocessing_pipeline(metadata.get('preprocessing_pipeline', []), default_disabled=True, source_dataset=dataset_name)
                     # Auto-disable preview for preprocessed datasets
-                    self.preview_enabled = False
-                    self._update_preview_button_state(False)
+                    if self.preview_toggle_btn.isChecked():
+                        self.preview_toggle_btn.blockSignals(True)
+                        self.preview_toggle_btn.setChecked(False)
+                        self.preview_toggle_btn.blockSignals(False)
+                        self._update_preview_button_state(False)
+                        self.preview_enabled = False
                     self._last_selected_was_preprocessed = True
                 else:
                     # Check if switching from preprocessed to raw
                     if hasattr(self, '_last_selected_was_preprocessed') and self._last_selected_was_preprocessed:
-                        self.preview_enabled = True
-                        self._update_preview_button_state(True)
+                        # Auto-enable preview for raw datasets
+                        if not self.preview_toggle_btn.isChecked():
+                            self.preview_toggle_btn.blockSignals(True)
+                            self.preview_toggle_btn.setChecked(True)
+                            self.preview_toggle_btn.blockSignals(False)
+                            self._update_preview_button_state(True)
+                            self.preview_enabled = True
+                    else:
+                        # First load or raw to raw: ensure preview is ON
+                        if not self.preview_toggle_btn.isChecked():
+                            self.preview_toggle_btn.blockSignals(True)
+                            self.preview_toggle_btn.setChecked(True)
+                            self.preview_toggle_btn.blockSignals(False)
+                            self._update_preview_button_state(True)
+                            self.preview_enabled = True
                     
                     # For raw datasets, restore from global pipeline memory
                     self._restore_global_pipeline_memory()
@@ -710,7 +792,7 @@ class PreprocessPage(QWidget):
                 self.original_data = combined_df
                 
                 # Show data with current preview mode
-                if self.preview_enabled and hasattr(self, 'pipeline_steps') and self.pipeline_steps:
+                if self.preview_toggle_btn.isChecked() and hasattr(self, 'pipeline_steps') and self.pipeline_steps:
                     self._schedule_preview_update()
                 else:
                     fig = plot_spectra(combined_df, title="Original Data (Preview OFF)", auto_focus=False)
@@ -943,14 +1025,16 @@ class PreprocessPage(QWidget):
         # Preview mode toggle with enhanced styling
         self.preview_toggle_btn = QPushButton()
         self.preview_toggle_btn.setCheckable(True)
-        self.preview_toggle_btn.setChecked(True)
+        # Default state: ON for raw datasets (default tab), OFF for preprocessed
+        # This will be adjusted by _on_dataset_tab_changed when tabs are created
+        self.preview_toggle_btn.setChecked(True)  # Default for raw datasets
         self.preview_toggle_btn.setFixedHeight(28)  # Reduced from 32
         self.preview_toggle_btn.setMinimumWidth(110)  # Reduced from 120
         self.preview_toggle_btn.setToolTip(LOCALIZE("PREPROCESS.real_time_preview_tooltip"))
         
         # Load eye icons using centralized icon paths
-        self.eye_open_icon = load_svg_icon(get_icon_path("eye_open"), "#2c3e50", QSize(16, 16))
-        self.eye_close_icon = load_svg_icon(get_icon_path("eye_close"), "#7f8c8d", QSize(16, 16))
+        self.eye_open_icon = load_icon("eye_open", QSize(16, 16), "#2c3e50")
+        self.eye_close_icon = load_icon("eye_close", QSize(16, 16), "#7f8c8d")
         
         # Set initial state
         self._update_preview_button_state(True)
@@ -960,7 +1044,7 @@ class PreprocessPage(QWidget):
         
         # Manual refresh button with SVG icon (compact)
         self.manual_refresh_btn = QPushButton()
-        reload_icon = load_svg_icon(get_icon_path("reload"), "#7f8c8d", QSize(14, 14))
+        reload_icon = load_icon("reload", QSize(14, 14), "#7f8c8d")
         self.manual_refresh_btn.setIcon(reload_icon)
         self.manual_refresh_btn.setIconSize(QSize(14, 14))
         self.manual_refresh_btn.setFixedSize(28, 28)  # Reduced from 32x32
@@ -985,7 +1069,7 @@ class PreprocessPage(QWidget):
         
         # Manual focus button with SVG icon (compact)
         self.manual_focus_btn = QPushButton()
-        focus_icon = load_svg_icon(get_icon_path("focus_horizontal"), "#7f8c8d", QSize(14, 14))
+        focus_icon = load_icon("focus_horizontal", QSize(14, 14), "#7f8c8d")
         self.manual_focus_btn.setIcon(focus_icon)
         self.manual_focus_btn.setIconSize(QSize(14, 14))
         self.manual_focus_btn.setFixedSize(28, 28)  # Reduced from 32x32
@@ -1851,6 +1935,45 @@ class PreprocessPage(QWidget):
         dialog.setModal(True)
         dialog.setMinimumWidth(500)
         
+        # Apply dialog styling
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #ffffff;
+            }
+            QLabel {
+                color: #2c3e50;
+            }
+            QLineEdit, QTextEdit {
+                padding: 8px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                background-color: #ffffff;
+                color: #2c3e50;
+            }
+            QLineEdit:focus, QTextEdit:focus {
+                border-color: #0078d4;
+            }
+            QPushButton {
+                padding: 8px 16px;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                background-color: #f8f9fa;
+                color: #2c3e50;
+            }
+            QPushButton:hover {
+                background-color: #e9ecef;
+                border-color: #adb5bd;
+            }
+            QPushButton#ctaButton {
+                background-color: #0078d4;
+                color: white;
+                border: none;
+            }
+            QPushButton#ctaButton:hover {
+                background-color: #006abc;
+            }
+        """)
+        
         layout = QVBoxLayout(dialog)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
@@ -2002,6 +2125,51 @@ class PreprocessPage(QWidget):
             dialog.setModal(True)
             dialog.setMinimumWidth(600)
             dialog.setMinimumHeight(400)
+            
+            # Apply dialog styling
+            dialog.setStyleSheet("""
+                QDialog {
+                    background-color: #ffffff;
+                }
+                QLabel {
+                    color: #2c3e50;
+                }
+                QListWidget {
+                    border: 1px solid #ced4da;
+                    border-radius: 4px;
+                    background-color: #ffffff;
+                }
+                QListWidget::item {
+                    padding: 4px;
+                    border-bottom: 1px solid #e9ecef;
+                }
+                QListWidget::item:selected {
+                    background-color: #e7f3ff;
+                    border-left: 3px solid #0078d4;
+                }
+                QListWidget::item:hover {
+                    background-color: #f8f9fa;
+                }
+                QPushButton {
+                    padding: 8px 16px;
+                    border: 1px solid #ced4da;
+                    border-radius: 4px;
+                    background-color: #f8f9fa;
+                    color: #2c3e50;
+                }
+                QPushButton:hover {
+                    background-color: #e9ecef;
+                    border-color: #adb5bd;
+                }
+                QPushButton#ctaButton {
+                    background-color: #0078d4;
+                    color: white;
+                    border: none;
+                }
+                QPushButton#ctaButton:hover {
+                    background-color: #006abc;
+                }
+            """)
             
             layout = QVBoxLayout(dialog)
             layout.setContentsMargins(20, 20, 20, 20)
@@ -3089,49 +3257,6 @@ class PreprocessPage(QWidget):
             self.output_name_edit.clear()
 
     # ============== AUTOMATIC PREVIEW SYSTEM ==============
-    
-    def _update_preview_button_state(self, enabled: bool):
-        """Update preview button appearance based on state."""
-        if enabled:
-            self.preview_toggle_btn.setIcon(self.eye_open_icon)
-            self.preview_toggle_btn.setText("プレビュー")
-            self.preview_toggle_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #3498db;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: bold;
-                    padding: 6px;
-                }
-                QPushButton:hover {
-                    background-color: #2980b9;
-                }
-                QPushButton:pressed {
-                    background-color: #21618c;
-                }
-            """)
-        else:
-            self.preview_toggle_btn.setIcon(self.eye_close_icon)
-            self.preview_toggle_btn.setText("オフ")
-            self.preview_toggle_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #95a5a6;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: bold;
-                    padding: 6px;
-                }
-                QPushButton:hover {
-                    background-color: #7f8c8d;
-                }
-                QPushButton:pressed {
-                    background-color: #6c7b7d;
-                }
-            """)
 
     def _toggle_preview_mode(self, enabled: bool):
         """Toggle real-time preview mode."""

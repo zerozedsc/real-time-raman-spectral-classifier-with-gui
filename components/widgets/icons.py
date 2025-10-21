@@ -7,9 +7,9 @@ for all widgets in the components/widgets package.
 
 import os
 from typing import Optional, Union
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QIcon
-from utils import load_svg_icon
+from PySide6.QtGui import QFontDatabase, QIcon, QPixmap, QPainter 
+from PySide6.QtSvg import QSvgRenderer
+from PySide6.QtCore import QSize, Qt
 
 # Base path for all icons
 ICONS_BASE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons")
@@ -37,6 +37,7 @@ ICON_PATHS = {
     "export": "export-button.svg",       # Export button icon
     "save": "save.svg",                # Save button icon
     "edit": "edit.svg",              # Edit button icon
+    "checkmark": "checkmark.svg",    # Checkmark icon
     
     # Project management icons
     "new_project": "new-project.svg",    # Used in home_page.py, utils.py
@@ -72,6 +73,32 @@ def get_icon_path(icon_name: str) -> str:
         raise KeyError(f"Icon '{icon_name}' not found in registry. Available icons: {list(ICON_PATHS.keys())}")
     
     return os.path.join(ICONS_BASE_PATH, ICON_PATHS[icon_name])
+
+def load_svg_icon(path: str,  color: Qt.GlobalColor = None, size: QSize = QSize(48, 48)) -> QIcon:
+    """
+    Loads an SVG file from disk and returns a QIcon of the given size.
+    Optionally applies a color overlay to the SVG.
+    """
+    renderer = QSvgRenderer(path)
+    pixmap = QPixmap(size)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    renderer.render(painter)
+    painter.end()
+
+    if color is not None:
+        # Apply color overlay
+        mask = pixmap.createMaskFromColor(Qt.GlobalColor.transparent)
+        colored_pixmap = QPixmap(size)
+        colored_pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(colored_pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_Source)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+        painter.fillRect(colored_pixmap.rect(), color)
+        painter.end()
+        return QIcon(colored_pixmap)
+    return QIcon(pixmap)
 
 def load_icon(icon_name: str, size: Optional[Union[QSize, str]] = None, color: Optional[str] = None) -> QIcon:
     """

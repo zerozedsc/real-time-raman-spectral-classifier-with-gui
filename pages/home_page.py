@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QSize, Signal, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QIcon, QPixmap, QPainter, QMouseEvent, QFont
 from PySide6.QtSvg import QSvgRenderer
+from components.widgets import *
 from utils import *
 
 class ActionCard(QWidget):
@@ -93,7 +94,7 @@ class RecentProjectItemWidget(QWidget):
         
         # Project icon
         icon_label = QLabel()
-        project_icon = load_svg_icon(ICON_PATHS["recent_projects"], "#0078d4", QSize(24, 24))
+        project_icon = load_icon("recent_projects", QSize(24, 24), "#0078d4")
         icon_label.setPixmap(project_icon.pixmap(QSize(24, 24)))
         icon_label.setFixedSize(24, 24)
         
@@ -193,12 +194,12 @@ class HomePage(QWidget):
         actions_layout.setSpacing(20)
         
         # New project card
-        new_icon = load_svg_icon(ICON_PATHS["new_project"], "#0078d4", QSize(32, 32))
+        new_icon = load_icon("new_project", QSize(32, 32), "#0078d4")
         new_card = ActionCard(new_icon, LOCALIZE("HOME_PAGE.new_project_button"), LOCALIZE("HOME_PAGE.new_project_desc"))
         new_card.clicked.connect(self.handle_new_project)
         
         # Open project card
-        open_icon = load_svg_icon(ICON_PATHS["open_project"], "#0078d4", QSize(32, 32))
+        open_icon = load_icon("open_project", QSize(32, 32), "#0078d4")
         open_card = ActionCard(open_icon, LOCALIZE("HOME_PAGE.open_project_button"), LOCALIZE("HOME_PAGE.open_project_desc"))
         open_card.clicked.connect(self.handle_open_project)
         
@@ -241,7 +242,7 @@ class HomePage(QWidget):
         header_layout.setSpacing(16)
         
         # Recent projects icon
-        recent_icon = load_svg_icon(ICON_PATHS["recent_projects"], "#0078d4", QSize(24, 24))
+        recent_icon = load_icon("recent_projects", QSize(24, 24), "#0078d4")
         icon_label = QLabel()
         icon_label.setPixmap(recent_icon.pixmap(QSize(24, 24)))
         icon_label.setFixedSize(24, 24)
@@ -265,7 +266,7 @@ class HomePage(QWidget):
         if not recent_projects:
             # Create empty state item
             empty_item = QListWidgetItem()
-            empty_item.setObjectName("emptyStateLabel")
+            # empty_item.setObjectName("emptyStateLabel")
             empty_item.setText(LOCALIZE("HOME_PAGE.no_recent_projects"))
             empty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             empty_item.setFlags(empty_item.flags() & ~Qt.ItemFlag.ItemIsSelectable)

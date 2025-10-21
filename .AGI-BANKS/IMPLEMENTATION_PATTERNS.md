@@ -2,6 +2,599 @@
 
 ## Code Architecture Patterns
 
+### 0.0. Icon Loading Pattern (October 16, 2025) 🆕⭐
+**PURPOSE**: Standardized icon loading using centralized icon management  
+**CONTEXT**: All UI components requiring icons (buttons, toolbars, widgets)
+
+**✅ CORRECT Pattern - Use icons.py API**:
+```python
+from components.widgets.icons import load_icon, create_button_icon, get_icon_path
+from PySide6.QtCore import QSize
+
+# Method 1: Load icon with color customization (most common)
+icon = load_icon("icon_name", QSize(width, height), "#hex_color")
+
+# Method 2: Load icon without color (use original SVG colors)
+icon = load_icon("icon_name", QSize(width, height))
+
+# Method 3: Use predefined size string keys
+icon = load_icon("icon_name", "button")  # Uses DEFAULT_SIZES["button"] = QSize(16, 16)
+icon = load_icon("icon_name", "toolbar")  # Uses DEFAULT_SIZES["toolbar"] = QSize(24, 24)
+
+# Method 4: Specialized button icon creation
+icon = create_button_icon("icon_name", "#0078d4")
+
+# Examples from codebase:
+import_icon = load_icon("load_project", QSize(14, 14), "#28a745")
+export_icon = load_icon("export", QSize(14, 14), "#0078d4")
+plus_icon = load_icon("plus", QSize(24, 24), "white")
+trash_icon = load_icon("trash_bin", QSize(14, 14), "#dc3545")
+```
+
+**❌ INCORRECT Pattern - Don't use low-level utils directly**:
+```python
+# DON'T: Direct path-based loading (deprecated)
+from utils import load_svg_icon
+icon = load_svg_icon(get_icon_path("icon_name"), "#color", QSize(w, h))
+
+# DON'T: Using ICON_PATHS dictionary directly
+icon = load_svg_icon(ICON_PATHS["icon_name"], "#color", QSize(w, h))
+
+# DON'T: Manual path construction
+icon_path = os.path.join(os.path.dirname(__file__), "assets", "icons", "icon.svg")
+icon = load_svg_icon(icon_path, "#color", QSize(w, h))
+```
+
+**Why Use icons.py API?**:
+1. **Name-based loading**: No path manipulation needed
+2. **Consistent API**: Single source of truth for icon loading
+3. **Type safety**: Better IDE support and error detection
+4. **Maintainability**: Centralized icon management
+5. **Flexibility**: Supports size presets, color customization
+
+**Parameter Order Note**:
+- `load_icon(icon_name, size, color)` - Note: size comes before color!
+- This differs from the old `load_svg_icon(path, color, size)` pattern
+
+**Internal Architecture** (For Reference Only):
+```python
+# utils.py - Low-level function (used internally by icons.py)
+def load_svg_icon(path: str, color: Qt.GlobalColor = None, size: QSize = QSize(48, 48)) -> QIcon:
+    # Handles SVG rendering with color customization
+    pass
+
+# components/widgets/icons.py - High-level API (USE THIS)
+def load_icon(icon_name: str, size=None, color: Optional[str] = None) -> QIcon:
+    """
+    Load icon by name with optional size and color customization.
+    
+    Args:
+        icon_name: Icon identifier (key from ICON_PATHS)
+        size: QSize object or string key from DEFAULT_SIZES
+        color: Optional hex color (#RRGGBB) or Qt color name
+    """
+    icon_path = get_icon_path(icon_name)
+    if color is not None:
+        return load_svg_icon(icon_path, color, size)  # Calls utils internally
+    else:
+        return QIcon(icon_path)
+```
+
+**Migration Checklist**:
+- [x] Replace all `load_svg_icon(get_icon_path("name"), color, size)` calls
+- [x] Replace all `load_svg_icon(ICON_PATHS["name"], color, size)` calls
+- [x] Replace all manual path construction with `load_icon("name", size, color)`
+- [x] Update imports: `from components.widgets.icons import load_icon`
+- [x] Remove unused `from utils import load_svg_icon` imports
+- [x] Verify all icons display correctly after migration
+
+---
+
+### 0.1. Tab-Aware Selection Pattern (October 16, 2025) 🆕⭐
+**PURPOSE**: Implement selection operations that respect active tab context  
+**CONTEXT**: Multi-tab interfaces where each tab has its own dataset/item list
+
+**Pattern Implementation**:
+```python
+class PreprocessPage:
+    def __init__(self):
+        # Create separate list widgets for each tab
+        self.dataset_list_all = QListWidget()
+        self.dataset_list_raw = QListWidget()
+        self.dataset_list_preprocessed = QListWidget()
+        
+        # Reference to current tab's list (updated on tab change)
+        self.dataset_list = self.dataset_list_all
+        
+        # Connect tab change signal
+        self.dataset_tabs.currentChanged.connect(self._on_dataset_tab_changed)
+    
+    def _on_dataset_tab_changed(self, index: int):
+        """Update active list reference when tab changes."""
+        if index == 0:
+            self.dataset_list = self.dataset_list_all
+        elif index == 1:
+            self.dataset_list = self.dataset_list_raw
+        elif index == 2:
+            self.dataset_list = self.dataset_list_preprocessed
+        
+        # Update any tab-dependent UI state here
+        self._update_tab_dependent_state(index)
+    
+    def _toggle_select_all_datasets(self):
+        """Select/deselect all items in current tab only."""
+        current_list = self.dataset_list  # Uses current tab's list
+        
+        total_items = current_list.count()
+        if total_items == 0:
+            return
+        
+        selected_items = current_list.selectedItems()
+        all_selected = len(selected_items) == total_items
+        
+        if all_selected:
+            current_list.clearSelection()  # Deselect all
+        else:
+            current_list.selectAll()  # Select all
+```
+
+**Key Principles**:
+1. **Single Reference**: Maintain one `self.dataset_list` reference that points to current tab's list
+2. **Tab Change Handler**: Update reference in `_on_dataset_tab_changed()`
+3. **Toggle Logic**: Check if all selected → deselect, otherwise → select all
+4. **Zero Items Check**: Always check if list is empty before operations
+
+**UI Integration**:
+```python
+# Add select all button to title bar
+select_all_btn = self._create_action_icon_button(
+    "checkmark", "#0078d4", LOCALIZE("PREPROCESS.select_all_tooltip")
+)
+select_all_btn.clicked.connect(self._toggle_select_all_datasets)
+title_layout.addWidget(select_all_btn)
+```
+
+**Localization Keys**:
+- `select_all_tooltip`: "Select/deselect all datasets in current tab"
+- JA: "現在のタブのすべてのデータセットを選択/選択解除"
+
+**Related Files**:
+- `pages/preprocess_page.py` (lines 485-513, 658-695)
+- `assets/locales/en.json` (line 221)
+- `assets/locales/ja.json` (line 200)
+
+---
+
+### 0.2. Intelligent State Management Pattern (October 16, 2025) 🆕⭐
+**PURPOSE**: Automatically adjust UI state based on context changes (e.g., tab switches)  
+**CONTEXT**: Features that should behave differently based on data type or context
+
+**Pattern: Preview Toggle with Tab-Aware Defaults**
+```python
+def _on_dataset_tab_changed(self, index: int):
+    """Update UI state based on tab type."""
+    # Update active reference
+    if index == 0:
+        self.dataset_list = self.dataset_list_all
+    elif index == 1:
+        self.dataset_list = self.dataset_list_raw
+    elif index == 2:
+        self.dataset_list = self.dataset_list_preprocessed
+    
+    # Adjust preview toggle based on tab type
+    # Raw datasets (tabs 0 & 1) should have preview ON
+    # Preprocessed datasets (tab 2) should have preview OFF
+    if index in [0, 1]:  # All or Raw datasets
+        if not self.preview_toggle_btn.isChecked():
+            self.preview_toggle_btn.blockSignals(True)
+            self.preview_toggle_btn.setChecked(True)
+            self.preview_toggle_btn.blockSignals(False)
+            self._update_preview_toggle_button_style()
+    elif index == 2:  # Preprocessed datasets
+        if self.preview_toggle_btn.isChecked():
+            self.preview_toggle_btn.blockSignals(True)
+            self.preview_toggle_btn.setChecked(False)
+            self.preview_toggle_btn.blockSignals(False)
+            self._update_preview_toggle_button_style()
+    
+    # Trigger selection changed event
+    self._on_dataset_selection_changed()
+```
+
+**Key Principles**:
+1. **Context-Dependent Defaults**: State depends on current context (tab or dataset type)
+2. **Signal Blocking**: Use `blockSignals(True/False)` to prevent unwanted events
+3. **State Consistency**: Update related UI elements after state change
+4. **Rationale Documentation**: Comment explaining why state differs per context
+5. **Dataset Type Detection**: Check metadata to determine raw vs preprocessed
+
+**Enhanced Pattern: Dataset Type-Aware State Management**:
+```python
+def _on_dataset_selection_changed(self):
+    """Adjust preview toggle based on selected dataset type."""
+    selected_items = self.dataset_list.selectedItems()
+    
+    if len(selected_items) == 1:
+        dataset_name = self._clean_dataset_name(selected_items[0].text())
+        metadata = PROJECT_MANAGER.get_dataframe_metadata(dataset_name)
+        is_preprocessed = metadata and metadata.get('is_preprocessed', False)
+        
+        if is_preprocessed:
+            # Preprocessed dataset → Force preview OFF
+            if self.preview_toggle_btn.isChecked():
+                self.preview_toggle_btn.blockSignals(True)
+                self.preview_toggle_btn.setChecked(False)
+                self.preview_toggle_btn.blockSignals(False)
+                self._update_preview_toggle_button_style()
+            self._last_selected_was_preprocessed = True
+        else:
+            # Raw dataset → Force preview ON
+            # Works for: first load, raw-to-raw, preprocessed-to-raw
+            if not self.preview_toggle_btn.isChecked():
+                self.preview_toggle_btn.blockSignals(True)
+                self.preview_toggle_btn.setChecked(True)
+                self.preview_toggle_btn.blockSignals(False)
+                self._update_preview_toggle_button_style()
+            self._last_selected_was_preprocessed = False
+```
+
+**State Decision Matrix**:
+| Context | Tab | Dataset Type | Preview State |
+|---------|-----|--------------|---------------|
+| Tab change | All/Raw | N/A | ON |
+| Tab change | Preprocessed | N/A | OFF |
+| Selection | Any | Raw | ON |
+| Selection | Any | Preprocessed | OFF |
+| First load | Any | Raw | ON |
+| First load | Any | Preprocessed | OFF |
+
+**Rationale Example**:
+```python
+# Default state: ON for raw datasets, OFF for preprocessed
+# Reasoning:
+# - Raw data needs preview to show processing effects
+# - Preprocessed data should NOT be previewed to avoid double processing
+# - Tab changes AND dataset selection both trigger state updates
+self.preview_toggle_btn.setChecked(True)  # Default for raw datasets
+```
+
+**Signal Management**:
+```python
+# Always block signals during programmatic changes
+widget.blockSignals(True)
+widget.setValue(new_value)
+widget.blockSignals(False)
+
+# Then manually trigger any required updates
+self._update_dependent_ui()
+```
+
+**Related Files**:
+- `pages/preprocess_page.py` (lines 658-681 tab change, 707-798 selection change, 1007-1010 initialization)
+
+---
+
+### 0.3. Dialog Styling Consistency Pattern (October 16, 2025) 🆕⭐
+**PURPOSE**: Maintain consistent visual design across all dialogs  
+**CONTEXT**: QDialog instances need unified styling matching application theme
+
+**Standard Dialog Styling**:
+```python
+def _create_styled_dialog(self, title_key: str, min_width: int = 500, 
+                         min_height: int = None) -> QDialog:
+    """Create dialog with standardized styling."""
+    dialog = QDialog(self)
+    dialog.setWindowTitle(LOCALIZE(title_key))
+    dialog.setModal(True)
+    dialog.setMinimumWidth(min_width)
+    if min_height:
+        dialog.setMinimumHeight(min_height)
+    
+    # Standard dialog stylesheet
+    dialog.setStyleSheet("""
+        QDialog {
+            background-color: #ffffff;
+        }
+        QLabel {
+            color: #2c3e50;
+        }
+        QLineEdit, QTextEdit {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #ffffff;
+            color: #2c3e50;
+        }
+        QLineEdit:focus, QTextEdit:focus {
+            border-color: #0078d4;
+        }
+        QListWidget {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #ffffff;
+        }
+        QListWidget::item {
+            padding: 4px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        QListWidget::item:selected {
+            background-color: #e7f3ff;
+            border-left: 3px solid #0078d4;
+        }
+        QListWidget::item:hover {
+            background-color: #f8f9fa;
+        }
+        QPushButton {
+            padding: 8px 16px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            color: #2c3e50;
+        }
+        QPushButton:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
+        QPushButton#ctaButton {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+        }
+        QPushButton#ctaButton:hover {
+            background-color: #006abc;
+        }
+    """)
+    
+    return dialog
+```
+
+**Color Scheme**:
+- **Background**: `#ffffff` (white)
+- **Text**: `#2c3e50` (dark gray)
+- **Borders**: `#ced4da` (light gray)
+- **Primary Actions**: `#0078d4` (blue)
+- **Hover States**: `#e9ecef` (lighter gray)
+- **Selection**: `#e7f3ff` (light blue)
+
+**Button Patterns**:
+```python
+# Primary CTA button (blue)
+cta_btn = QPushButton(LOCALIZE("action_label"))
+cta_btn.setObjectName("ctaButton")
+cta_btn.setDefault(True)
+
+# Secondary cancel button (gray)
+cancel_btn = QPushButton(LOCALIZE("COMMON.cancel"))
+# No special objectName needed
+```
+
+**Layout Pattern**:
+```python
+layout = QVBoxLayout(dialog)
+layout.setContentsMargins(20, 20, 20, 20)
+layout.setSpacing(16)
+
+# Add content widgets...
+
+# Button layout (always at bottom)
+button_layout = QHBoxLayout()
+button_layout.addStretch()  # Push buttons right
+button_layout.addWidget(cancel_btn)
+button_layout.addWidget(cta_btn)
+layout.addLayout(button_layout)
+```
+
+**Related Files**:
+- `pages/preprocess_page.py` (lines 1903-1955, 2079-2125)
+
+---
+
+### 0.4. Preview Toggle State Synchronization Pattern (October 21, 2025) 🆕⭐
+**PURPOSE**: Synchronize toggle button visual state, checked state, and internal flags  
+**CONTEXT**: Preview systems with ON/OFF toggle that must maintain consistent state across UI and logic
+
+**🚨 Common Anti-Pattern - Missing State Synchronization**:
+```python
+# ❌ INCORRECT - Only updates checked state, visual out of sync
+if condition:
+    self.preview_toggle_btn.setChecked(True)
+    # Missing: Button text still shows "OFF", preview_enabled flag not updated
+
+# ❌ INCORRECT - Calls non-existent method
+self.preview_toggle_btn.setChecked(False)
+self._update_preview_toggle_button_style()  # Method doesn't exist!
+
+# ❌ INCORRECT - Duplicate method definitions (Python uses last one)
+def _update_preview_button_state(self, enabled):
+    # First definition with hardcoded text
+    self.preview_toggle_btn.setText("プレビュー オン")
+    
+def _update_preview_button_state(self, enabled):
+    # Second definition with localization (this one is used)
+    text = LOCALIZE("PREPROCESS.UI.preview_on" if enabled else "PREPROCESS.UI.preview_off")
+    self.preview_toggle_btn.setText(text)
+```
+
+**✅ CORRECT Pattern - Three-Way Synchronization**:
+```python
+# Pattern: Always update ALL THREE components together
+def _update_preview_state(self, enabled: bool):
+    """Update preview state with full synchronization."""
+    # 1. Update button checked state
+    self.preview_toggle_btn.blockSignals(True)
+    self.preview_toggle_btn.setChecked(enabled)
+    self.preview_toggle_btn.blockSignals(False)
+    
+    # 2. Update button visual (text, icon, style)
+    self._update_preview_button_state(enabled)
+    
+    # 3. Update internal flag
+    self.preview_enabled = enabled
+
+def _update_preview_button_state(self, enabled: bool):
+    """Update button visual appearance only."""
+    # Use localized text
+    text = LOCALIZE("PREPROCESS.UI.preview_on" if enabled else "PREPROCESS.UI.preview_off")
+    self.preview_toggle_btn.setText(text)
+    
+    # Optional: Update icon or stylesheet based on state
+    # icon = load_icon("eye-open" if enabled else "eye-close", QSize(16, 16))
+    # self.preview_toggle_btn.setIcon(icon)
+```
+
+**Real-World Example - Dataset Type Detection**:
+```python
+def _on_dataset_selection_changed(self):
+    """Handle dataset selection with automatic preview state adjustment."""
+    selected_items = self.dataset_list.selectedItems()
+    if not selected_items:
+        return
+    
+    # Detect if dataset is preprocessed
+    first_item = selected_items[0]
+    dataset_name = self._clean_dataset_name(first_item.text())
+    is_preprocessed = (
+        dataset_name in self.project_manager.datasets 
+        and self.project_manager.datasets[dataset_name].get("is_preprocessed", False)
+    )
+    
+    # Auto-adjust preview state based on dataset type
+    if is_preprocessed:
+        # Preprocessed dataset → Force preview OFF (avoid double preprocessing)
+        if self.preview_toggle_btn.isChecked():
+            self.preview_toggle_btn.blockSignals(True)
+            self.preview_toggle_btn.setChecked(False)
+            self.preview_toggle_btn.blockSignals(False)
+            self._update_preview_button_state(False)  # ✅ Update visual
+            self.preview_enabled = False  # ✅ Update flag
+    else:
+        # Raw dataset → Force preview ON (show processing effects)
+        if not self.preview_toggle_btn.isChecked():
+            self.preview_toggle_btn.blockSignals(True)
+            self.preview_toggle_btn.setChecked(True)
+            self.preview_toggle_btn.blockSignals(False)
+            self._update_preview_button_state(True)  # ✅ Update visual
+            self.preview_enabled = True  # ✅ Update flag
+    
+    # Update preview display
+    self._update_preview()
+```
+
+**Tab Change Pattern**:
+```python
+def _on_dataset_tab_changed(self, index: int):
+    """Adjust preview defaults based on active tab."""
+    # Tab 0 (All), Tab 1 (Raw) → Preview ON
+    if index in [0, 1]:
+        if not self.preview_toggle_btn.isChecked():
+            self.preview_toggle_btn.blockSignals(True)
+            self.preview_toggle_btn.setChecked(True)
+            self.preview_toggle_btn.blockSignals(False)
+            self._update_preview_button_state(True)
+            self.preview_enabled = True
+            
+    # Tab 2 (Preprocessed) → Preview OFF
+    elif index == 2:
+        if self.preview_toggle_btn.isChecked():
+            self.preview_toggle_btn.blockSignals(True)
+            self.preview_toggle_btn.setChecked(False)
+            self.preview_toggle_btn.blockSignals(False)
+            self._update_preview_button_state(False)
+            self.preview_enabled = False
+    
+    self._update_preview()
+```
+
+**Preview Display Logic**:
+```python
+def _update_preview(self):
+    """Update preview based on current state."""
+    # Always show something - never blank the plot!
+    
+    if not self.preview_enabled:
+        # Preview OFF → Show original/current dataset state
+        dataset_name = self._get_selected_dataset_name()
+        if dataset_name in RAMAN_DATA:
+            self.original_data = RAMAN_DATA[dataset_name]
+            self._show_original_data()  # ✅ Shows graph with original data
+        return
+    
+    # Preview ON → Show processed data with real-time pipeline
+    self._show_processed_preview()
+```
+
+**User Confirmation Pattern (Optional)**:
+```python
+def _on_preview_toggle_clicked(self):
+    """Handle manual preview toggle with warnings."""
+    enabled = self.preview_toggle_btn.isChecked()
+    
+    # Warn when disabling preview on pipelines with steps
+    if not enabled and self.pipeline_steps:
+        result = QMessageBox.question(
+            self,
+            LOCALIZE("PREPROCESS.UI.warning"),
+            LOCALIZE("PREPROCESS.UI.disable_preview_warning"),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if result == QMessageBox.No:
+            # User cancelled - revert toggle
+            self.preview_toggle_btn.blockSignals(True)
+            self.preview_toggle_btn.setChecked(True)
+            self.preview_toggle_btn.blockSignals(False)
+            return
+    
+    # Update all three components
+    self._update_preview_button_state(enabled)
+    self.preview_enabled = enabled
+    self._update_preview()
+```
+
+**Initialization Pattern**:
+```python
+def __init__(self):
+    # Create toggle button
+    self.preview_toggle_btn = QPushButton()
+    self.preview_toggle_btn.setCheckable(True)
+    self.preview_toggle_btn.clicked.connect(self._on_preview_toggle_clicked)
+    
+    # Set initial state (all three components)
+    initial_enabled = True
+    self.preview_toggle_btn.setChecked(initial_enabled)
+    self._update_preview_button_state(initial_enabled)
+    self.preview_enabled = initial_enabled
+```
+
+**Debug Checklist**:
+- [ ] Does `setChecked()` match `preview_enabled` flag?
+- [ ] Does button text/icon match `setChecked()` state?
+- [ ] Is `_update_preview_button_state()` called after every `setChecked()`?
+- [ ] Are signals blocked during programmatic state changes?
+- [ ] Does the preview display logic check `preview_enabled` flag?
+- [ ] Is there only ONE method definition (no duplicates)?
+- [ ] Are all method names spelled correctly (no typos)?
+
+**Benefits**:
+- ✅ Prevents visual-state desynchronization bugs
+- ✅ Ensures consistent user experience
+- ✅ Makes debugging easier (single source of truth)
+- ✅ Avoids duplicate code with centralized update method
+- ✅ Supports localization through proper method structure
+
+**Anti-Patterns to Avoid**:
+1. **Calling non-existent methods** - Use IDE autocomplete to verify
+2. **Duplicate method definitions** - Search codebase before creating new methods
+3. **Updating only 1-2 of 3 components** - Always update checked + visual + flag
+4. **Hardcoded text in methods** - Use localization system
+5. **Not blocking signals** - Prevents infinite loops during programmatic changes
+6. **Forgetting to update preview display** - Call `_update_preview()` after state changes
+
+**Related Files**:
+- `pages/preprocess_page.py` (lines 669-683, 734-765, 3951-3971)
+
+---
+
 ### 0.0. Standardized Section Title Bar Pattern (October 14, 2025) 🆕⭐
 **PURPOSE**: Maintain visual consistency across all pages with standardized title bars  
 **GUIDELINE**: See `.AGI-BANKS/UI_TITLE_BAR_STANDARD.md` for comprehensive documentation

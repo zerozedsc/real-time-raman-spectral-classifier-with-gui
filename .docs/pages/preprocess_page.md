@@ -2,6 +2,71 @@
 
 ## 🎯 Recent Updates (2025)
 
+### **Preview Toggle State Management Fix (October 21, 2025) ✅**
+
+#### **Critical Bug Fix: Preview Toggle State Synchronization**
+Fixed critical bugs where preview toggle button showed incorrect state, causing confusion about preview mode status.
+
+**Issues Resolved**:
+1. ❌ **Non-existent method calls** - Code called `_update_preview_toggle_button_style()` which didn't exist (6 occurrences)
+2. ❌ **Duplicate method definitions** - Two `_update_preview_button_state()` methods (one hardcoded Japanese, one localized)
+3. ❌ **Desynchronized state** - Button visual didn't match `checked` state or `preview_enabled` flag
+
+**Root Cause**:
+- Methods like `_on_dataset_tab_changed()` and `_on_dataset_selection_changed()` called non-existent `_update_preview_toggle_button_style()`
+- Python used last method definition (localized version), but duplicate caused maintenance issues
+- Missing `self.preview_enabled` flag updates after toggle state changes
+
+**Solution - Three-Way State Synchronization**:
+```python
+# Correct pattern used throughout codebase
+if condition:
+    # 1. Update checked state
+    self.preview_toggle_btn.blockSignals(True)
+    self.preview_toggle_btn.setChecked(True)
+    self.preview_toggle_btn.blockSignals(False)
+    
+    # 2. Update visual appearance
+    self._update_preview_button_state(True)
+    
+    # 3. Update internal flag
+    self.preview_enabled = True
+```
+
+**Preview Toggle Behavior** (User-Facing):
+- **Preview ON (プレビュー ON)**: 
+  - Shows real-time processed data with pipeline preview
+  - Graph updates as you add/modify preprocessing steps
+  - Best for raw datasets to see processing effects
+  
+- **Preview OFF (プレビュー OFF)**:
+  - Shows original/current dataset state **without** processing
+  - Graph still displayed (NOT cleared/disabled)
+  - Best for preprocessed datasets to avoid double-preprocessing confusion
+
+**Smart Default State**:
+- **Raw datasets** → Preview defaults to **ON** (see processing effects)
+- **Preprocessed datasets** → Preview defaults to **OFF** (avoid double preprocessing)
+- **Tab switching** → Preview auto-adjusts based on active tab (All/Raw = ON, Preprocessed = OFF)
+
+**Files Modified**:
+- Replaced 6 calls to non-existent method with correct `_update_preview_button_state()`
+- Removed duplicate hardcoded method definition (lines 3261-3303)
+- Added `preview_enabled` flag synchronization in tab and selection handlers
+
+**Impact**:
+- ✅ Preview button text now always matches actual state
+- ✅ No more silent errors from missing methods
+- ✅ Preview mode correctly indicated at all times
+- ✅ Users can trust the displayed preview state
+- ✅ Prevents preprocessing confusion with preprocessed datasets
+
+**Related Documentation**:
+- `.AGI-BANKS/IMPLEMENTATION_PATTERNS.md` section 0.4: "Preview Toggle State Synchronization Pattern"
+- `.AGI-BANKS/RECENT_CHANGES.md`: "October 21, 2025 - Preview Toggle & Dataset Info Enhancements"
+
+---
+
 ### **Height Optimization for Non-Maximized Windows (October 6 Evening #2, 2025) ⚙️**
 
 #### **Critical Design Constraint**

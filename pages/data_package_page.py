@@ -12,9 +12,9 @@ from PySide6.QtCore import Qt, Signal, QUrl, QSize, QThread
 from PySide6.QtGui import QIcon
 
 from functions.data_loader import load_data_from_path, load_metadata_from_json
-from utils import LOCALIZE, PROJECT_MANAGER, CONFIGS, RAMAN_DATA, load_svg_icon
+from utils import LOCALIZE, PROJECT_MANAGER, CONFIGS, RAMAN_DATA
 from components.widgets.matplotlib_widget import MatplotlibWidget, plot_spectra
-from components.widgets.icons import get_icon_path
+from components.widgets.icons import get_icon_path, load_icon
 
 class BatchImportProgressDialog(QDialog):
     """Progress dialog for batch dataset import operations."""
@@ -86,18 +86,55 @@ class DatasetItemWidget(QWidget):
         super().__init__(parent)
         self.dataset_name = dataset_name
         self.setObjectName("datasetItemWidget")
-        layout = QHBoxLayout(self); layout.setContentsMargins(0, 5, 5, 5); layout.setSpacing(10)
-        name_label = QLabel(dataset_name); name_label.setObjectName("datasetItemLabel")
+        
+        # Main horizontal layout
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(0, 5, 5, 5)
+        main_layout.setSpacing(10)
+        
+        # Vertical layout for name and info
+        info_vbox = QVBoxLayout()
+        info_vbox.setSpacing(2)
+        
+        # Dataset name label
+        name_label = QLabel(dataset_name)
+        name_label.setObjectName("datasetItemLabel")
+        name_label.setStyleSheet("font-weight: bold; font-size: 13px;")
+        info_vbox.addWidget(name_label)
+        
+        # Get dataset info from RAMAN_DATA
+        try:
+            df = RAMAN_DATA.get(dataset_name)
+            if df is not None and not df.empty:
+                # Create info text with smaller font
+                num_spectra = df.shape[1]
+                wavelength_min = df.index.min()
+                wavelength_max = df.index.max()
+                data_points = df.shape[0]
+                
+                info_text = f"{num_spectra} spectra | {wavelength_min:.1f}–{wavelength_max:.1f} cm⁻¹ | {data_points} pts"
+                info_label = QLabel(info_text)
+                info_label.setObjectName("datasetItemInfo")
+                info_label.setStyleSheet("font-size: 10px; color: #7f8c8d;")
+                info_vbox.addWidget(info_label)
+        except Exception as e:
+            # If there's an error getting info, just show the name
+            pass
+        
+        main_layout.addLayout(info_vbox)
+        main_layout.addStretch()
         
         # Modify remove button to use SVG icon
-        remove_button = QPushButton(); remove_button.setObjectName("removeListItemButton"); remove_button.setFixedSize(26, 26); remove_button.setToolTip(f"Remove '{dataset_name}'")
+        remove_button = QPushButton()
+        remove_button.setObjectName("removeListItemButton")
+        remove_button.setFixedSize(26, 26)
+        remove_button.setToolTip(f"Remove '{dataset_name}'")
         icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "icons", "trash-xmark.svg")  # Adjust path if needed
         remove_button.setIcon(QIcon(icon_path))
         remove_button.setIconSize(QSize(16, 16))  # Adjust size as needed
         remove_button.clicked.connect(lambda: self.removeRequested.emit(self.dataset_name))
         
-
-        layout.addWidget(name_label); layout.addStretch(); layout.addWidget(remove_button)
+        main_layout.addWidget(remove_button)
 
 class DataPackagePage(QWidget):
     showNotification = Signal(str, str)
@@ -148,7 +185,7 @@ class DataPackagePage(QWidget):
         # Delete all button (red theme)
         self.delete_all_btn = QPushButton()
         self.delete_all_btn.setObjectName("titleBarButtonRed")
-        delete_all_icon = load_svg_icon(get_icon_path("delete_all"), "#dc3545", QSize(14, 14))
+        delete_all_icon = load_icon("delete_all", QSize(14, 14), "#dc3545")
         self.delete_all_btn.setIcon(delete_all_icon)
         self.delete_all_btn.setIconSize(QSize(14, 14))
         self.delete_all_btn.setFixedSize(24, 24)
@@ -244,7 +281,7 @@ class DataPackagePage(QWidget):
         
         browse_data_btn = QPushButton()
         browse_data_btn.setObjectName("browseButton")
-        browse_data_btn.setIcon(load_svg_icon(get_icon_path("focus_horizontal"), "#6c757d", QSize(16, 16)))
+        browse_data_btn.setIcon(load_icon("focus_horizontal", QSize(16, 16), "#6c757d"))
         browse_data_btn.setIconSize(QSize(16, 16))
         browse_data_btn.setFixedSize(32, 32)
         browse_data_btn.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.browse_data_button"))
@@ -291,7 +328,7 @@ class DataPackagePage(QWidget):
         
         browse_meta_btn = QPushButton()
         browse_meta_btn.setObjectName("browseButton")
-        browse_meta_btn.setIcon(load_svg_icon(get_icon_path("focus_horizontal"), "#6c757d", QSize(16, 16)))
+        browse_meta_btn.setIcon(load_icon("focus_horizontal", QSize(16, 16), "#6c757d"))
         browse_meta_btn.setIconSize(QSize(16, 16))
         browse_meta_btn.setFixedSize(32, 32)
         browse_meta_btn.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.browse_meta_button"))
@@ -385,7 +422,7 @@ class DataPackagePage(QWidget):
         # Edit metadata button (pencil icon)
         self.edit_meta_button = QPushButton()
         self.edit_meta_button.setObjectName("titleBarButton")
-        edit_icon = load_svg_icon(get_icon_path("edit"), "#0078d4", QSize(14, 14))
+        edit_icon = load_icon("edit", QSize(14, 14), "#0078d4")
         self.edit_meta_button.setIcon(edit_icon)
         self.edit_meta_button.setIconSize(QSize(14, 14))
         self.edit_meta_button.setFixedSize(24, 24)
@@ -414,7 +451,7 @@ class DataPackagePage(QWidget):
         # Save metadata button with icon
         self.save_meta_button = QPushButton()
         self.save_meta_button.setObjectName("titleBarButtonGreen")
-        save_icon = load_svg_icon(get_icon_path("save"), "#28a745", QSize(14, 14))
+        save_icon = load_icon("save", QSize(14, 14), "#28a745")
         self.save_meta_button.setIcon(save_icon)
         self.save_meta_button.setIconSize(QSize(14, 14))
         self.save_meta_button.setFixedSize(24, 24)
@@ -441,7 +478,7 @@ class DataPackagePage(QWidget):
         # Export metadata button with icon (orange theme)
         self.export_meta_button = QPushButton()
         self.export_meta_button.setObjectName("titleBarButtonOrange")
-        export_icon = load_svg_icon(get_icon_path("export_button"), "#fd7e14", QSize(14, 14))
+        export_icon = load_icon("export_button", QSize(14, 14), "#fd7e14")
         self.export_meta_button.setIcon(export_icon)
         self.export_meta_button.setIconSize(QSize(14, 14))
         self.export_meta_button.setFixedSize(24, 24)
@@ -547,10 +584,10 @@ class DataPackagePage(QWidget):
     def _update_auto_preview_icon(self):
         """Update auto-preview button icon based on state."""
         if self.auto_preview_enabled:
-            icon = load_svg_icon(get_icon_path("eye_open"), "#0078d4", QSize(14, 14))
+            icon = load_icon("eye_open", QSize(14, 14), "#0078d4")
             tooltip = LOCALIZE("DATA_PACKAGE_PAGE.auto_preview_enabled")
         else:
-            icon = load_svg_icon(get_icon_path("eye_close"), "#6c757d", QSize(14, 14))
+            icon = load_icon("eye_close", QSize(14, 14), "#6c757d")
             tooltip = LOCALIZE("DATA_PACKAGE_PAGE.auto_preview_disabled")
         self.auto_preview_btn.setIcon(icon)
         self.auto_preview_btn.setIconSize(QSize(14, 14))
@@ -1111,10 +1148,10 @@ class DataPackagePage(QWidget):
         
         # Update button icon color based on state
         if is_editing:
-            edit_icon = load_svg_icon(get_icon_path("edit"), "#ffffff", QSize(14, 14))
+            edit_icon = load_icon("edit", QSize(14, 14), "#ffffff")
             self.edit_meta_button.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.view_mode_button"))
         else:
-            edit_icon = load_svg_icon(get_icon_path("edit"), "#0078d4", QSize(14, 14))
+            edit_icon = load_icon("edit", QSize(14, 14), "#0078d4")
             self.edit_meta_button.setToolTip(LOCALIZE("DATA_PACKAGE_PAGE.edit_meta_button"))
         self.edit_meta_button.setIcon(edit_icon)
 
