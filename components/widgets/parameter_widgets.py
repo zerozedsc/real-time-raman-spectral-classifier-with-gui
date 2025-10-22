@@ -1082,8 +1082,8 @@ class DynamicParameterWidget(QWidget):
                     border-radius: 3px;
                 }
                 QCheckBox::indicator:checked {
-                    background-color: #3498db;
-                    border: 2px solid #2980b9;
+                    background-color: #6c757d;
+                    border: 2px solid #495057;
                     border-radius: 3px;
                 }
             """)
