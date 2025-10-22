@@ -1,7 +1,258 @@
 # Base Memory - AI Agent Knowledge Base
 
 > **Core knowledge and reference system for AI-assisted development**  
-> **Last Updated**: October 14, 2025 - Preprocessing System Fixes & Robust Testing Standards
+> **Last Updated**: October 21, 2025 - Build Troubleshooting Guide (Part 7)
+
+## 🔧 BUILD SYSTEM (October 21, 2025) ⭐ UPDATED
+
+### Critical Build Workflow (Part 7) ⚠️ IMPORTANT
+
+**MUST REBUILD After Spec Changes**:
+```powershell
+# 1. Edit spec file (add hidden imports, change config)
+# 2. REBUILD (don't skip this!)
+.\build_portable.ps1 -Clean
+# 3. Test NEW exe (not old one!)
+.\dist\raman_app\raman_app.exe
+```
+
+**Common Mistake**:
+- Update spec file ✅
+- Forget to rebuild ❌
+- Test old exe ❌
+- Report "fix doesn't work" ❌
+
+**Verification**:
+```powershell
+# Check if rebuild needed:
+(Get-Item build_scripts\raman_app.spec).LastWriteTime  # Spec modified
+(Get-Item dist\raman_app).LastWriteTime  # Dist created
+# If spec is newer → MUST REBUILD
+```
+
+**PowerShell Syntax**:
+```powershell
+# ✅ Correct:
+.\build_portable.ps1 -Clean
+.\build_portable.ps1 -Debug
+
+# ❌ Wrong (Linux style):
+.\build_portable.ps1 --clean
+.\build_portable.ps1 --debug
+```
+
+**Path Handling**:
+```powershell
+# ✅ Use -LiteralPath for Unicode/special chars:
+Get-Item -LiteralPath $path
+Get-ChildItem -LiteralPath $path -Recurse
+
+# ❌ Fails with Chinese/Unicode:
+Get-Item $path
+Get-ChildItem -Path $path
+```
+
+**Troubleshooting Reference**: `.docs/building/TROUBLESHOOTING.md`
+
+### Build System Enhancements (Part 6)
+
+**Critical Fixes**:
+1. **PowerShell Path Handling**: Use `-LiteralPath` for paths with non-ASCII characters
+2. **Scipy Hidden Imports**: Added scipy.stats submodules to prevent runtime errors
+3. **Test Validation**: Check both direct and `_internal/` paths for assets
+4. **Backup System**: Automatic timestamped backups before cleaning builds
+
+**Backup System**:
+```powershell
+# Automatically creates backup_YYYYMMDD_HHmmss folder
+# Moves (not deletes) existing build/dist before rebuild
+# Example: build_backups/backup_20251021_150732/
+```
+
+**Scipy Runtime Fix**:
+```python
+# Required hidden imports for scipy.stats
+hiddenimports += [
+    'scipy.stats',
+    'scipy.stats._stats_py',
+    'scipy.stats.distributions',
+    'scipy.stats._distn_infrastructure',
+]
+```
+
+### PyInstaller Configuration
+**Windows Builds**: Portable executable and NSIS installer
+
+**Spec Files**:
+- `raman_app.spec` (Portable) - 100 lines
+- `raman_app_installer.spec` (Installer) - 100 lines
+
+**Key Configuration**:
+```python
+# Hidden imports for complex packages
+hiddenimports = [
+    'PySide6.QtCore', 'PySide6.QtGui', 'PySide6.QtWidgets',  # Qt6
+    'numpy', 'pandas', 'scipy',  # Data processing
+    'matplotlib.backends.backend_qt5agg',  # Visualization
+    'ramanspy', 'pybaselines',  # Spectroscopy
+    'torch', 'sklearn',  # ML (optional)
+]
+
+# Data files collection
+datas = [
+    ('assets/icons', 'assets/icons'),
+    ('assets/fonts', 'assets/fonts'),
+    ('assets/locales', 'assets/locales'),
+]
+
+# Binary files
+binaries = [
+    ('drivers/atmcd32d.dll', 'drivers'),  # Andor SDK
+    ('drivers/atmcd64d.dll', 'drivers'),
+]
+```
+
+**Build Scripts** (PowerShell):
+- `build_portable.ps1` - Automated portable build (190 lines)
+- `build_installer.ps1` - Installer staging build (180 lines)
+
+**Test Suite**:
+- `test_build_executable.py` - Comprehensive validation (500+ lines)
+
+**NSIS Template**:
+- `raman_app_installer.nsi` - Windows installer (100 lines)
+
+**Build Workflow**:
+```powershell
+# 1. Build portable
+.\build_portable.ps1
+
+# 2. Test
+python test_build_executable.py
+
+# 3. Build installer (optional)
+.\build_installer.ps1
+
+# Output:
+# - dist/raman_app/ (50-80 MB)
+# - dist_installer/raman_app_installer_staging/ (same size)
+# - raman_app_installer.exe (30-50 MB, if NSIS available)
+```
+
+**Documentation**:
+- `.docs/building/PYINSTALLER_GUIDE.md` (600+ lines)
+
+**Typical Output Sizes**:
+- Portable .exe: 50-80 MB
+- Total distribution: 60-100 MB
+- Installer .exe: 30-50 MB (compressed)
+
+**Testing Validation**:
+- ✓ Executable structure
+- ✓ Required directories (assets, PySide6, _internal)
+- ✓ Asset files (icons, fonts, locales, data)
+- ✓ Binary/DLL files
+- ✓ Executable launch
+- ✓ Performance baseline
+
+### Build Script Fixes (October 21, 2025 - Part 3) ✅
+
+**PowerShell Script Corrections**:
+1. **build_portable.ps1**
+   - Fixed try-catch block structure
+   - Removed problematic emoji characters from code
+   - Improved error handling
+   - Status: ✅ Syntax correct, runs without errors
+
+2. **build_installer.ps1**
+   - Fixed nested block structure
+   - Corrected variable interpolation
+   - Improved parenthesis matching
+   - Status: ✅ All parsing errors resolved
+
+3. **test_build_executable.py**
+   - Enhanced error messages with build command hints
+   - Better user guidance
+   - Status: ✅ Improved user experience
+
+**Verification** ✅:
+- [x] PowerShell scripts run without syntax errors
+- [x] Error messages provide clear next steps
+- [x] All blocks properly closed and structured
+
+### Path Resolution Fix (October 21, 2025 - Part 4) ✅
+
+**Problem**: Build scripts in `build_scripts/` subfolder couldn't locate parent directory files
+
+**Solution Implemented**:
+
+1. **Spec Files** (`raman_app.spec`, `raman_app_installer.spec`)
+   ```python
+   # Get project root (parent of build_scripts/)
+   spec_dir = os.path.dirname(os.path.abspath(__file__))
+   project_root = os.path.dirname(spec_dir)
+   sys.path.insert(0, project_root)
+   ```
+
+2. **PowerShell Scripts** (`build_portable.ps1`, `build_installer.ps1`)
+   ```powershell
+   # Detect script location and project root
+   $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+   $ProjectRoot = Split-Path -Parent $ScriptDir
+   
+   # Change to project root
+   Push-Location $ProjectRoot
+   # ... build ...
+   Pop-Location  # Restore directory
+   ```
+
+3. **Python Test** (`test_build_executable.py`)
+   ```python
+   script_dir = os.path.dirname(os.path.abspath(__file__))
+   project_root = os.path.dirname(script_dir)
+   os.chdir(project_root)
+   ```
+
+**Benefits**:
+- ✅ Scripts work from any directory
+- ✅ Relative paths resolve correctly
+- ✅ No hardcoded paths needed
+- ✅ Proper error handling
+- ✅ Directory restored after build
+
+**Status** ✅:
+- [x] Spec files detect project root correctly
+- [x] Build scripts use Push/Pop-Location
+- [x] Test script changes to project root
+- [x] All relative paths resolve properly
+- [x] Error handling with directory restoration
+
+### PyInstaller CLI Argument Fix (October 21, 2025 - Part 5) ✅
+
+**Problem**: PyInstaller 6.16.0 rejected the unsupported `--buildpath` option used by both build scripts, preventing builds from running.
+
+**Solution**:
+```powershell
+$BuildArgs = @(
+    '--distpath', $OutputDir,
+    '--workpath', 'build'
+)
+
+$BuildArgs += 'raman_app.spec'
+```
+- Removed `--buildpath` and ensured all options precede the spec file
+- Mirrored the fix in `build_installer.ps1` and appended `raman_app_installer.spec` last
+- Cleanup lists now target only directories that PyInstaller actually generates (`build`, `dist`, `build_installer`, `dist_installer`)
+- Spec files now compute their location via `Path(sys.argv[0])` fallback when `__file__` is missing
+
+**Benefits**:
+- ✅ PyInstaller CLI invocation succeeds without errors
+- ✅ Works reliably with PyInstaller 6.16.0 behaviour
+- ✅ Consistent command structure between portable and installer builds
+- ✅ Clearer BuildArgs assembly with inline comment guidance
+- ⚠️ Build currently fails later during module data collection (follow-up fix required for `collect_data_files` usage)
+
+---
 
 ## 🎯 Purpose
 

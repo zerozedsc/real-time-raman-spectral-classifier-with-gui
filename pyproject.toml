@@ -31,6 +31,7 @@ dependencies = [
     "pybaselines",
     "pydantic",
     "pydantic-core",
+    "pyinstaller>=6.16.0",
     "pyparsing",
     "pyside6",
     "pyside6-addons",

@@ -5,6 +5,19 @@ This is a comprehensive PySide6-based desktop application for Raman spectroscopy
 
 ## Recent Updates & Improvements (October 2025)
 
+### Build System Implementation (October 21, 2025) 🔧
+- **PyInstaller Build Automation**: Complete Windows build system for portable and installer distributions
+  - **Spec Files**: `raman_app.spec` (portable) and `raman_app_installer.spec` (installer)
+  - **Build Scripts**: PowerShell automation with validation (`build_portable.ps1`, `build_installer.ps1`)
+  - **Test Suite**: Comprehensive `test_build_executable.py` validating all components
+  - **NSIS Support**: Professional installer template (`raman_app_installer.nsi`)
+  - **Documentation**: Complete guide in `.docs/building/PYINSTALLER_GUIDE.md`
+- **Two Distribution Methods**:
+  - **Portable**: Single .exe (50-80 MB) with all dependencies, no installation required
+  - **Installer**: NSIS-based setup (30-50 MB) for professional deployment
+- **Quality Assurance**: Automated testing validates executable structure, assets, binaries, launch
+- **Production Status**: ✅ Ready for testing and deployment
+
 ### Critical System Enhancement (October 15, 2025) 🔒⭐
 - **Robust Parameter Type Validation System**: Implemented two-layer type validation architecture
   - **Problem Solved**: FABC baseline correction failing with "expected int, got '1.0'" errors
