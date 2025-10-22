@@ -12,6 +12,7 @@ class CustomSpinBox(QWidget):
         self._minimum = 0
         self._maximum = 99
         self._step = 1
+        self._ignore_max_limit = False  # Flag to ignore maximum limit
         self._setup_ui()
     
     def _setup_ui(self):
@@ -98,13 +99,20 @@ class CustomSpinBox(QWidget):
         self.setValue(new_value)
     
     def _increase_value(self):
-        new_value = min(self._maximum, self._value + self._step)
+        # Allow increase beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit:
+            new_value = self._value + self._step
+        else:
+            new_value = min(self._maximum, self._value + self._step)
         self.setValue(new_value)
     
     def _on_text_changed(self):
         try:
             new_value = int(self.value_input.text())
-            new_value = max(self._minimum, min(self._maximum, new_value))
+            if not self._ignore_max_limit:
+                new_value = max(self._minimum, min(self._maximum, new_value))
+            else:
+                new_value = max(self._minimum, new_value)  # Only enforce minimum
             self.setValue(new_value)
         except ValueError:
             self._update_display()
@@ -114,10 +122,15 @@ class CustomSpinBox(QWidget):
     
     def _update_button_states(self):
         self.minus_btn.setEnabled(self._value > self._minimum)
-        self.plus_btn.setEnabled(self._value < self._maximum)
+        # Enable plus button if ignore_max_limit is True or value is below maximum
+        self.plus_btn.setEnabled(self._ignore_max_limit or self._value < self._maximum)
     
     def setValue(self, value: int):
-        value = max(self._minimum, min(self._maximum, value))
+        # Allow values beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit:
+            value = max(self._minimum, value)  # Only enforce minimum
+        else:
+            value = max(self._minimum, min(self._maximum, value))  # Enforce both min and max
         if value != self._value:
             self._value = value
             self._update_display()
@@ -130,10 +143,20 @@ class CustomSpinBox(QWidget):
     def setRange(self, minimum: int, maximum: int):
         self._minimum = minimum
         self._maximum = maximum
-        self.setValue(max(minimum, min(maximum, self._value)))
+        if not self._ignore_max_limit:
+            self.setValue(max(minimum, min(maximum, self._value)))
     
     def setSingleStep(self, step: int):
         self._step = step
+    
+    def setIgnoreMaxLimit(self, ignore: bool):
+        """Enable or disable ignoring the maximum limit.
+        
+        Args:
+            ignore: If True, allows values beyond the maximum limit
+        """
+        self._ignore_max_limit = ignore
+        self._update_button_states()
     
     def setStyleSheet(self, style: str):
         # Override to prevent external styling from breaking our design
@@ -153,6 +176,7 @@ class CustomDoubleSpinBox(QWidget):
         self._step = 0.1
         self._decimals = 1
         self._suffix = ""
+        self._ignore_max_limit = False  # Flag to ignore maximum limit
         self._setup_ui()
     
     def _setup_ui(self):
@@ -239,7 +263,11 @@ class CustomDoubleSpinBox(QWidget):
         self.setValue(new_value)
     
     def _increase_value(self):
-        new_value = min(self._maximum, self._value + self._step)
+        # Allow increase beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit:
+            new_value = self._value + self._step
+        else:
+            new_value = min(self._maximum, self._value + self._step)
         self.setValue(new_value)
     
     def _on_text_changed(self):
@@ -248,7 +276,10 @@ class CustomDoubleSpinBox(QWidget):
             if self._suffix:
                 text = text.replace(self._suffix, "").strip()
             new_value = float(text)
-            new_value = max(self._minimum, min(self._maximum, new_value))
+            if not self._ignore_max_limit:
+                new_value = max(self._minimum, min(self._maximum, new_value))
+            else:
+                new_value = max(self._minimum, new_value)  # Only enforce minimum
             self.setValue(new_value)
         except ValueError:
             self._update_display()
@@ -259,10 +290,15 @@ class CustomDoubleSpinBox(QWidget):
     
     def _update_button_states(self):
         self.minus_btn.setEnabled(self._value > self._minimum)
-        self.plus_btn.setEnabled(self._value < self._maximum)
+        # Enable plus button if ignore_max_limit is True or value is below maximum
+        self.plus_btn.setEnabled(self._ignore_max_limit or self._value < self._maximum)
     
     def setValue(self, value: float):
-        value = max(self._minimum, min(self._maximum, value))
+        # Allow values beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit:
+            value = max(self._minimum, value)  # Only enforce minimum
+        else:
+            value = max(self._minimum, min(self._maximum, value))  # Enforce both min and max
         if abs(value - self._value) > 1e-9:  # Use small epsilon for float comparison
             self._value = value
             self._update_display()
@@ -275,7 +311,8 @@ class CustomDoubleSpinBox(QWidget):
     def setRange(self, minimum: float, maximum: float):
         self._minimum = minimum
         self._maximum = maximum
-        self.setValue(max(minimum, min(maximum, self._value)))
+        if not self._ignore_max_limit:
+            self.setValue(max(minimum, min(maximum, self._value)))
     
     def setSingleStep(self, step: float):
         self._step = step
@@ -287,6 +324,15 @@ class CustomDoubleSpinBox(QWidget):
     def setSuffix(self, suffix: str):
         self._suffix = suffix
         self._update_display()
+    
+    def setIgnoreMaxLimit(self, ignore: bool):
+        """Enable or disable ignoring the maximum limit.
+        
+        Args:
+            ignore: If True, allows values beyond the maximum limit
+        """
+        self._ignore_max_limit = ignore
+        self._update_button_states()
     
     def setToolTip(self, tooltip: str):
         super().setToolTip(tooltip)
