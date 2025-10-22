@@ -1420,8 +1420,8 @@ class PreprocessPage(QWidget):
                 border-color: #0078d4;
             }
             QCheckBox::indicator:checked {
-                background-color: #28a745;
-                border-color: #28a745;
+                background-color: #6c757d;
+                border-color: #495057;
                 image: url(assets/icons/checkmark.svg);
             }
             QDialogButtonBox QPushButton {

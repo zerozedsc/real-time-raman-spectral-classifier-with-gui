@@ -531,8 +531,8 @@ class PipelineConfirmationDialog(QDialog):
             }
             
             QCheckBox::indicator:checked {
-                background-color: #28a745;
-                border-color: #28a745;
+                background-color: #6c757d;
+                border-color: #495057;
                 image: url(assets/icons/checkmark.svg);
             }
             
@@ -952,12 +952,12 @@ class PipelineStepWidget(QWidget):
                     background-color: white;
                 }
                 QCheckBox::indicator:checked {
-                    background-color: #0078d4;
-                    border-color: #0078d4;
+                    background-color: #6c757d;
+                    border-color: #495057;
                 }
                 QCheckBox::indicator:checked:hover {
-                    background-color: #106ebe;
-                    border-color: #106ebe;
+                    background-color: #5a6268;
+                    border-color: #3d4349;
                 }
             """)
             layout.addWidget(self.toggle_checkbox)

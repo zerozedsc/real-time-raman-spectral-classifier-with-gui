@@ -14,6 +14,7 @@ class CustomSpinBox(QWidget):
         self._minimum = 0
         self._maximum = 99
         self._step = 1
+        self._ignore_max_limit = False  # Flag to ignore maximum limit
         self._setup_ui()
     
     def _setup_ui(self):
@@ -71,8 +72,12 @@ class CustomSpinBox(QWidget):
             self.setValue(new_value)
     
     def _increase_value(self):
-        if self._value < self._maximum:
-            new_value = min(self._maximum, self._value + self._step)
+        # Allow increase beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit or self._value < self._maximum:
+            if self._ignore_max_limit:
+                new_value = self._value + self._step
+            else:
+                new_value = min(self._maximum, self._value + self._step)
             self.setValue(new_value)
     
     def _on_text_changed(self):
@@ -134,7 +139,7 @@ class CustomSpinBox(QWidget):
     
     def _update_button_states(self):
         can_decrease = self._value > self._minimum
-        can_increase = self._value < self._maximum
+        can_increase = self._ignore_max_limit or self._value < self._maximum
         
         # Update minus button state and color
         self.minus_btn.setEnabled(can_decrease)
@@ -189,23 +194,27 @@ class CustomSpinBox(QWidget):
                 }
             """
         else:
-            # Red: cannot increase (at maximum)
+            # Gray: cannot increase (at maximum) - Changed from red/pink to gray
             plus_style = """
                 QPushButton {
-                    background-color: #f8d7da;
-                    border: 1px solid #dc3545;
+                    background-color: #f8f9fa;
+                    border: 1px solid #bdc3c7;
                     border-radius: 12px;
                     padding: 2px;
                 }
                 QPushButton:disabled {
-                    background-color: #f8d7da;
-                    border-color: #dc3545;
+                    background-color: #f8f9fa;
+                    border-color: #bdc3c7;
                 }
             """
         self.plus_btn.setStyleSheet(plus_style)
     
     def setValue(self, value: int):
-        value = max(self._minimum, min(self._maximum, value))
+        # Allow values beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit:
+            value = max(self._minimum, value)  # Only enforce minimum
+        else:
+            value = max(self._minimum, min(self._maximum, value))  # Enforce both min and max
         if value != self._value:
             self._value = value
             self._update_display()
@@ -218,10 +227,20 @@ class CustomSpinBox(QWidget):
     def setRange(self, minimum: int, maximum: int):
         self._minimum = minimum
         self._maximum = maximum
-        self.setValue(max(minimum, min(maximum, self._value)))
+        if not self._ignore_max_limit:
+            self.setValue(max(minimum, min(maximum, self._value)))
     
     def setSingleStep(self, step: int):
         self._step = step
+    
+    def setIgnoreMaxLimit(self, ignore: bool):
+        """Enable or disable ignoring the maximum limit.
+        
+        Args:
+            ignore: If True, allows values beyond the maximum limit
+        """
+        self._ignore_max_limit = ignore
+        self._update_button_states()
     
     def setStyleSheet(self, style: str):
         # Override to prevent external styling from breaking our design
@@ -241,6 +260,7 @@ class CustomDoubleSpinBox(QWidget):
         self._step = 0.1
         self._decimals = 1
         self._suffix = ""
+        self._ignore_max_limit = False  # Flag to ignore maximum limit
         self._setup_ui()
     
     def _setup_ui(self):
@@ -298,8 +318,12 @@ class CustomDoubleSpinBox(QWidget):
             self.setValue(new_value)
     
     def _increase_value(self):
-        if self._value < self._maximum:
-            new_value = min(self._maximum, self._value + self._step)
+        # Allow increase beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit or self._value < self._maximum:
+            if self._ignore_max_limit:
+                new_value = self._value + self._step
+            else:
+                new_value = min(self._maximum, self._value + self._step)
             self.setValue(new_value)
     
     def _on_text_changed(self):
@@ -365,7 +389,7 @@ class CustomDoubleSpinBox(QWidget):
     
     def _update_button_states(self):
         can_decrease = self._value > self._minimum
-        can_increase = self._value < self._maximum
+        can_increase = self._ignore_max_limit or self._value < self._maximum
         
         # Update minus button state and color
         self.minus_btn.setEnabled(can_decrease)
@@ -420,23 +444,27 @@ class CustomDoubleSpinBox(QWidget):
                 }
             """
         else:
-            # Red: cannot increase (at maximum)
+            # Gray: cannot increase (at maximum) - Changed from red/pink to gray
             plus_style = """
                 QPushButton {
-                    background-color: #f8d7da;
-                    border: 1px solid #dc3545;
+                    background-color: #f8f9fa;
+                    border: 1px solid #bdc3c7;
                     border-radius: 12px;
                     padding: 2px;
                 }
                 QPushButton:disabled {
-                    background-color: #f8d7da;
-                    border-color: #dc3545;
+                    background-color: #f8f9fa;
+                    border-color: #bdc3c7;
                 }
             """
         self.plus_btn.setStyleSheet(plus_style)
     
     def setValue(self, value: float):
-        value = max(self._minimum, min(self._maximum, value))
+        # Allow values beyond maximum if ignore_max_limit is enabled
+        if self._ignore_max_limit:
+            value = max(self._minimum, value)  # Only enforce minimum
+        else:
+            value = max(self._minimum, min(self._maximum, value))  # Enforce both min and max
         if abs(value - self._value) > 1e-9:  # Use small epsilon for float comparison
             self._value = value
             self._update_display()
@@ -449,7 +477,8 @@ class CustomDoubleSpinBox(QWidget):
     def setRange(self, minimum: float, maximum: float):
         self._minimum = minimum
         self._maximum = maximum
-        self.setValue(max(minimum, min(maximum, self._value)))
+        if not self._ignore_max_limit:
+            self.setValue(max(minimum, min(maximum, self._value)))
     
     def setSingleStep(self, step: float):
         self._step = step
@@ -461,6 +490,15 @@ class CustomDoubleSpinBox(QWidget):
     def setSuffix(self, suffix: str):
         self._suffix = suffix
         self._update_display()
+    
+    def setIgnoreMaxLimit(self, ignore: bool):
+        """Enable or disable ignoring the maximum limit.
+        
+        Args:
+            ignore: If True, allows values beyond the maximum limit
+        """
+        self._ignore_max_limit = ignore
+        self._update_button_states()
     
     def setToolTip(self, tooltip: str):
         super().setToolTip(tooltip)
@@ -1044,8 +1082,8 @@ class DynamicParameterWidget(QWidget):
                     border-radius: 3px;
                 }
                 QCheckBox::indicator:checked {
-                    background-color: #3498db;
-                    border: 2px solid #2980b9;
+                    background-color: #6c757d;
+                    border: 2px solid #495057;
                     border-radius: 3px;
                 }
             """)
