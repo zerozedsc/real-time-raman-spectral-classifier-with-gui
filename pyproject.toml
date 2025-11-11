@@ -53,6 +53,7 @@ dependencies = [
     "sniffio",
     "threadpoolctl",
     "tifffile",
+    "tomli>=2.3.0",
     "tqdm",
     "typing-extensions",
     "typing-inspection",

@@ -24,14 +24,22 @@ class LocalizationManager:
             default_lang (str): The fallback language to use if a key is not found in the current language.
             initial_lang (str): The initial language to set. Defaults to `default_lang`.
         """
-        self.locale_dir = locale_dir
-        if not os.path.isdir(self.locale_dir):
-            # Try to resolve path relative to the current file
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            self.locale_dir = os.path.join(base_dir, '..', locale_dir)
+        # Support both frozen (.exe) and development modes
+        if getattr(sys, 'frozen', False):
+            # Running in PyInstaller bundle
+            base_path = sys._MEIPASS
+            self.locale_dir = os.path.join(base_path, locale_dir)
+        else:
+            # Running in normal Python
+            self.locale_dir = locale_dir
             if not os.path.isdir(self.locale_dir):
-                create_logs("LocalizationManager", "localization", f"Locale directory not found: {self.locale_dir}", status='error')
-                raise FileNotFoundError(f"Locale directory not found: {self.locale_dir}")
+                # Try to resolve path relative to the current file
+                base_dir = os.path.dirname(os.path.abspath(__file__))
+                self.locale_dir = os.path.join(base_dir, '..', locale_dir)
+        
+        if not os.path.isdir(self.locale_dir):
+            create_logs("LocalizationManager", "localization", f"Locale directory not found: {self.locale_dir}", status='error')
+            raise FileNotFoundError(f"Locale directory not found: {self.locale_dir}")
 
         self.translations: Dict[str, Dict[str, Any]] = {}
         self.default_lang = default_lang
@@ -154,6 +162,7 @@ class LocalizationManager:
 def load_config(file_path: str = "configs/app_configs.json") -> dict:
     """
     Load a JSON configuration file and return its contents as a dictionary.
+    Supports both frozen (.exe) and development modes.
     
     Args:
         file_path (str): Path to the JSON configuration file.
@@ -161,6 +170,11 @@ def load_config(file_path: str = "configs/app_configs.json") -> dict:
     Returns:
         dict: Contents of the JSON file.
     """
+    # Support frozen mode
+    if getattr(sys, 'frozen', False):
+        # Running in PyInstaller bundle
+        file_path = os.path.join(sys._MEIPASS, file_path)
+    
     if not os.path.exists(file_path):
         create_logs("ConfigLoader", "config", f"Configuration file not found: {file_path}", status='error')
         return {}
@@ -274,13 +288,21 @@ def load_application_fonts():
     """
     Loads all .ttf fonts from the assets/fonts directory into the application.
     This makes them available for use in stylesheets without system installation.
+    Supports both frozen (.exe) and development modes.
     """
     from PySide6.QtGui import QFontDatabase
-    # Try to resolve fonts directory relative to the project root if not found in current dir
-    fonts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'fonts')
-    if not os.path.exists(fonts_dir):
-        # Fallback: try relative to this file (legacy location)
-        fonts_dir = os.path.join(os.path.dirname(__file__), 'assets', 'fonts')
+    
+    # Support frozen mode
+    if getattr(sys, 'frozen', False):
+        # Running in PyInstaller bundle
+        fonts_dir = os.path.join(sys._MEIPASS, 'assets', 'fonts')
+    else:
+        # Try to resolve fonts directory relative to the project root if not found in current dir
+        fonts_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'fonts')
+        if not os.path.exists(fonts_dir):
+            # Fallback: try relative to this file (legacy location)
+            fonts_dir = os.path.join(os.path.dirname(__file__), 'assets', 'fonts')
+    
     if not os.path.exists(fonts_dir):
         return
 

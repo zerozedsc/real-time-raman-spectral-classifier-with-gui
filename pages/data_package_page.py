@@ -1062,7 +1062,7 @@ class DataPackagePage(QWidget):
             else: self.showNotification.emit(LOCALIZE("NOTIFICATIONS.dataset_remove_error", name=name), "error")
 
     def _handle_delete_all_datasets(self):
-        """Handle deleting all datasets from project with confirmation."""
+        """Handle deleting all datasets from project with confirmation and progress dialog."""
         if not RAMAN_DATA:
             self.showNotification.emit(LOCALIZE("DATA_PACKAGE_PAGE.no_datasets_to_delete"), "info")
             return
@@ -1079,13 +1079,84 @@ class DataPackagePage(QWidget):
         if reply == QMessageBox.StandardButton.Yes:
             # Get all dataset names (copy to avoid modification during iteration)
             dataset_names = list(RAMAN_DATA.keys())
-            success_count = 0
             
-            for name in dataset_names:
+            # Create progress dialog
+            progress_dialog = QDialog(self)
+            progress_dialog.setWindowTitle(LOCALIZE("DATA_PACKAGE_PAGE.delete_progress_title"))
+            progress_dialog.setModal(True)
+            progress_dialog.setMinimumWidth(500)
+            progress_dialog.setWindowFlags(progress_dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+            
+            layout = QVBoxLayout(progress_dialog)
+            layout.setSpacing(12)
+            
+            # Title
+            title_label = QLabel(LOCALIZE("DATA_PACKAGE_PAGE.delete_progress_message"))
+            title_label.setStyleSheet("font-weight: 600; font-size: 13px;")
+            layout.addWidget(title_label)
+            
+            # Current dataset label
+            current_label = QLabel("")
+            current_label.setStyleSheet("color: #6c757d; font-size: 11px;")
+            layout.addWidget(current_label)
+            
+            # Progress bar
+            progress_bar = QProgressBar()
+            progress_bar.setMinimum(0)
+            progress_bar.setMaximum(dataset_count)
+            progress_bar.setTextVisible(True)
+            layout.addWidget(progress_bar)
+            
+            # Status label (✓ X | ✗ Y format)
+            status_label = QLabel("✓ 0 | ✗ 0")
+            status_label.setStyleSheet("font-size: 12px; color: #2c3e50;")
+            layout.addWidget(status_label)
+            
+            # Cancel button
+            cancel_btn = QPushButton(LOCALIZE("COMMON.cancel"))
+            cancel_btn.clicked.connect(progress_dialog.reject)
+            cancel_layout = QHBoxLayout()
+            cancel_layout.addStretch()
+            cancel_layout.addWidget(cancel_btn)
+            layout.addLayout(cancel_layout)
+            
+            # Show dialog
+            progress_dialog.show()
+            QApplication.processEvents()
+            
+            # Delete datasets with progress updates
+            success_count = 0
+            failed_count = 0
+            cancelled = False
+            
+            for i, name in enumerate(dataset_names, 1):
+                # Check if cancelled
+                if not progress_dialog.isVisible():
+                    cancelled = True
+                    break
+                
+                # Update current dataset
+                current_label.setText(f"{LOCALIZE('DATA_PACKAGE_PAGE.deleting_dataset')}: {name}")
+                progress_bar.setValue(i)
+                status_label.setText(f"✓ {success_count} | ✗ {failed_count}")
+                QApplication.processEvents()
+                
+                # Delete dataset
                 if PROJECT_MANAGER.remove_dataframe_from_project(name):
                     success_count += 1
+                else:
+                    failed_count += 1
             
-            if success_count > 0:
+            # Close progress dialog
+            progress_dialog.close()
+            
+            # Show result notification
+            if cancelled:
+                self.showNotification.emit(
+                    LOCALIZE("DATA_PACKAGE_PAGE.delete_cancelled", deleted=success_count, remaining=dataset_count - success_count),
+                    "warning"
+                )
+            elif success_count > 0:
                 self.showNotification.emit(
                     LOCALIZE("DATA_PACKAGE_PAGE.delete_all_success", count=success_count),
                     "success"

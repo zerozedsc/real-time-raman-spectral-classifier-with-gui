@@ -6,13 +6,24 @@ for all widgets in the components/widgets package.
 """
 
 import os
+import sys
 from typing import Optional, Union
 from PySide6.QtGui import QFontDatabase, QIcon, QPixmap, QPainter 
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtCore import QSize, Qt
 
+def _get_base_path():
+    """Get base path that works in both development and frozen (PyInstaller) modes."""
+    if getattr(sys, 'frozen', False):
+        # Running in PyInstaller bundle (frozen .exe)
+        base_path = sys._MEIPASS
+    else:
+        # Running in normal Python (development mode)
+        base_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    return base_path
+
 # Base path for all icons
-ICONS_BASE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "icons")
+ICONS_BASE_PATH = os.path.join(_get_base_path(), "assets", "icons")
 
 # Icon file paths registry
 ICON_PATHS = {

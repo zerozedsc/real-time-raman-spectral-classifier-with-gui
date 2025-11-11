@@ -5,15 +5,18 @@
 param(
     [switch]$Clean = $false,
     [switch]$Debug = $false,
-    [switch]$BuildOnly = $false
+    [switch]$BuildOnly = $false,
+    [switch]$Console = $false,
+    [ValidateSet('DEBUG', 'INFO', 'WARNING', 'ERROR')]
+    [string]$LogLevel = 'WARNING'
 )
 
 # Colors for output
 $Colors = @{
     Success = 'Green'
-    Error = 'Red'
+    Error   = 'Red'
     Warning = 'Yellow'
-    Info = 'Cyan'
+    Info    = 'Cyan'
     Section = 'Magenta'
 }
 
@@ -56,7 +59,8 @@ try {
     $PyInstallerVersion = pyinstaller --version 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Status "PyInstaller: $PyInstallerVersion" 'Success'
-    } else {
+    }
+    else {
         Write-Status "ERROR: PyInstaller not found!" 'Error'
         exit 1
     }
@@ -66,7 +70,8 @@ try {
     if (Test-Path $NSISPath) {
         Write-Status "NSIS found at: $NSISPath" 'Success'
         $HasNSIS = $true
-    } else {
+    }
+    else {
         Write-Status "NSIS not found (installer creation will be skipped)" 'Warning'
         Write-Status "Download from: https://nsis.sourceforge.io/" 'Info'
         $HasNSIS = $false
@@ -108,7 +113,8 @@ try {
         
         if ($HasBackup) {
             Write-Status "Previous builds backed up to: $BackupDir" 'Success'
-        } else {
+        }
+        else {
             Write-Status "No previous builds to clean" 'Info'
         }
         Write-Status "Cleanup complete" 'Success'
@@ -121,7 +127,8 @@ try {
     Write-Status "Checking project files..." 'Info'
     if ((Test-Path "pyproject.toml") -and (Test-Path "main.py")) {
         Write-Status "Project files found" 'Success'
-    } else {
+    }
+    else {
         Write-Status "ERROR: Required files missing!" 'Error'
         exit 1
     }
@@ -171,14 +178,16 @@ try {
         
         $DirSize = (Get-ChildItem -Path $StagingDir -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB
         Write-Status "Total staging size: $([Math]::Round($DirSize, 2)) MB" 'Info'
-    } else {
+    }
+    else {
         Write-Status "ERROR: Executable not created!" 'Error'
         exit 1
     }
     
     if ($BuildOnly) {
         Write-Status "Build-only mode: Stopping before NSIS processing" 'Info'
-    } else {
+    }
+    else {
         # ============== NSIS INSTALLER CREATION ==============
         if ($HasNSIS) {
             Write-Section "Creating NSIS Installer"
@@ -189,7 +198,8 @@ try {
                 Write-Status "NSIS script not found: $NSISScript" 'Warning'
                 Write-Status "Installer creation skipped. Generate one using: makensis /HELP" 'Info'
                 Write-Status "Or create template: $NSISScript" 'Info'
-            } else {
+            }
+            else {
                 Write-Status "Building installer from: $NSISScript" 'Info'
                 
                 # Run NSIS compiler
@@ -212,11 +222,13 @@ try {
                         $SizeRounded = [Math]::Round($Size, 2)
                         Write-Status "Output: $($Installer.Name) ($SizeRounded MB)" 'Success'
                     }
-                } else {
+                }
+                else {
                     Write-Status "NSIS compilation failed (return code: $LASTEXITCODE)" 'Warning'
                 }
             }
-        } else {
+        }
+        else {
             Write-Status "NSIS not found - skipping installer creation" 'Warning'
             Write-Status "To create installer, install NSIS and re-run with NSIS script" 'Info'
         }
@@ -233,7 +245,8 @@ try {
     if ($HasNSIS) {
         if (Test-Path $NSISScript) {
             Write-Status "NSIS installer: Ready" 'Success'
-        } else {
+        }
+        else {
             Write-Status "NSIS script: Not found (raman_app_installer.nsi)" 'Warning'
         }
     }

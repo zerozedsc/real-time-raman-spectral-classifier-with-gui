@@ -80,6 +80,10 @@
         "delete_all_confirm_text": "{count}個のデータセットをすべて削除してもよろしいですか？\nこの操作は元に戻せません。",
         "delete_all_success": "{count}個のデータセットを削除しました",
         "delete_all_error": "データセットの削除に失敗しました",
+        "delete_progress_title": "データセットを削除中",
+        "delete_progress_message": "プロジェクトからすべてのデータセットを削除しています...",
+        "deleting_dataset": "削除中",
+        "delete_cancelled": "削除をキャンセルしました。{deleted}/{remaining}個のデータセットを削除しました。",
         "no_datasets_to_delete": "削除するデータセットがありません",
         "save_metadata_tooltip": "メタデータをJSONファイルに保存",
         "edit_meta_button": "選択したデータセットのメタデータを編集",
@@ -522,6 +526,13 @@
             "raw_to_preprocessed_message": "生データから前処理済みデータセットに切り替えています。\n二重前処理を防ぐため、プレビューが自動的に無効になります。",
             "preprocessed_to_raw_message": "前処理済みから生データセットに切り替えています。\n処理効果を表示するため、プレビューが自動的に有効になります。"
         }
+    },
+    "PARAMETER_WIDGETS": {
+        "ignore_max_limit": "最大値制限を無視",
+        "ignore_max_tooltip": "最大値を超える値を許可します。注意して使用してください - エラーが発生する可能性があります。",
+        "beyond_max_warning": "⚠️ 最大値制限が無視されています - エラーが発生する可能性があります",
+        "parameter_error_title": "パラメータエラー",
+        "parameter_error_message": "処理中にエラーが発生しました:\n\n{error}\n\nパラメータ値を減らすか、設定を調整することを検討してください。"
     },
     "TABS": {
         "data": "データ",

@@ -934,6 +934,35 @@ class PreprocessPage(QWidget):
         
         params_title_layout.addStretch()
         
+        # Add "Ignore max limit" checkbox for ALL parameters (Gray theme - subtle)
+        self.ignore_max_checkbox = QCheckBox(LOCALIZE("PARAMETER_WIDGETS.ignore_max_limit"))
+        self.ignore_max_checkbox.setStyleSheet("""
+            QCheckBox {
+                font-size: 11px;
+                color: #6c757d;
+                font-weight: 600;
+                spacing: 6px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 2px solid #adb5bd;
+                border-radius: 4px;
+                background-color: white;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #6c757d;
+                border-color: #6c757d;
+            }
+            QCheckBox::indicator:hover {
+                border-color: #495057;
+                background-color: #e9ecef;
+            }
+        """)
+        self.ignore_max_checkbox.setToolTip(LOCALIZE("PARAMETER_WIDGETS.ignore_max_tooltip"))
+        self.ignore_max_checkbox.toggled.connect(self._on_ignore_max_toggled_global)
+        params_title_layout.addWidget(self.ignore_max_checkbox)
+        
         # Add step info badge on the right side
         self.params_step_badge = QLabel("")
         self.params_step_badge.setStyleSheet("""
@@ -2123,8 +2152,8 @@ class PreprocessPage(QWidget):
             dialog = QDialog(self)
             dialog.setWindowTitle(LOCALIZE("PREPROCESS.DIALOGS.import_pipeline_title"))
             dialog.setModal(True)
-            dialog.setMinimumWidth(600)
-            dialog.setMinimumHeight(400)
+            dialog.setMinimumWidth(650)  # Increased from 600 for better text visibility
+            dialog.setMinimumHeight(450)  # Increased from 400
             
             # Apply dialog styling
             dialog.setStyleSheet("""
@@ -2181,30 +2210,34 @@ class PreprocessPage(QWidget):
             layout.addWidget(list_label)
             
             pipeline_list = QListWidget()
-            pipeline_list.setMinimumHeight(250)
+            pipeline_list.setMinimumHeight(280)  # Increased from 250 for better visibility
             
             if saved_pipelines:
                 for pipeline in saved_pipelines:
                     item = QListWidgetItem()
                     widget = QWidget()
                     widget_layout = QVBoxLayout(widget)
-                    widget_layout.setContentsMargins(12, 8, 12, 8)
-                    widget_layout.setSpacing(4)
+                    widget_layout.setContentsMargins(12, 10, 12, 10)  # Increased vertical padding
+                    widget_layout.setSpacing(6)  # Increased spacing
                     
                     name_label = QLabel(f"<b>{pipeline['name']}</b>")
+                    name_label.setStyleSheet("font-size: 13px; color: #2c3e50;")  # Larger font
+                    name_label.setWordWrap(True)  # Enable word wrap for long names
                     widget_layout.addWidget(name_label)
                     
                     info_label = QLabel(f"📊 {pipeline['step_count']} steps | 📅 {pipeline['created_date'][:10]}")
-                    info_label.setStyleSheet("color: #6c757d; font-size: 11px;")
+                    info_label.setStyleSheet("color: #6c757d; font-size: 12px;")  # Increased from 11px
                     widget_layout.addWidget(info_label)
                     
                     if pipeline['description']:
                         desc_label = QLabel(pipeline['description'][:100])
-                        desc_label.setStyleSheet("color: #495057; font-size: 11px; font-style: italic;")
+                        desc_label.setStyleSheet("color: #495057; font-size: 12px; font-style: italic;")  # Increased from 11px
                         desc_label.setWordWrap(True)
                         widget_layout.addWidget(desc_label)
                     
-                    item.setSizeHint(widget.sizeHint())
+                    # Ensure adequate height for item
+                    widget.adjustSize()
+                    item.setSizeHint(QSize(widget.sizeHint().width(), max(widget.sizeHint().height(), 80)))  # Minimum 80px height
                     item.setData(Qt.ItemDataRole.UserRole, pipeline)
                     pipeline_list.addItem(item)
                     pipeline_list.setItemWidget(item, widget)
@@ -2423,6 +2456,10 @@ class PreprocessPage(QWidget):
         # Connect parameter signals for automatic preview updates
         self._connect_parameter_signals(self.current_step_widget)
         
+        # Apply global ignore max limit state to new widgets
+        if hasattr(self, 'ignore_max_checkbox'):
+            self._on_ignore_max_toggled_global(self.ignore_max_checkbox.isChecked())
+        
         # Update title label with category and method name
         category_display = step.category.replace('_', ' ').title()
         
@@ -2485,6 +2522,39 @@ class PreprocessPage(QWidget):
         if step_index is not None and 0 <= step_index < len(self.pipeline_steps):
             step = self.pipeline_steps[step_index]
             step.params = self.current_step_widget.get_parameters()
+
+    def _on_ignore_max_toggled_global(self, checked: bool):
+        """Handle global ignore max limit checkbox toggle for ALL parameters."""
+        if not self.current_step_widget:
+            return
+        
+        # Apply to ALL parameter widgets in current step
+        for param_name, widget in self.current_step_widget.param_widgets.items():
+            # Check if widget has ignore_max_limit capability
+            if hasattr(widget, '_ignore_max_limit'):
+                # Set the flag
+                widget._ignore_max_limit = checked
+                
+                # Update button states to show orange warning if beyond max
+                if hasattr(widget, '_update_button_states'):
+                    widget._update_button_states()
+                
+                # Update tooltip warning
+                if hasattr(widget, 'value_input'):
+                    if checked:
+                        warning_text = LOCALIZE("PARAMETER_WIDGETS.beyond_max_warning")
+                        widget.value_input.setToolTip(warning_text)
+                    else:
+                        widget.value_input.setToolTip("")
+            
+            # Also check for individual checkboxes (hide them when global is used)
+            if hasattr(widget, 'ignore_max_checkbox'):
+                # Sync individual checkbox with global
+                widget.ignore_max_checkbox.blockSignals(True)
+                widget.ignore_max_checkbox.setChecked(checked)
+                widget.ignore_max_checkbox.blockSignals(False)
+                # Hide individual checkbox since we have global one
+                widget.ignore_max_checkbox.setVisible(False)
 
     def run_preprocessing(self):
         """Execute the preprocessing pipeline."""
@@ -3534,8 +3604,12 @@ class PreprocessPage(QWidget):
                         
                 except Exception as e:
                     # Log the error but continue with next step
+                    error_msg = str(e)
                     create_logs("preview_method_error", "PreprocessPage", 
-                               f"[{step.category}] Error applying {step.method} step_method: {str(e)}", status='error')
+                               f"[{step.category}] Error applying {step.method} step_method: {error_msg}", status='error')
+                    
+                    # Show error dialog to user
+                    self._show_parameter_error_dialog(step.method, step.category, error_msg)
                     continue
             
 
@@ -3586,6 +3660,58 @@ class PreprocessPage(QWidget):
             return None
         except Exception as e:
             return None
+
+    def _show_parameter_error_dialog(self, method_name: str, category: str, error_message: str):
+        """Show error dialog when preprocessing fails due to parameter issues."""
+        from PySide6.QtWidgets import QMessageBox
+        
+        # Get localized title (but show error in English for clarity)
+        error_title = LOCALIZE("PARAMETER_WIDGETS.parameter_error_title")
+        
+        # Build error message without localization template (show raw error in English)
+        header_text = "An error occurred during preprocessing:"
+        error_detail = f"[{category}] {method_name}\n\n{error_message}"
+        suggestion_text = "\nPlease adjust parameter values or check your settings."
+        
+        full_message = f"{header_text}\n\n{error_detail}{suggestion_text}"
+        
+        # Create and show the error dialog with modern app theme
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setWindowTitle(error_title)
+        msg_box.setText(full_message)
+        msg_box.setStandardButtons(QMessageBox.Ok)
+        
+        # Modern styling matching app theme (blue/white, not yellow)
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #ffffff;
+                border: 2px solid #0078d4;
+            }
+            QLabel {
+                color: #2c3e50;
+                font-size: 13px;
+                padding: 10px;
+            }
+            QPushButton {
+                background-color: #0078d4;
+                color: white;
+                border: none;
+                padding: 8px 24px;
+                border-radius: 4px;
+                font-size: 13px;
+                font-weight: 600;
+                min-width: 80px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+            QPushButton:pressed {
+                background-color: #004578;
+            }
+        """)
+        
+        msg_box.exec()
 
     def _show_original_data(self):
         """Show original unprocessed data without any pipeline effects."""

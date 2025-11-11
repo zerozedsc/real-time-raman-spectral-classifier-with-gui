@@ -6,15 +6,18 @@ param(
     [switch]$Clean = $false,
     [switch]$Debug = $false,
     [string]$OutputDir = "dist",
-    [switch]$NoCompress = $false
+    [switch]$NoCompress = $false,
+    [switch]$Console = $false,
+    [ValidateSet('DEBUG', 'INFO', 'WARNING', 'ERROR')]
+    [string]$LogLevel = 'WARNING'
 )
 
 # Colors for output
 $Colors = @{
     Success = 'Green'
-    Error = 'Red'
+    Error   = 'Red'
     Warning = 'Yellow'
-    Info = 'Cyan'
+    Info    = 'Cyan'
     Section = 'Magenta'
 }
 
@@ -57,7 +60,8 @@ try {
     $PyInstallerVersion = pyinstaller --version 2>&1
     if ($LASTEXITCODE -eq 0) {
         Write-Status "PyInstaller: $PyInstallerVersion" 'Success'
-    } else {
+    }
+    else {
         Write-Status "PyInstaller not found. Installing..." 'Warning'
         pip install pyinstaller
     }
@@ -98,7 +102,8 @@ try {
         
         if ($HasBackup) {
             Write-Status "Previous builds backed up to: $BackupDir" 'Success'
-        } else {
+        }
+        else {
             Write-Status "No previous builds to clean" 'Info'
         }
         Write-Status "Cleanup complete" 'Success'
@@ -120,7 +125,8 @@ try {
     # Check main entry point
     if (Test-Path "main.py") {
         Write-Status "main.py found" 'Success'
-    } else {
+    }
+    else {
         Write-Status "ERROR: main.py not found!" 'Error'
         exit 1
     }
@@ -134,6 +140,22 @@ try {
     
     # ============== BUILD EXECUTABLE ==============
     Write-Section "Building Portable Executable"
+    
+    # Set environment variable for log level (used at runtime)
+    $env:RAMAN_LOG_LEVEL = $LogLevel
+    Write-Status "Log level set to: $LogLevel" 'Info'
+    
+    # Modify spec file for console mode if requested
+    if ($Console) {
+        Write-Status "Console mode enabled - updating spec file temporarily" 'Warning'
+        $SpecContent = Get-Content "raman_app.spec" -Raw
+        $SpecContent = $SpecContent -replace "console=False", "console=True"
+        $SpecContent | Set-Content "raman_app_temp.spec"
+        $SpecFile = 'raman_app_temp.spec'
+    }
+    else {
+        $SpecFile = 'raman_app.spec'
+    }
     
     $BuildArgs = @(
         '--distpath', $OutputDir,
@@ -151,7 +173,7 @@ try {
     }
 
     # Append spec file as final argument so PyInstaller applies options correctly
-    $BuildArgs += 'raman_app.spec'
+    $BuildArgs += $SpecFile
     
     Write-Status "Building with PyInstaller..." 'Info'
     Write-Status "Command: pyinstaller $($BuildArgs -join ' ')" 'Info'
@@ -185,7 +207,8 @@ try {
         $DirSize = (Get-ChildItem -LiteralPath $DirPath -Recurse | Measure-Object -Property Length -Sum).Sum
         $DirSizeMB = [Math]::Round($DirSize / 1MB, 2)
         Write-Status "Total distribution size: $DirSizeMB MB" 'Info'
-    } else {
+    }
+    else {
         Write-Status "ERROR: Executable not created at expected location!" 'Error'
         exit 1
     }
@@ -198,7 +221,8 @@ try {
         $ItemPath = Join-Path $OutputDir "raman_app" $Item
         if (Test-Path $ItemPath) {
             Write-Status "Found: $Item" 'Success'
-        } else {
+        }
+        else {
             Write-Status "Missing: $Item (may be required)" 'Warning'
             $MissingItems += $Item
         }
@@ -215,7 +239,8 @@ try {
     
     if ($MissingItems.Count -gt 0) {
         Write-Status "Warning: Some items were not included ($($MissingItems -join ', '))" 'Warning'
-    } else {
+    }
+    else {
         Write-Status "All required components included" 'Success'
     }
     
@@ -235,10 +260,21 @@ try {
     
     Write-Status "Portable build complete!" 'Success'
     
+    # Cleanup temporary spec file if created
+    if ($Console -and (Test-Path "raman_app_temp.spec")) {
+        Remove-Item "raman_app_temp.spec" -Force
+        Write-Status "Cleaned up temporary spec file" 'Info'
+    }
+    
     # Restore original directory
     Pop-Location
 }
 catch {
+    # Cleanup temporary spec file on error
+    if ($Console -and (Test-Path "raman_app_temp.spec")) {
+        Remove-Item "raman_app_temp.spec" -Force -ErrorAction SilentlyContinue
+    }
+    
     # Restore original directory on error
     Pop-Location -ErrorAction SilentlyContinue
     Write-Status "FATAL ERROR: $_" 'Error'

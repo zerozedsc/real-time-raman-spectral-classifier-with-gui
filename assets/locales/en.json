@@ -80,6 +80,10 @@
         "delete_all_confirm_text": "Are you sure you want to delete all {count} datasets?\nThis action cannot be undone.",
         "delete_all_success": "Successfully deleted {count} dataset(s)",
         "delete_all_error": "Failed to delete datasets",
+        "delete_progress_title": "Deleting Datasets",
+        "delete_progress_message": "Deleting all datasets from project...",
+        "deleting_dataset": "Deleting",
+        "delete_cancelled": "Deletion cancelled. Deleted {deleted} of {remaining} datasets.",
         "no_datasets_to_delete": "No datasets to delete",
         "save_metadata_tooltip": "Save metadata to JSON file",
         "edit_meta_button": "Edit metadata for selected dataset",
@@ -109,6 +113,13 @@
         "metadata_field_operator": "Operator Name",
         "metadata_field_acquisition_date": "Acquisition Date",
         "metadata_field_notes": "Additional Notes"
+    },
+    "PARAMETER_WIDGETS": {
+        "ignore_max_limit": "Ignore max limit",
+        "ignore_max_tooltip": "Allow values beyond maximum limit. Use with caution - may cause errors.",
+        "beyond_max_warning": "⚠️ Max limit ignored - values may cause errors",
+        "parameter_error_title": "Parameter Error",
+        "parameter_error_message": "An error occurred while processing:\n\n{error}\n\nConsider reducing parameter values or adjusting your settings."
     },
     "COMMON": {
         "not_available": "N/A",
