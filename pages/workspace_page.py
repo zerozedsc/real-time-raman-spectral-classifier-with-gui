@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt
 from components.app_tabs import AppTabBar
 from pages.data_package_page import DataPackagePage
 from pages.preprocess_page import PreprocessPage
+from pages.analysis_page import AnalysisPage
 from pages.home_page import HomePage
 from utils import *
 from configs.configs import *
@@ -39,15 +40,16 @@ class WorkspacePage(QWidget):
         self.home_page = HomePage()
         self.data_page = DataPackagePage()
         self.preprocessing_page = PreprocessPage()
+        self.analysis_page = AnalysisPage()
         self.ml_page = QLabel(LOCALIZE("TABS.machine_learning") + " Page Content", alignment=Qt.AlignmentFlag.AlignCenter)
-        self.realtime_page = QLabel(LOCALIZE("TABS.real_time") + " Page Content", alignment=Qt.AlignmentFlag.AlignCenter)
         
         # --- Add pages to the stack ---
         self.page_stack.addWidget(self.home_page)      # Index 0 - Home
         self.page_stack.addWidget(self.data_page)      # Index 1 - Data
         self.page_stack.addWidget(self.preprocessing_page)  # Index 2 - Preprocessing
-        self.page_stack.addWidget(self.ml_page)        # Index 3 - ML
-        self.page_stack.addWidget(self.realtime_page)  # Index 4 - Real-time
+        self.page_stack.addWidget(self.analysis_page)  # Index 3 - Analysis
+        self.page_stack.addWidget(self.ml_page)        # Index 4 - ML
+        
 
         main_layout.addWidget(self.tab_bar)
         main_layout.addWidget(self.page_stack, 1)

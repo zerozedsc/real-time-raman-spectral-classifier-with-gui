@@ -35,8 +35,8 @@ class AppTabBar(QWidget):
         tabs = [
             ("data", "TABS.data"),
             ("preprocessing", "TABS.preprocessing"),
+            ("analysis", "TABS.analysis"),
             ("machine_learning", "TABS.machine_learning"),
-            ("analysis", "TABS.analysis")
         ]
 
         # --- Create Home Button (separate from main tabs) ---

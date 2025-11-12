@@ -9,7 +9,7 @@ Functions:
     visualize_processed_spectra: Plot preprocessed spectral data
     extract_raman_characteristics: Extract peaks and calculate AUC
 
-Author: Visualization Package
+Author: MUHAMMAD HELMI BIN ROZAIN
 Created: 2025-10-01 (Extracted from core.py during Phase 1 refactoring)
 """
 

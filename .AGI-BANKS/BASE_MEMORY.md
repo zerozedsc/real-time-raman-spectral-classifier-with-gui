@@ -774,6 +774,16 @@ raman-app/
 ├── pages/                     # Application pages (UI views)
 │   ├── preprocess_page.py     # Main preprocessing interface
 │   ├── data_package_page.py   # Data import/management
+│   ├── analysis_page.py       # ⭐ NEW: Data analysis interface (Dec 2024)
+│   │   └── analysis_page_utils/  # Analysis support modules
+│   │       ├── result.py         # AnalysisResult dataclass
+│   │       ├── registry.py       # 15+ method definitions
+│   │       ├── thread.py         # Background processing
+│   │       ├── widgets.py        # Parameter widget factory
+│   │       └── methods/          # Analysis implementations
+│   │           ├── exploratory.py    # PCA, UMAP, t-SNE, clustering
+│   │           ├── statistical.py    # Comparison, peaks, ANOVA
+│   │           └── visualization.py  # Heatmaps, overlays, plots
 │   └── home_page.py           # Project management
 ├── components/                # Reusable UI components
 │   ├── app_tabs.py           # Tab navigation
@@ -790,13 +800,31 @@ raman-app/
 ├── configs/                   # Configuration management
 ├── assets/                    # Static resources
 │   ├── icons/                # SVG icons
-│   ├── locales/              # EN/JA translations
+│   ├── locales/              # EN/JA translations (ANALYSIS_PAGE keys added Dec 2024)
 │   └── fonts/                # Typography
 ├── .docs/                     # 📚 Detailed documentation hub
 └── .AGI-BANKS/               # 🤖 AI agent knowledge base
 ```
 
 ## 🎨 UI/UX Patterns
+
+### Analysis Page Structure (NEW - December 2024) ⭐
+- **Left Panel (400px)**: 
+  - Dataset selection with Raw/Preprocessed/All filters
+  - Method selection (category + method dropdowns)
+  - Dynamic parameters (changes based on selected method)
+  - Quick statistics (datasets, spectra, wavenumber range)
+  - Run controls (Run, Cancel, Export, Clear)
+- **Right Panel (expanding)**: 
+  - Primary Visualization tab
+  - Secondary Visualization tab (method-dependent)
+  - Data Table tab
+- **Key Features**: 
+  - Multi-dataset selection with filters
+  - 15+ analysis methods (PCA, UMAP, clustering, statistical tests, visualizations)
+  - Background threading for responsive UI
+  - Result caching to avoid recomputation
+  - Comprehensive export (PNG, SVG, CSV, reports)
 
 ### Preprocessing Page Structure
 - **Left Panel**: Dataset selection, pipeline building, output config

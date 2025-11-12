@@ -4,7 +4,7 @@ COMPREHENSIVE PREPROCESSING METHODS TEST SCRIPT
 Tests ALL preprocessing methods for parameter issues, instantiation errors,
 and validates the entire preprocessing registry system.
 
-Author: AI Assistant
+Author: MUHAMMAD HELMI BIN ROZAIN
 Date: 2025-10-14
 Environment: UV Python environment
 Output: Saves results to test_script/test_results_TIMESTAMP.txt

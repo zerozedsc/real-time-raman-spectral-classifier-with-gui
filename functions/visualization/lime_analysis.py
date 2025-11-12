@@ -28,7 +28,7 @@ Dependencies:
     - numpy, matplotlib: Data manipulation and visualization
     - ramanspy: Spectral data containers
 
-Author: Raman Analysis Team
+Author: MUHAMMAD HELMI BIN ROZAIN
 Phase: 5 (Extracted from core.py)
 """
 

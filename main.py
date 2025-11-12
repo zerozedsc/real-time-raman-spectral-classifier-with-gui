@@ -37,6 +37,8 @@ class MainWindow(QMainWindow):
         self.home_page.newProjectCreated.connect(self.open_project_workspace)
         # Connect the notification signal from the data page to the toast's slot
         self.workspace_page.data_page.showNotification.connect(self.toast.show_message)
+        # Connect the notification signal from the analysis page to the toast's slot
+        self.workspace_page.analysis_page.showNotification.connect(self.toast.show_message)
 
         # Start on the home page
         self.central_stack.setCurrentWidget(self.home_page)

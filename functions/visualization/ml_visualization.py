@@ -20,7 +20,7 @@ Dependencies:
     - ramanspy: Spectral container handling
     - functions.configs: Logging utilities
 
-Author: Phase 2 Refactoring - Extracted from RamanVisualizer
+Author: MUHAMMAD HELMI BIN ROZAIN
 Date: October 2025
 """
 

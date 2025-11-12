@@ -6,7 +6,7 @@ Tests preprocessing methods with synthetic Raman spectra and validates:
 2. Medical diagnostic pipelines work correctly
 3. Output data has proper characteristics
 
-Author: AI Assistant
+Author: MUHAMMAD HELMI BIN ROZAIN
 Date: 2025-10-14
 Environment: UV Python environment
 Output: Saves results to test_script/functional_test_results_TIMESTAMP.txt

@@ -27,7 +27,7 @@ Generated Files:
     - raman_app_installer.nsi (NSIS installer script)
     - build_config_report.json (System analysis report)
 
-Author: AI Assistant
+Author: MUHAMMAD HELMI BIN ROZAIN
 Date: October 22, 2025
 """
 
